@@ -8,12 +8,10 @@ import sqlite3
 import os
 from datetime import datetime
 
-# 数据目录：默认放在项目内 data/（本地运行）；容器化时通过 DATA_DIR 指向持久卷。
-DATA_DIR = os.environ.get("DATA_DIR", os.path.join(os.path.dirname(__file__), "data"))
-DB_PATH = os.path.join(DATA_DIR, "customers.db")
+DB_PATH = os.path.join(os.path.dirname(__file__), "data", "customers.db")
 
-# 确保数据目录存在（云端容器首次部署时数据目录可能不存在）
-os.makedirs(DATA_DIR, exist_ok=True)
+# 确保数据目录存在（云端容器首次部署时 data/ 可能不存在）
+os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
 
 
 def get_db():
