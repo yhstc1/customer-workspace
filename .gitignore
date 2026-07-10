@@ -5,12 +5,19 @@ __pycache__/
 .venv/
 venv/
 
-# 数据库（线上用 Zeabur Volume 持久化，不进仓库，避免把本地数据带上云）
+# 数据库（线上用持久卷，不进仓库，避免把本地数据带上云）
 *.db
 *.db-journal
 *.db-wal
 *.db-shm
 data/*.db*
+
+# 项目内部笔记 / 代理记忆（不进仓库）
+.workbuddy/
+
+# 环境变量 / 密钥文件
+.env
+.env.*
 
 # 生成的报告
 reports/*.html
