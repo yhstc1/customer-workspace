@@ -1,6 +1,6 @@
-# Zeabur 部署指南
+# Zeabur 部署指南（不依赖 GitHub）
 
-本项目已完成 Zeabur 适配。下面两种方式任选其一，**推荐方式一（GitHub）**，最稳、支持 push 后自动重新部署。
+> 适用场景：**github.com 打不开 / 不想用 GitHub**。本方案用 Zeabur 官方 CLI 从本地直接打包上传部署，全程不碰 GitHub。
 
 ---
 
@@ -12,47 +12,60 @@
 | `app.py` | 建表 `init_db()` 提到模块级 | gunicorn 不执行 `if __name__=="__main__"`，否则线上第一个请求就 500 |
 | `models.py` | 启动时自动 `makedirs(data)` | 云端容器首次没有 `data/` 目录，SQLite 连接会失败 |
 | `zbpack.json` | 指定启动命令 | 告诉 Zeabur 用 `gunicorn app:app` 启动 |
-| `.gitignore` | 忽略 `*.db`、`__pycache__` 等 | 数据库不进仓库，线上用 Volume 持久化 |
+| `.zeaburignore` | 忽略 `*.db`、`__pycache__`、`.workbuddy` 等 | 防止把本地数据库、密钥、缓存传上线 |
+| `.gitignore` | 忽略 `*.db`、`__pycache__` 等 | 数据库不进仓库 |
 
-启动命令：`gunicorn app:app -b 0.0.0.0:$PORT --workers 2 --timeout 120`
-
----
-
-## 二、方式一：GitHub（推荐）
-
-### 1. 推送到 GitHub
-项目已初始化 git 并完成首次提交，只差关联远程仓库：
-
-```bash
-cd "C:\Users\123\Downloads\customer-workspace"
-# 先到 github.com 新建一个空仓库（不要勾选 README/.gitignore），拿到地址后执行：
-git remote add origin https://github.com/你的用户名/仓库名.git
-git branch -M main
-git push -u origin main
-```
-
-### 2. 在 Zeabur 部署
-1. 打开 https://zeabur.com ，用 GitHub 登录
-2. `Create Project` → 选区域（推荐 Hong Kong / Singapore）
-3. `Add Service` → `Deploy from GitHub` → 授权并选中刚推送的仓库
-4. Zeabur 自动识别为 Python 项目，读取 `zbpack.json`，用 gunicorn 启动，几分钟后构建完成
-
-### 3. 生成公网域名
-服务详情 → `Networking` / `Domains` → `Generate Domain`，填一个前缀，得到 `xxx.zeabur.app` 即可访问。
+启动命令（Zeabur 自动读取）：`gunicorn app:app -b 0.0.0.0:$PORT --workers 2 --timeout 120`
 
 ---
 
-## 三、方式二：Zeabur CLI（不想用 GitHub 时）
+## 二、准备：注册 Zeabur（用邮箱，不碰 GitHub）
+
+1. 打开 https://zeabur.com
+2. 点注册/登录，**选择「邮箱 Email」或「Google」方式**（不要选 GitHub，因为你打不开 github.com）
+3. 首次创建项目需要验证账号：手机号 / 预存余额 / 信用卡，三选一完成验证
+
+> 只要 `zeabur.com` 能打开，这一步就和 GitHub 无关，正常走。
+
+---
+
+## 三、主部署方式：Zeabur CLI（本地直传）
+
+在本机项目目录执行：
 
 ```bash
 cd "C:\Users\123\Downloads\customer-workspace"
+
+# 1. 登录（会打开浏览器，到 Zeabur 网站用邮箱登录后点 Confirm）
+npx zeabur@latest auth login
+
+# 2. 部署（在当前目录执行，CLI 自动识别 Python 项目并打包上传）
 npx zeabur@latest deploy
 ```
-按提示登录、选/建 Project，CLI 会把当前目录打包上传部署。
+
+`deploy` 会交互式让你：
+- 选择或新建一个 Project（区域推荐 Hong Kong / Singapore）
+- 选择环境（默认 production）
+- 自动构建并给出服务 URL
+
+构建完成后在终端会显示访问地址。
+
+> 前提：本机需有 Node.js（你已装 22.x，`npx` 可用）。
+> CLI 登录走的是 Zeabur 自家网站，回传 token 给终端，**全程不经过 github.com**。
 
 ---
 
-## 四、必须配置的两项（部署后立刻做）
+## 四、备选：网页直接传 ZIP（不想装 CLI 时）
+
+1. 在本地把整个项目目录压成 `customer-workspace.zip`（**排除** `data/*.db`、`__pycache__`、`.workbuddy` 文件夹）
+2. 在 Zeabur 项目里 `Add Service` → 选择「Upload / Deploy code」类入口上传该 zip
+3. Zeabur 自动解包构建
+
+（CLI 方式更省事，优先用第三种。）
+
+---
+
+## 五、部署后必须配置的两项
 
 ### 1. 数据持久化 Volume（重要，不配数据会丢）
 Zeabur 容器磁盘是临时的，**重新部署/重启会清空 SQLite 数据库**。必须挂 Volume：
@@ -79,17 +92,26 @@ Zeabur 容器磁盘是临时的，**重新部署/重启会清空 SQLite 数据�
 | `APP_BASE_URL` | `https://你的域名.zeabur.app` |
 
 > ⚠️ 一旦填了钉钉 AppKey/AppSecret，登录门禁会启用。此时必须：
-> 1. 设置 `APP_BASE_URL` 为你的 Zeabur 域名（回调地址会自动拼成 `域名/api/dingtalk/oauth/callback`）
+> 1. 设置 `APP_BASE_URL` 为你的 Zeabur 域名（回调地址自动拼成 `域名/api/dingtalk/oauth/callback`）
 > 2. 到钉钉开放平台「安全设置 → 重定向 URL」把该回调地址加进白名单
 > 3. 否则会一直卡在扫码登录页登不进去
 
 ---
 
-## 五、验证
+## 六、生成公网域名
+服务详情 → `Domains` / `Networking` → `Generate Domain`，填前缀得到 `xxx.zeabur.app` 即可访问。
+
+## 七、验证
 - 访问 `https://你的域名.zeabur.app/` 打开仪表盘
 - 访问 `/api/dashboard` 返回 JSON 即为正常
 
-## 六、常见问题
-- **502 / 启动失败**：看 Zeabur 日志。多半是依赖装失败或端口没监听 `$PORT`，本项目已用 `-b 0.0.0.0:$PORT` 处理。
-- **数据莫名清空**：没挂 Volume，回到第四节第 1 步。
-- **改代码后更新**：GitHub 方式直接 `git push`，Zeabur 自动重新部署。
+## 八、常见问题
+- **502 / 启动失败**：看 Zeabur 日志。多半是依赖装失败或没监听 `$PORT`，本项目已用 `-b 0.0.0.0:$PORT` 处理。
+- **数据莫名清空**：没挂 Volume，回到第五节第 1 步。
+- **改代码后更新**：重新在本地目录跑 `npx zeabur@latest deploy` 即可重新部署（会新建一次部署）。
+- **CLI 登录没反应**：确认浏览器能打开 `zeabur.com` 并完成邮箱登录，点 Confirm 后回到终端应显示 success。
+
+---
+
+## 九、如果你将来能访问 github.com（可选）
+也可用 GitHub 方式：把项目 `git push` 到 GitHub 仓库，Zeabur `Add Service → Deploy from GitHub` 选中仓库，支持 push 后自动重新部署。当前已 `git init` 并提交，只差 `git remote add origin` + `git push`。
