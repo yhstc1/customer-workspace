@@ -110,6 +110,7 @@ Zeabur 容器磁盘是临时的，**重新部署/重启会清空 SQLite 数据�
 - **数据莫名清空**：没挂 Volume，回到第五节第 1 步。
 - **改代码后更新**：重新在本地目录跑 `npx zeabur@latest deploy` 即可重新部署（会新建一次部署）。
 - **CLI 登录没反应**：确认浏览器能打开 `zeabur.com` 并完成邮箱登录，点 Confirm 后回到终端应显示 success。
+- **`Failed to create project: invalid region code`**：CLI 交互创建项目时传入了服务端不认的区域代码，是 CLI 的已知坑，与你的操作无关。绕过办法：去 zeabur.com 网页 `New Project` 选好区域（Hong Kong）创建空项目，再重新跑 `npx zeabur@latest deploy`，这次选已有项目即可，不再触发创建项目的 region 错误。
 
 ---
 
