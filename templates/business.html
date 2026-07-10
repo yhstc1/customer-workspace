@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>业务管理</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-brand">🏢 客户工作空间</div>
+        <ul class="navbar-nav">
+            <li><a href="/">📊 仪表盘</a></li>
+            <li><a href="/customers">👥 客户管理</a></li>
+            <li><a href="/business">💼 业务</a></li>
+            <li><a href="/map">🗺️ 地图视图</a></li>
+            <li><a href="/tasks">📝 事项看板</a></li>
+            <li><a href="/reports">📊 每日报告</a></li>
+            <li><a href="/settings">⚙️ 设置</a></li>
+            <li><a href="/logout">🚪 退出</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <div class="toolbar">
+            <div class="toolbar-left">
+                <input type="text" class="form-control" id="searchInput" placeholder="🔍 搜索公司名称/合同编码/业务号码/类型..." style="width: 340px;" oninput="loadBusinesses()">
+            </div>
+            <div class="toolbar-right">
+                <button class="btn btn-primary" onclick="openBusinessModal()">➕ 新增业务</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div id="businessTable">
+                <div class="empty-state"><div class="icon">⏳</div><div>加载中...</div></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 业务编辑模态框 -->
+    <div class="modal-overlay" id="businessModal">
+        <div class="modal" style="max-width: 720px;">
+            <div class="modal-header">
+                <h3 id="businessModalTitle">新增业务</h3>
+                <button class="modal-close" onclick="closeBusinessModal()">&times;</button>
+            </div>
+            <form id="businessForm">
+                <input type="hidden" id="businessId">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div class="form-group">
+                        <label>关联客户</label>
+                        <select class="form-control" id="customerSelect" onchange="onCustomerSelect()">
+                            <option value="">（不关联，手动填公司名称）</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>公司名称 *</label>
+                        <input type="text" class="form-control" id="companyName" required>
+                    </div>
+                    <div class="form-group">
+                        <label>业务类型</label>
+                        <input type="text" class="form-control" id="businessType" placeholder="如：宽带专线 / 云服务 / 设备采购">
+                    </div>
+                    <div class="form-group">
+                        <label>合同编码</label>
+                        <input type="text" class="form-control" id="contractCode">
+                    </div>
+                    <div class="form-group">
+                        <label>业务号码</label>
+                        <input type="text" class="form-control" id="businessNumber">
+                    </div>
+                    <div class="form-group">
+                        <label>合同金额 (¥)</label>
+                        <input type="number" step="any" class="form-control" id="contractAmount">
+                    </div>
+                    <div class="form-group">
+                        <label>开始时间</label>
+                        <input type="date" class="form-control" id="startDate">
+                    </div>
+                    <div class="form-group">
+                        <label>结束时间</label>
+                        <input type="date" class="form-control" id="endDate">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>业务地址</label>
+                    <input type="text" class="form-control" id="businessAddress">
+                </div>
+                <div class="form-group">
+                    <label>备注</label>
+                    <textarea class="form-control" id="notes" rows="3"></textarea>
+                </div>
+            </form>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeBusinessModal()">取消</button>
+                <button class="btn btn-primary" onclick="saveBusiness()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+    <script>
+        let allBusinesses = [];
+        let customers = [];
+
+        async function loadCustomersForSelect() {
+            try {
+                customers = await api('/api/customers');
+                const sel = document.getElementById('customerSelect');
+                sel.innerHTML = '<option value="">（不关联，手动填公司名称）</option>' +
+                    customers.map(c => `<option value="${c.id}" data-company="${(c.company || c.name || '').replace(/"/g, '&quot;')}">${c.company || c.name}${c.name && c.company ? ' · ' + c.name : ''}</option>`).join('');
+            } catch (e) {
+                console.error('客户加载失败', e);
+            }
+        }
+
+        function onCustomerSelect() {
+            const sel = document.getElementById('customerSelect');
+            const opt = sel.options[sel.selectedIndex];
+            if (sel.value && opt) {
+                document.getElementById('companyName').value = opt.getAttribute('data-company') || '';
+            }
+        }
+
+        async function loadBusinesses() {
+            const search = document.getElementById('searchInput').value;
+            const params = new URLSearchParams();
+            if (search) params.append('search', search);
+            try {
+                allBusinesses = await api('/api/business?' + params.toString());
+                renderBusinesses(allBusinesses);
+            } catch (e) {
+                showToast('加载失败: ' + e.message, 'error');
+            }
+        }
+
+        function renderBusinesses(list) {
+            const el = document.getElementById('businessTable');
+            if (list.length === 0) {
+                el.innerHTML = '<div class="empty-state"><div class="icon">📭</div><div class="title">暂无业务</div><div>点击右上角"新增业务"开始添加</div></div>';
+                return;
+            }
+            el.innerHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>公司名称</th>
+                            <th>业务类型</th>
+                            <th>合同编码</th>
+                            <th>合同金额</th>
+                            <th>业务号码</th>
+                            <th>起止时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${list.map(b => `
+                            <tr>
+                                <td><strong>${b.company_name || '-'}</strong></td>
+                                <td>${b.business_type || '-'}</td>
+                                <td>${b.contract_code || '-'}</td>
+                                <td>${b.contract_amount != null ? '¥' + Number(b.contract_amount).toLocaleString() : '-'}</td>
+                                <td>${b.business_number || '-'}</td>
+                                <td style="white-space:nowrap;">${(b.start_date || '?')} ~ ${(b.end_date || '?')}</td>
+                                <td>
+                                    <button class="btn btn-outline btn-sm" onclick="editBusiness(${b.id})">编辑</button>
+                                    <button class="btn btn-danger btn-sm" onclick="deleteBusiness(${b.id}, '${(b.company_name || '').replace(/'/g, "\\'")}')">删除</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        async function openBusinessModal(biz = null) {
+            if (customers.length === 0) await loadCustomersForSelect();
+            const modal = document.getElementById('businessModal');
+            const title = document.getElementById('businessModalTitle');
+            document.getElementById('businessForm').reset();
+
+            if (biz) {
+                title.textContent = '编辑业务';
+                document.getElementById('businessId').value = biz.id;
+                document.getElementById('customerSelect').value = biz.customer_id || '';
+                document.getElementById('companyName').value = biz.company_name || '';
+                document.getElementById('businessType').value = biz.business_type || '';
+                document.getElementById('contractCode').value = biz.contract_code || '';
+                document.getElementById('businessNumber').value = biz.business_number || '';
+                document.getElementById('contractAmount').value = biz.contract_amount != null ? biz.contract_amount : '';
+                document.getElementById('startDate').value = biz.start_date ? biz.start_date.substring(0, 10) : '';
+                document.getElementById('endDate').value = biz.end_date ? biz.end_date.substring(0, 10) : '';
+                document.getElementById('businessAddress').value = biz.business_address || '';
+                document.getElementById('notes').value = biz.notes || '';
+            } else {
+                title.textContent = '新增业务';
+                document.getElementById('businessId').value = '';
+            }
+            modal.classList.add('show');
+        }
+
+        function closeBusinessModal() {
+            document.getElementById('businessModal').classList.remove('show');
+        }
+
+        function editBusiness(id) {
+            const biz = allBusinesses.find(b => b.id === id);
+            if (biz) openBusinessModal(biz);
+        }
+
+        async function saveBusiness() {
+            const id = document.getElementById('businessId').value;
+            const company = document.getElementById('companyName').value.trim();
+            if (!company) {
+                showToast('请填写公司名称', 'error');
+                return;
+            }
+            const data = {
+                customer_id: parseInt(document.getElementById('customerSelect').value) || null,
+                company_name: company,
+                business_type: document.getElementById('businessType').value,
+                contract_code: document.getElementById('contractCode').value,
+                business_number: document.getElementById('businessNumber').value,
+                contract_amount: parseFloat(document.getElementById('contractAmount').value),
+                start_date: document.getElementById('startDate').value || '',
+                end_date: document.getElementById('endDate').value || '',
+                business_address: document.getElementById('businessAddress').value,
+                notes: document.getElementById('notes').value,
+            };
+            if (isNaN(data.contract_amount)) data.contract_amount = null;
+
+            try {
+                if (id) {
+                    await api(`/api/business/${id}`, { method: 'PUT', body: data });
+                    showToast('业务已更新', 'success');
+                } else {
+                    await api('/api/business', { method: 'POST', body: data });
+                    showToast('业务已添加', 'success');
+                }
+                closeBusinessModal();
+                loadBusinesses();
+            } catch (e) {
+                showToast('保存失败: ' + e.message, 'error');
+            }
+        }
+
+        async function deleteBusiness(id, name) {
+            if (!confirm(`确定删除业务"${name}"吗？`)) return;
+            try {
+                await api(`/api/business/${id}`, { method: 'DELETE' });
+                showToast('业务已删除', 'success');
+                loadBusinesses();
+            } catch (e) {
+                showToast('删除失败: ' + e.message, 'error');
+            }
+        }
+
+        // 初始化
+        loadCustomersForSelect();
+        loadBusinesses();
+    </script>
+</body>
+</html>

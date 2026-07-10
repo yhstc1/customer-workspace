@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# 数据库（线上用 Zeabur Volume 持久化，不进仓库，避免把本地数据带上云）
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+data/*.db*
+
+# 生成的报告
+reports/*.html
+
+# 系统 / 编辑器
+.DS_Store
+Thumbs.db

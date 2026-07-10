@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>客户工作空间</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/mobile.css">
+</head>
+<body class="mobile-body">
+    <!-- 顶部状态栏 -->
+    <header class="mobile-header">
+        <div class="mobile-header-title" id="pageTitle">📊 仪表盘</div>
+        {% if dingtalk_user %}
+        <div class="mobile-header-user">👤 {{ dingtalk_user.name }}</div>
+        {% endif %}
+    </header>
+
+    <!-- 内容区域 -->
+    <main class="mobile-content" id="pageContent">
+        <!-- 动态加载 -->
+    </main>
+
+    <!-- 底部 Tab 导航 -->
+    <nav class="mobile-tabbar">
+        <a class="tab-item active" data-page="dashboard" onclick="switchPage('dashboard')">
+            <span class="tab-icon">📊</span>
+            <span class="tab-label">仪表盘</span>
+        </a>
+        <a class="tab-item" data-page="customers" onclick="switchPage('customers')">
+            <span class="tab-icon">👥</span>
+            <span class="tab-label">客户</span>
+        </a>
+        <a class="tab-item" data-page="map" onclick="switchPage('map')">
+            <span class="tab-icon">🗺️</span>
+            <span class="tab-label">地图</span>
+        </a>
+        <a class="tab-item" data-page="tasks" onclick="switchPage('tasks')">
+            <span class="tab-icon">📝</span>
+            <span class="tab-label">事项</span>
+        </a>
+        <a class="tab-item" data-page="report" onclick="switchPage('report')">
+            <span class="tab-icon">📋</span>
+            <span class="tab-label">报告</span>
+        </a>
+    </nav>
+
+    <script src="/static/js/app.js"></script>
+    <script src="/static/js/mobile.js"></script>
+    <script>
+        // 钉钉免登（如果在钉钉环境内）
+        {% if not dingtalk_user %}
+        initDingtalkAuth();
+        {% endif %}
+
+        // 默认加载仪表盘
+        switchPage('dashboard');
+    </script>
+</body>
+</html>

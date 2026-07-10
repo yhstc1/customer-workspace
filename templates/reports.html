@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>每日报告</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-brand">🏢 客户工作空间</div>
+        <ul class="navbar-nav">
+            <li><a href="/">📊 仪表盘</a></li>
+            <li><a href="/customers">👥 客户管理</a></li>
+            <li><a href="/business">💼 业务</a></li>
+            <li><a href="/map">🗺️ 地图视图</a></li>
+            <li><a href="/tasks">📝 事项看板</a></li>
+            <li><a href="/reports">📊 每日报告</a></li>
+            <li><a href="/settings">⚙️ 设置</a></li>
+            <li><a href="/logout">🚪 退出</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <div class="card">
+            <div class="card-title">
+                <span>📊 每日客户报告</span>
+                <div style="display:flex; gap:8px;">
+                    <button class="btn btn-outline" onclick="sendReportToDingtalk()">📢 推送到钉钉</button>
+                    <button class="btn btn-primary" onclick="generateReport()">⚡ 立即生成今日报告</button>
+                </div>
+            </div>
+            <div class="alert alert-info">
+                💡 点击「立即生成今日报告」可一键生成包含客户概览、待办事项、附近客户、进度统计的 HTML 报告。
+                你也可以配置定时自动生成（见下方说明）。「推送到钉钉」会生成报告并发送钉钉工作通知。
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">
+                <span>📁 历史报告</span>
+                <button class="btn btn-outline btn-sm" onclick="loadReports()">🔄 刷新</button>
+            </div>
+            <div id="reportsList">
+                <div class="empty-state"><div class="icon">⏳</div><div>加载中...</div></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title"><span>⏰ 定时自动生成</span></div>
+            <div class="alert alert-warning">
+                <p style="margin-bottom: 8px;"><strong>配置方法：</strong></p>
+                <p>在服务器上运行以下命令设置每天早上 8:00 自动生成报告：</p>
+                <pre style="background: #fff; padding: 12px; border-radius: 6px; margin: 10px 0; overflow-x: auto; font-size: 13px;"><code># 编辑 crontab
+crontab -e
+
+# 添加以下行（每天 8:00 生成报告）：
+0 8 * * * cd /workspace/customer-workspace && python3 report_generator.py >> /tmp/report_cron.log 2>&1</code></pre>
+                <p style="margin-top: 8px;">报告会自动保存在 <code>reports/</code> 目录下，可在上方列表查看。</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+    <script>
+        async function loadReports() {
+            try {
+                const reports = await api('/api/reports');
+                const el = document.getElementById('reportsList');
+
+                if (reports.length === 0) {
+                    el.innerHTML = '<div class="empty-state"><div class="icon">📭</div><div class="title">暂无报告</div><div>点击上方按钮生成第一份报告</div></div>';
+                    return;
+                }
+
+                el.innerHTML = reports.map(r => `
+                    <div class="report-item">
+                        <div class="info">
+                            <div class="filename">📄 ${r.filename}</div>
+                            <div class="meta">📅 ${r.created} · 📦 ${r.size}</div>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <a href="${r.url}" target="_blank" class="btn btn-primary btn-sm">👀 查看</a>
+                            <a href="${r.url}" download class="btn btn-outline btn-sm">⬇ 下载</a>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (e) {
+                showToast('加载失败: ' + e.message, 'error');
+            }
+        }
+
+        async function generateReport() {
+            try {
+                showToast('正在生成报告...', '');
+                const data = await api('/api/report/generate', { method: 'POST' });
+                showToast('报告已生成！', 'success');
+                loadReports();
+                setTimeout(() => window.open(data.url, '_blank'), 500);
+            } catch (e) {
+                showToast('生成失败: ' + e.message, 'error');
+            }
+        }
+
+        async function sendReportToDingtalk() {
+            try {
+                showToast('正在生成并推送报告到钉钉...', '');
+                // 先生成报告
+                const reportData = await api('/api/report/generate', { method: 'POST' });
+                // 再推送到钉钉
+                await api('/api/dingtalk/notify', {
+                    method: 'POST',
+                    body: {
+                        title: '📊 今日客户报告已生成',
+                        content: '报告已生成，包含客户概览、待办事项、附近客户统计。\n\n点击查看完整报告。',
+                        url: window.location.origin + reportData.url
+                    }
+                });
+                showToast('报告已推送到钉钉！', 'success');
+                loadReports();
+            } catch (e) {
+                showToast('推送失败: ' + e.message + '（请确认钉钉已配置且已通过钉钉登录）', 'error');
+            }
+        }
+
+        loadReports();
+    </script>
+</body>
+</html>

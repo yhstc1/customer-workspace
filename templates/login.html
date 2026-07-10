@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 - 客户管理工作空间</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .login-card {
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 420px;
+            padding: 40px 36px;
+            text-align: center;
+        }
+        .logo { font-size: 46px; margin-bottom: 8px; }
+        h1 { font-size: 22px; color: #333; margin-bottom: 6px; }
+        .subtitle { font-size: 14px; color: #888; margin-bottom: 28px; }
+        #login_container {
+            display: flex;
+            justify-content: center;
+            min-height: 300px;
+            align-items: center;
+        }
+        .tip { font-size: 13px; color: #999; margin-top: 20px; line-height: 1.6; }
+        .error-box {
+            background: #fdecea; color: #c0392b;
+            border: 1px solid #f5c6cb; border-radius: 8px;
+            padding: 10px 14px; font-size: 14px; margin-bottom: 20px;
+        }
+        .notice-box {
+            background: #fff8e1; color: #8a6d3b;
+            border: 1px solid #ffe0a3; border-radius: 8px;
+            padding: 16px; font-size: 14px; line-height: 1.7; text-align: left;
+        }
+        .notice-box code {
+            background: #f5f5f5; padding: 2px 6px; border-radius: 4px;
+            font-size: 13px; color: #d6336c;
+        }
+        .btn-enter {
+            display: inline-block; margin-top: 18px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #fff; text-decoration: none; padding: 11px 30px;
+            border-radius: 8px; font-size: 15px; font-weight: 600;
+            transition: opacity .2s;
+        }
+        .btn-enter:hover { opacity: .9; }
+        .loading { color: #888; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <div class="logo">🏢</div>
+        <h1>客户管理工作空间</h1>
+        <p class="subtitle">请使用钉钉扫码登录</p>
+
+        <div id="errorBox" class="error-box" style="display:none;"></div>
+
+        {% if configured %}
+        <div id="login_container">
+            <span class="loading">二维码加载中…</span>
+        </div>
+        <p class="tip">打开手机钉钉 App，扫描上方二维码完成登录</p>
+        {% else %}
+        <div class="notice-box">
+            <strong>钉钉登录尚未配置</strong><br>
+            当前为本地免登录模式，可直接进入使用。<br><br>
+            如需启用钉钉扫码登录，请在 <code>dingtalk_config.py</code> 中填入
+            <code>AppKey</code> / <code>AppSecret</code>，
+            并在钉钉开放平台配置回调地址：<br>
+            <code>http://localhost:5000/api/dingtalk/oauth/callback</code>
+        </div>
+        <a href="/" class="btn-enter">直接进入系统 →</a>
+        {% endif %}
+    </div>
+
+    {% if configured %}
+    <script src="https://g.alicdn.com/dingding/h5-dingtalk-login/0.21.0/ddlogin.js"></script>
+    <script>
+        // 显示 URL 上的错误提示
+        (function () {
+            const params = new URLSearchParams(window.location.search);
+            const err = params.get("error");
+            if (err) {
+                const box = document.getElementById("errorBox");
+                box.textContent = "⚠️ " + decodeURIComponent(err);
+                box.style.display = "block";
+            }
+        })();
+
+        const APP_KEY = {{ app_key | tojson }};
+        const REDIRECT_URI = {{ redirect_uri | tojson }};
+        const STATE = "cw_" + Math.random().toString(36).slice(2, 10);
+
+        function renderQrCode() {
+            if (typeof window.DTFrameLogin !== "function") {
+                document.getElementById("login_container").innerHTML =
+                    '<span class="loading">二维码组件加载失败，请检查网络后刷新</span>';
+                return;
+            }
+            window.DTFrameLogin(
+                { id: "login_container", width: 300, height: 300 },
+                {
+                    redirect_uri: encodeURIComponent(REDIRECT_URI),
+                    client_id: APP_KEY,
+                    scope: "openid",
+                    response_type: "code",
+                    state: STATE,
+                    prompt: "consent"
+                },
+                function (loginResult) {
+                    // 扫码成功：优先用官方 redirectUrl，回退到自建回调
+                    const { redirectUrl, authCode } = loginResult;
+                    if (redirectUrl) {
+                        window.location.href = redirectUrl;
+                    } else if (authCode) {
+                        window.location.href =
+                            "/api/dingtalk/oauth/callback?authCode=" + encodeURIComponent(authCode);
+                    }
+                },
+                function (errorMsg) {
+                    const box = document.getElementById("errorBox");
+                    box.textContent = "⚠️ 登录失败：" + errorMsg;
+                    box.style.display = "block";
+                }
+            );
+        }
+
+        window.addEventListener("load", renderQrCode);
+    </script>
+    {% endif %}
+</body>
+</html>

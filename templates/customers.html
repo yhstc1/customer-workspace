@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>客户管理</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-brand">🏢 客户工作空间</div>
+        <ul class="navbar-nav">
+            <li><a href="/">📊 仪表盘</a></li>
+            <li><a href="/customers">👥 客户管理</a></li>
+            <li><a href="/business">💼 业务</a></li>
+            <li><a href="/map">🗺️ 地图视图</a></li>
+            <li><a href="/tasks">📝 事项看板</a></li>
+            <li><a href="/reports">📊 每日报告</a></li>
+            <li><a href="/settings">⚙️ 设置</a></li>
+            <li><a href="/logout">🚪 退出</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <div class="toolbar">
+            <div class="toolbar-left">
+                <input type="text" class="form-control" id="searchInput" placeholder="🔍 搜索公司名称/联系人/地址/电话..." style="width: 300px;" oninput="loadCustomers()">
+                <select class="form-control" id="categoryFilter" style="width: 140px;" onchange="loadCustomers()">
+                    <option value="">全部分类</option>
+                    <option value="核心要客">核心要客</option>
+                    <option value="TOP20">TOP20</option>
+                </select>
+            </div>
+            <div class="toolbar-right">
+                <button class="btn btn-outline" onclick="downloadTemplate()">📥 下载模板</button>
+                <button class="btn btn-outline" onclick="openImportModal()">📤 批量导入</button>
+                <button class="btn btn-primary" onclick="openCustomerModal()">➕ 新增客户</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div id="customerTable">
+                <div class="empty-state"><div class="icon">⏳</div><div>加载中...</div></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 客户编辑模态框 -->
+    <div class="modal-overlay" id="customerModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modalTitle">新增客户</h3>
+                <button class="modal-close" onclick="closeCustomerModal()">&times;</button>
+            </div>
+            <form id="customerForm">
+                <input type="hidden" id="customerId">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div class="form-group">
+                        <label>公司名称 *</label>
+                        <input type="text" class="form-control" id="company" required>
+                    </div>
+                    <div class="form-group">
+                        <label>联系人</label>
+                        <input type="text" class="form-control" id="name">
+                    </div>
+                    <div class="form-group">
+                        <label>联系方式</label>
+                        <input type="text" class="form-control" id="phone">
+                    </div>
+                    <div class="form-group">
+                        <label>邮箱</label>
+                        <input type="text" class="form-control" id="email">
+                    </div>
+                    <div class="form-group">
+                        <label>分类</label>
+                        <select class="form-control" id="category">
+                            <option value="">（不设置）</option>
+                            <option value="核心要客">核心要客</option>
+                            <option value="TOP20">TOP20</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>优先级</label>
+                        <select class="form-control" id="priority">
+                            <option value="低">低</option>
+                            <option value="中" selected>中</option>
+                            <option value="高">高</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>地址</label>
+                    <input type="text" class="form-control" id="address" placeholder="输入地址会自动获取经纬度">
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div class="form-group">
+                        <label>纬度</label>
+                        <input type="number" step="any" class="form-control" id="latitude">
+                    </div>
+                    <div class="form-group">
+                        <label>经度</label>
+                        <input type="number" step="any" class="form-control" id="longitude">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>备注</label>
+                    <textarea class="form-control" id="notes" rows="3"></textarea>
+                </div>
+            </form>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeCustomerModal()">取消</button>
+                <button class="btn btn-primary" onclick="saveCustomer()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 客户详情模态框 -->
+    <div class="modal-overlay" id="detailModal">
+        <div class="modal" style="max-width: 700px;">
+            <div class="modal-header">
+                <h3 id="detailTitle">客户详情</h3>
+                <button class="modal-close" onclick="closeDetailModal()">&times;</button>
+            </div>
+            <div id="detailContent"></div>
+        </div>
+    </div>
+
+    <!-- 批量导入模态框 -->
+    <div class="modal-overlay" id="importModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>批量导入客户</h3>
+                <button class="modal-close" onclick="closeImportModal()">&times;</button>
+            </div>
+            <div class="alert alert-info" style="margin-bottom:12px;">
+                请先<a href="javascript:void(0)" onclick="downloadTemplate()" style="font-weight:600;">下载模板</a>，按列填写后上传（支持 CSV，UTF-8 或 GBK 编码）。<br>
+                列：公司名称、联系人、联系方式、邮箱、地址、分类（核心要客/TOP20/留空）、优先级（高/中/低）、备注。
+            </div>
+            <div class="form-group">
+                <label>选择 CSV 文件</label>
+                <input type="file" class="form-control" id="importFile" accept=".csv,text/csv">
+            </div>
+            <div id="importResult" style="margin-top:12px;"></div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeImportModal()">取消</button>
+                <button class="btn btn-primary" onclick="doImport()">开始导入</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+    <script>
+        let allCustomers = [];
+
+        async function loadCustomers() {
+            const search = document.getElementById('searchInput').value;
+            const category = document.getElementById('categoryFilter').value;
+            const params = new URLSearchParams();
+            if (search) params.append('search', search);
+            if (category) params.append('category', category);
+
+            try {
+                const data = await api('/api/customers?' + params.toString());
+                allCustomers = data;
+                renderCustomers(data);
+            } catch (e) {
+                showToast('加载失败: ' + e.message, 'error');
+            }
+        }
+
+        function renderCustomers(customers) {
+            const el = document.getElementById('customerTable');
+            if (customers.length === 0) {
+                el.innerHTML = '<div class="empty-state"><div class="icon">📭</div><div class="title">暂无客户</div><div>点击右上角"新增客户"开始添加</div></div>';
+                return;
+            }
+            el.innerHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>公司名称</th>
+                            <th>联系人</th>
+                            <th>联系方式</th>
+                            <th>地址</th>
+                            <th>分类</th>
+                            <th>优先级</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${customers.map(c => `
+                            <tr>
+                                <td><strong>${c.company || '-'}</strong></td>
+                                <td>${c.name || '-'}</td>
+                                <td>${c.phone || '-'}</td>
+                                <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${c.address || ''}">${c.address || '-'}</td>
+                                <td>${categoryBadge(c.category)}</td>
+                                <td><span class="badge priority-${c.priority}">${c.priority}</span></td>
+                                <td>
+                                    <button class="btn btn-outline btn-sm" onclick="viewCustomer(${c.id})">详情</button>
+                                    <button class="btn btn-outline btn-sm" onclick="editCustomer(${c.id})">编辑</button>
+                                    <button class="btn btn-danger btn-sm" onclick="deleteCustomer(${c.id}, '${c.name}')">删除</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function openCustomerModal(customer = null) {
+            const modal = document.getElementById('customerModal');
+            const title = document.getElementById('modalTitle');
+            const form = document.getElementById('customerForm');
+            form.reset();
+
+            if (customer) {
+                title.textContent = '编辑客户';
+                document.getElementById('customerId').value = customer.id;
+                document.getElementById('name').value = customer.name || '';
+                document.getElementById('company').value = customer.company || '';
+                document.getElementById('phone').value = customer.phone || '';
+                document.getElementById('email').value = customer.email || '';
+                document.getElementById('address').value = customer.address || '';
+                document.getElementById('latitude').value = customer.latitude || '';
+                document.getElementById('longitude').value = customer.longitude || '';
+                document.getElementById('category').value = customer.category || '';
+                document.getElementById('priority').value = customer.priority || '中';
+                document.getElementById('notes').value = customer.notes || '';
+            } else {
+                title.textContent = '新增客户';
+                document.getElementById('customerId').value = '';
+            }
+            modal.classList.add('show');
+        }
+
+        function closeCustomerModal() {
+            document.getElementById('customerModal').classList.remove('show');
+        }
+
+        function editCustomer(id) {
+            const customer = allCustomers.find(c => c.id === id);
+            if (customer) openCustomerModal(customer);
+        }
+
+        async function saveCustomer() {
+            const id = document.getElementById('customerId').value;
+            const company = document.getElementById('company').value.trim();
+            const contact = document.getElementById('name').value.trim();
+            if (!company) {
+                showToast('请填写公司名称', 'error');
+                return;
+            }
+            const data = {
+                name: contact || company,
+                company: company,
+                phone: document.getElementById('phone').value,
+                email: document.getElementById('email').value,
+                address: document.getElementById('address').value,
+                latitude: parseFloat(document.getElementById('latitude').value) || null,
+                longitude: parseFloat(document.getElementById('longitude').value) || null,
+                category: document.getElementById('category').value,
+                priority: document.getElementById('priority').value,
+                notes: document.getElementById('notes').value,
+            };
+
+            try {
+                if (id) {
+                    await api(`/api/customers/${id}`, { method: 'PUT', body: data });
+                    showToast('客户已更新', 'success');
+                } else {
+                    await api('/api/customers', { method: 'POST', body: data });
+                    showToast('客户已添加', 'success');
+                }
+                closeCustomerModal();
+                loadCustomers();
+            } catch (e) {
+                showToast('保存失败: ' + e.message, 'error');
+            }
+        }
+
+        async function deleteCustomer(id, name) {
+            if (!confirm(`确定删除客户"${name}"及其所有事项吗？`)) return;
+            try {
+                await api(`/api/customers/${id}`, { method: 'DELETE' });
+                showToast('客户已删除', 'success');
+                loadCustomers();
+            } catch (e) {
+                showToast('删除失败: ' + e.message, 'error');
+            }
+        }
+
+        async function viewCustomer(id) {
+            try {
+                const data = await api(`/api/customers/${id}`);
+                const c = data.customer;
+                let businesses = [];
+                try {
+                    businesses = await api(`/api/customers/${id}/businesses`);
+                } catch (e) { businesses = []; }
+
+                document.getElementById('detailTitle').textContent = `客户详情 - ${c.company || c.name}`;
+                document.getElementById('detailContent').innerHTML = `
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
+                        <div><strong>公司名称:</strong> ${c.company || '-'}</div>
+                        <div><strong>联系人:</strong> ${c.name || '-'}</div>
+                        <div><strong>联系方式:</strong> ${c.phone || '-'}</div>
+                        <div><strong>邮箱:</strong> ${c.email || '-'}</div>
+                        <div><strong>分类:</strong> ${categoryBadge(c.category)}</div>
+                        <div><strong>优先级:</strong> <span class="badge priority-${c.priority}">${c.priority}</span></div>
+                        <div style="grid-column:1/3;"><strong>地址:</strong> ${c.address || '-'}</div>
+                    </div>
+                    ${c.notes ? `<div class="alert alert-info">📝 ${c.notes}</div>` : ''}
+
+                    <h4 style="margin: 20px 0 12px; border-bottom: 2px solid #eee; padding-bottom: 8px;">💼 业务 (${businesses.length})</h4>
+                    ${businesses.length === 0 ? '<div class="empty-state"><div class="icon">📭</div><div>暂无业务</div></div>' : `
+                        <table>
+                            <thead><tr><th>业务类型</th><th>合同编码</th><th>合同金额</th><th>业务号码</th><th>起止时间</th></tr></thead>
+                            <tbody>
+                                ${businesses.map(b => `
+                                    <tr>
+                                        <td>${b.business_type || '-'}</td>
+                                        <td>${b.contract_code || '-'}</td>
+                                        <td>${b.contract_amount != null ? '¥' + Number(b.contract_amount).toLocaleString() : '-'}</td>
+                                        <td>${b.business_number || '-'}</td>
+                                        <td>${(b.start_date || '?')} ~ ${(b.end_date || '?')}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `}
+
+                    <h4 style="margin: 20px 0 12px; border-bottom: 2px solid #eee; padding-bottom: 8px;">📋 跟进事项 (${data.tasks.length})</h4>
+                    ${data.tasks.length === 0 ? '<div class="empty-state"><div class="icon">📭</div><div>暂无事项</div></div>' : `
+                        <table>
+                            <thead><tr><th>事项</th><th>状态</th><th>优先级</th><th>进度</th><th>截止</th></tr></thead>
+                            <tbody>
+                                ${data.tasks.map(t => `
+                                    <tr>
+                                        <td>${t.title}</td>
+                                        <td><span class="badge status-${t.status}">${t.status}</span></td>
+                                        <td><span class="badge priority-${t.priority}">${t.priority}</span></td>
+                                        <td><div class="progress-bar"><div class="progress-fill" style="width:${t.progress}%">${t.progress}%</div></div></td>
+                                        <td style="color:${isOverdue(t.due_date,t.status)?'#e74c3c':'#888'}">${formatDate(t.due_date)}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `}
+                `;
+                document.getElementById('detailModal').classList.add('show');
+            } catch (e) {
+                showToast('加载失败: ' + e.message, 'error');
+            }
+        }
+
+        function closeDetailModal() {
+            document.getElementById('detailModal').classList.remove('show');
+        }
+
+        // ===== 批量导入 =====
+        function downloadTemplate() {
+            window.location.href = '/api/customers/template';
+        }
+
+        function openImportModal() {
+            document.getElementById('importFile').value = '';
+            document.getElementById('importResult').innerHTML = '';
+            document.getElementById('importModal').classList.add('show');
+        }
+
+        function closeImportModal() {
+            document.getElementById('importModal').classList.remove('show');
+        }
+
+        async function doImport() {
+            const fileInput = document.getElementById('importFile');
+            if (!fileInput.files.length) {
+                showToast('请先选择 CSV 文件', 'error');
+                return;
+            }
+            const fd = new FormData();
+            fd.append('file', fileInput.files[0]);
+            const resultEl = document.getElementById('importResult');
+            resultEl.innerHTML = '<div class="alert alert-info">正在导入...</div>';
+            try {
+                const resp = await fetch('/api/customers/import', { method: 'POST', body: fd });
+                const data = await resp.json();
+                if (!resp.ok) throw new Error(data.error || '导入失败');
+                let html = `<div class="alert alert-success">${data.message}</div>`;
+                if (data.errors && data.errors.length) {
+                    html += '<div class="alert alert-info" style="max-height:150px;overflow:auto;"><strong>部分行未导入：</strong><br>' +
+                        data.errors.map(e => '· ' + e).join('<br>') + '</div>';
+                }
+                resultEl.innerHTML = html;
+                showToast(data.message, 'success');
+                loadCustomers();
+            } catch (e) {
+                resultEl.innerHTML = `<div class="alert alert-danger">导入失败：${e.message}</div>`;
+                showToast('导入失败: ' + e.message, 'error');
+            }
+        }
+
+        loadCustomers();
+    </script>
+</body>
+</html>

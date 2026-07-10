@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>事项看板</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-brand">🏢 客户工作空间</div>
+        <ul class="navbar-nav">
+            <li><a href="/">📊 仪表盘</a></li>
+            <li><a href="/customers">👥 客户管理</a></li>
+            <li><a href="/business">💼 业务</a></li>
+            <li><a href="/map">🗺️ 地图视图</a></li>
+            <li><a href="/tasks">📝 事项看板</a></li>
+            <li><a href="/reports">📊 每日报告</a></li>
+            <li><a href="/settings">⚙️ 设置</a></li>
+            <li><a href="/logout">🚪 退出</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <div class="toolbar">
+            <div class="toolbar-left">
+                <select class="form-control" id="statusFilter" style="width: 140px;" onchange="loadTasks()">
+                    <option value="">全部状态</option>
+                    <option value="待处理">待处理</option>
+                    <option value="进行中">进行中</option>
+                    <option value="已完成">已完成</option>
+                    <option value="已搁置">已搁置</option>
+                </select>
+            </div>
+            <div class="toolbar-right">
+                <button class="btn btn-primary" onclick="openTaskModal()">➕ 新增事项</button>
+            </div>
+        </div>
+
+        <!-- 看板视图 -->
+        <div class="kanban-board" id="kanbanBoard">
+            <div class="kanban-column" id="col-待处理">
+                <div class="kanban-column-header"><span>📋 待处理</span><span class="count" id="count-待处理">0</span></div>
+                <div id="cards-待处理"></div>
+            </div>
+            <div class="kanban-column" id="col-进行中">
+                <div class="kanban-column-header"><span>🔄 进行中</span><span class="count" id="count-进行中">0</span></div>
+                <div id="cards-进行中"></div>
+            </div>
+            <div class="kanban-column" id="col-已搁置">
+                <div class="kanban-column-header"><span="⏸️ 已搁置</span><span class="count" id="count-已搁置">0</span></div>
+                <div id="cards-已搁置"></div>
+            </div>
+            <div class="kanban-column" id="col-已完成">
+                <div class="kanban-column-header"><span>✅ 已完成</span><span class="count" id="count-已完成">0</span></div>
+                <div id="cards-已完成"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 事项编辑模态框 -->
+    <div class="modal-overlay" id="taskModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="taskModalTitle">新增事项</h3>
+                <button class="modal-close" onclick="closeTaskModal()">&times;</button>
+            </div>
+            <form id="taskForm">
+                <input type="hidden" id="taskId">
+                <div class="form-group">
+                    <label>关联客户 *</label>
+                    <input type="text" class="form-control" id="customerSearch" placeholder="🔍 输入公司名称/联系人模糊搜索..." style="margin-bottom:8px;" oninput="filterCustomerOptions()">
+                    <select class="form-control" id="customerId" required></select>
+                </div>
+                <div class="form-group">
+                    <label>事项标题 *</label>
+                    <input type="text" class="form-control" id="taskTitle" required>
+                </div>
+                <div class="form-group">
+                    <label>详细描述</label>
+                    <textarea class="form-control" id="taskDesc" rows="3"></textarea>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div class="form-group">
+                        <label>状态</label>
+                        <select class="form-control" id="taskStatus">
+                            <option value="待处理">待处理</option>
+                            <option value="进行中">进行中</option>
+                            <option value="已完成">已完成</option>
+                            <option value="已搁置">已搁置</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>优先级</label>
+                        <select class="form-control" id="taskPriority">
+                            <option value="低">低</option>
+                            <option value="中" selected>中</option>
+                            <option value="高">高</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>进度 (%)</label>
+                        <input type="range" class="form-control" id="taskProgress" min="0" max="100" value="0" oninput="document.getElementById('progressLabel').textContent=this.value+'%'">
+                        <span id="progressLabel" style="font-weight:600;">0%</span>
+                    </div>
+                    <div class="form-group">
+                        <label>截止日期</label>
+                        <input type="date" class="form-control" id="taskDueDate">
+                    </div>
+                </div>
+            </form>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeTaskModal()">取消</button>
+                <button class="btn btn-primary" onclick="saveTask()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+    <script>
+        let allTasks = [];
+        let allCustomers = [];
+
+        async function loadTasks() {
+            try {
+                const status = document.getElementById('statusFilter').value;
+                const params = status ? `?status=${status}` : '';
+                allTasks = await api('/api/tasks' + params);
+                renderKanban(allTasks);
+            } catch (e) {
+                showToast('加载失败: ' + e.message, 'error');
+            }
+        }
+
+        async function loadCustomersForSelect() {
+            try {
+                allCustomers = await api('/api/customers');
+                renderCustomerOptions('');
+            } catch (e) {
+                console.error('客户加载失败', e);
+            }
+        }
+
+        function customerLabel(c) {
+            if (c.company && c.name) return `${c.company} · ${c.name}`;
+            return c.company || c.name || '';
+        }
+
+        function renderCustomerOptions(filter) {
+            const sel = document.getElementById('customerId');
+            const keep = sel.value;
+            const kw = (filter || '').trim().toLowerCase();
+            const list = kw
+                ? allCustomers.filter(c => customerLabel(c).toLowerCase().includes(kw))
+                : allCustomers;
+            sel.innerHTML = '<option value="">请选择客户</option>' +
+                list.map(c => `<option value="${c.id}">${customerLabel(c)}</option>`).join('');
+            // 若之前已选中项仍在筛选结果中，保持选中
+            if (keep && list.some(c => String(c.id) === String(keep))) {
+                sel.value = keep;
+            }
+        }
+
+        function filterCustomerOptions() {
+            renderCustomerOptions(document.getElementById('customerSearch').value);
+        }
+
+        function renderKanban(tasks) {
+            const statuses = ['待处理', '进行中', '已搁置', '已完成'];
+            const today = new Date().toISOString().substring(0, 10);
+
+            statuses.forEach(status => {
+                const colTasks = tasks.filter(t => t.status === status);
+                document.getElementById(`count-${status}`).textContent = colTasks.length;
+                const container = document.getElementById(`cards-${status}`);
+
+                if (colTasks.length === 0) {
+                    container.innerHTML = '<div style="text-align:center;color:#ccc;padding:20px;font-size:13px;">暂无</div>';
+                } else {
+                    container.innerHTML = colTasks.map(t => {
+                        const overdue = isOverdue(t.due_date, t.status);
+                        return `
+                            <div class="kanban-card priority-${t.priority}" onclick="editTask(${t.id})">
+                                <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px;">
+                                    <div class="title" style="flex:1;">${t.title}</div>
+                                    <button class="task-del-btn" title="删除事项" onclick="event.stopPropagation();deleteTask(${t.id})">🗑</button>
+                                </div>
+                                <div class="customer">👤 ${t.customer_name} ${t.customer_company ? '· ' + t.customer_company : ''}</div>
+                                <div style="display:flex;gap:4px;margin:6px 0;">
+                                    <span class="badge priority-${t.priority}">${t.priority}</span>
+                                </div>
+                                <div class="progress-bar" style="margin: 6px 0;">
+                                    <div class="progress-fill" style="width:${t.progress}%">${t.progress}%</div>
+                                </div>
+                                ${t.due_date ? `<div class="due ${overdue ? '' : 'not-overdue'}">${overdue ? '⚠ ' : '📅 '}${formatDate(t.due_date)}</div>` : ''}
+                            </div>
+                        `;
+                    }).join('');
+                }
+            });
+        }
+
+        async function openTaskModal(task = null) {
+            if (allCustomers.length === 0) {
+                await loadCustomersForSelect();
+            }
+
+            const modal = document.getElementById('taskModal');
+            const title = document.getElementById('taskModalTitle');
+            document.getElementById('taskForm').reset();
+            document.getElementById('customerSearch').value = '';
+            renderCustomerOptions('');
+
+            if (task) {
+                title.textContent = '编辑事项';
+                document.getElementById('taskId').value = task.id;
+                document.getElementById('customerId').value = task.customer_id;
+                document.getElementById('taskTitle').value = task.title;
+                document.getElementById('taskDesc').value = task.description || '';
+                document.getElementById('taskStatus').value = task.status;
+                document.getElementById('taskPriority').value = task.priority;
+                document.getElementById('taskProgress').value = task.progress;
+                document.getElementById('progressLabel').textContent = task.progress + '%';
+                document.getElementById('taskDueDate').value = task.due_date ? task.due_date.substring(0, 10) : '';
+            } else {
+                title.textContent = '新增事项';
+                document.getElementById('taskId').value = '';
+                document.getElementById('progressLabel').textContent = '0%';
+            }
+            modal.classList.add('show');
+        }
+
+        function closeTaskModal() {
+            document.getElementById('taskModal').classList.remove('show');
+        }
+
+        function editTask(id) {
+            const task = allTasks.find(t => t.id === id);
+            if (task) openTaskModal(task);
+        }
+
+        async function deleteTask(id) {
+            const task = allTasks.find(t => t.id === id);
+            const name = task ? task.title : '';
+            if (!confirm(`确定删除事项「${name}」吗？此操作不可恢复。`)) return;
+            try {
+                await api(`/api/tasks/${id}`, { method: 'DELETE' });
+                showToast('事项已删除', 'success');
+                loadTasks();
+            } catch (e) {
+                showToast('删除失败: ' + e.message, 'error');
+            }
+        }
+
+        async function saveTask() {
+            const id = document.getElementById('taskId').value;
+            const data = {
+                customer_id: parseInt(document.getElementById('customerId').value),
+                title: document.getElementById('taskTitle').value,
+                description: document.getElementById('taskDesc').value,
+                status: document.getElementById('taskStatus').value,
+                priority: document.getElementById('taskPriority').value,
+                progress: parseInt(document.getElementById('taskProgress').value),
+                due_date: document.getElementById('taskDueDate').value || null,
+            };
+
+            if (!data.customer_id) {
+                showToast('请选择关联客户', 'error');
+                return;
+            }
+
+            try {
+                if (id) {
+                    await api(`/api/tasks/${id}`, { method: 'PUT', body: data });
+                    showToast('事项已更新', 'success');
+                } else {
+                    await api('/api/tasks', { method: 'POST', body: data });
+                    showToast('事项已添加', 'success');
+                }
+                closeTaskModal();
+                loadTasks();
+            } catch (e) {
+                showToast('保存失败: ' + e.message, 'error');
+            }
+        }
+
+        // 初始化
+        loadCustomersForSelect();
+        loadTasks();
+    </script>
+</body>
+</html>

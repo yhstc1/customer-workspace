@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>地图视图</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        #map { height: 600px; width: 100%; }
+        .customer-popup { font-size: 14px; min-width: 180px; }
+        .customer-popup h4 { margin-bottom: 6px; }
+        .customer-popup .info-row { margin: 2px 0; color: #555; font-size: 13px; }
+        .my-location-popup { font-size: 14px; }
+        .my-location-popup h4 { color: #667eea; margin-bottom: 4px; }
+        .leaflet-popup-content { margin: 12px 16px; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-brand">🏢 客户工作空间</div>
+        <ul class="navbar-nav">
+            <li><a href="/">📊 仪表盘</a></li>
+            <li><a href="/customers">👥 客户管理</a></li>
+            <li><a href="/business">💼 业务</a></li>
+            <li><a href="/map">🗺️ 地图视图</a></li>
+            <li><a href="/tasks">📝 事项看板</a></li>
+            <li><a href="/reports">📊 每日报告</a></li>
+            <li><a href="/settings">⚙️ 设置</a></li>
+            <li><a href="/logout">🚪 退出</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <div class="card" style="padding: 0; overflow: hidden; position: relative;">
+            <div id="map"></div>
+
+            <!-- 地图控制面板 -->
+            <div class="map-controls">
+                <div style="font-weight: 700; font-size: 14px; margin-bottom: 4px;">📍 我的位置</div>
+                <div id="myLocationName" style="font-size: 13px; color: #555; margin-bottom: 8px;">加载中...</div>
+                <div class="form-group" style="margin: 0;">
+                    <label style="font-size: 12px;">搜索半径</label>
+                    <div style="display: flex; gap: 4px; align-items: center;">
+                        <input type="range" id="radiusSlider" min="1" max="50" value="10" style="flex: 1;">
+                        <span id="radiusValue" style="font-weight: 600; min-width: 45px;">10 km</span>
+                    </div>
+                </div>
+                <button class="btn btn-primary btn-sm" onclick="locateMe()" style="margin-top: 4px;">📡 定位到我</button>
+                <button class="btn btn-outline btn-sm" onclick="resetToDefault()" style="margin-top: 2px;">🏠 恢复默认位置</button>
+            </div>
+
+            <!-- 图例 -->
+            <div class="map-legend">
+                <div style="font-weight: 700; margin-bottom: 4px;">图例</div>
+                <div class="legend-item">
+                    <span class="legend-dot" style="background: #e74c3c;"></span> 我的位置
+                </div>
+                <div class="legend-item">
+                    <span class="legend-dot" style="background: #f39c12; border: 2px solid #e65100;"></span> VIP客户
+                </div>
+                <div class="legend-item">
+                    <span class="legend-dot" style="background: #3498db;"></span> 重要客户
+                </div>
+                <div class="legend-item">
+                    <span class="legend-dot" style="background: #95a5a6;"></span> 普通客户
+                </div>
+            </div>
+        </div>
+
+        <!-- 附近客户列表 -->
+        <div class="card" style="margin-top: 20px;">
+            <div class="card-title">
+                <span>🗺️ 附近客户（<span id="nearbyCount">0</span> 个）</span>
+                <span style="font-size: 14px; color: #888;" id="nearbyInfo"></span>
+            </div>
+            <div id="nearbyList">
+                <div class="empty-state"><div class="icon">⏳</div><div>加载中...</div></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+    <script>
+        let map = null;
+        let myMarker = null;
+        let circle = null;
+        let customerMarkers = [];
+        let myLat = 31.2036;
+        let myLon = 121.6040;
+        let radius = 10;
+        let allCustomers = [];
+
+        async function initMap() {
+            // 加载设置
+            try {
+                const settings = await api('/api/settings');
+                myLat = parseFloat(settings.my_latitude) || 31.2036;
+                myLon = parseFloat(settings.my_longitude) || 121.6040;
+                radius = parseFloat(settings.default_radius_km) || 10;
+                document.getElementById('myLocationName').textContent = settings.my_location_name || '未设置';
+                document.getElementById('radiusSlider').value = radius;
+                document.getElementById('radiusValue').textContent = radius + ' km';
+            } catch (e) {
+                console.error('设置加载失败', e);
+            }
+
+            // 加载客户
+            try {
+                allCustomers = await api('/api/customers');
+            } catch (e) {
+                showToast('客户加载失败: ' + e.message, 'error');
+                return;
+            }
+
+            // 初始化地图
+            map = L.map('map').setView([myLat, myLon], 13);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '© OpenStreetMap'
+            }).addTo(map);
+
+            // 我的位置标记
+            updateMyLocation(myLat, myLon, false);
+
+            // 绘制客户标记和搜索圆
+            updateNearbyCustomers();
+
+            // 半径滑块事件
+            document.getElementById('radiusSlider').addEventListener('input', function() {
+                radius = parseInt(this.value);
+                document.getElementById('radiusValue').textContent = radius + ' km';
+                updateNearbyCustomers();
+            });
+        }
+
+        function updateMyLocation(lat, lon, saveToDb = true) {
+            myLat = lat;
+            myLon = lon;
+
+            if (myMarker) {
+                map.removeLayer(myMarker);
+            }
+
+            const icon = L.divIcon({
+                className: 'my-location-icon',
+                html: '<div style="width:20px;height:20px;background:#e74c3c;border:3px solid #fff;border-radius:50%;box-shadow:0 0 8px rgba(231,76,60,0.6);"></div>',
+                iconSize: [20, 20],
+                iconAnchor: [10, 10]
+            });
+
+            myMarker = L.marker([lat, lon], { icon }).addTo(map)
+                .bindPopup(`
+                    <div class="my-location-popup">
+                        <h4>📍 我的位置</h4>
+                        <div>纬度: ${lat.toFixed(4)}</div>
+                        <div>经度: ${lon.toFixed(4)}</div>
+                    </div>
+                `);
+
+            map.setView([lat, lon], 13);
+
+            if (saveToDb) {
+                // 保存到数据库
+                fetch('/api/settings', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        my_latitude: lat,
+                        my_longitude: lon
+                    })
+                }).catch(e => console.error('位置保存失败', e));
+            }
+        }
+
+        function updateNearbyCustomers() {
+            // 清除旧标记
+            customerMarkers.forEach(m => map.removeLayer(m));
+            customerMarkers = [];
+
+            // 清除旧圆
+            if (circle) map.removeLayer(circle);
+
+            // 画搜索范围圆
+            circle = L.circle([myLat, myLon], {
+                radius: radius * 1000,
+                color: '#667eea',
+                fillColor: '#667eea',
+                fillOpacity: 0.08,
+                weight: 2,
+                dashArray: '5, 5'
+            }).addTo(map);
+
+            // 计算距离并筛选
+            const nearby = [];
+            allCustomers.forEach(c => {
+                if (c.latitude && c.longitude) {
+                    const dist = calcDistance(myLat, myLon, c.latitude, c.longitude);
+                    if (dist <= radius) {
+                        c._distance = dist;
+                        nearby.push(c);
+
+                        // 根据分类设置颜色
+                        const colors = {
+                            'VIP客户': { fill: '#f39c12', border: '#e65100' },
+                            '重要客户': { fill: '#3498db', border: '#2980b9' },
+                            '普通客户': { fill: '#95a5a6', border: '#7f8c8d' }
+                        };
+                        const color = colors[c.category] || colors['普通客户'];
+
+                        const icon = L.divIcon({
+                            className: 'customer-icon',
+                            html: `<div style="width:14px;height:14px;background:${color.fill};border:2px solid ${color.border};border-radius:50%;"></div>`,
+                            iconSize: [14, 14],
+                            iconAnchor: [7, 7]
+                        });
+
+                        const marker = L.marker([c.latitude, c.longitude], { icon })
+                            .bindPopup(`
+                                <div class="customer-popup">
+                                    <h4>${c.name}</h4>
+                                    <div class="info-row">🏢 ${c.company || '-'}</div>
+                                    <div class="info-row">📞 ${c.phone || '-'}</div>
+                                    <div class="info-row">📍 ${c.address || '-'}</div>
+                                    <div class="info-row">🏷️ ${categoryBadge(c.category)}</div>
+                                    <div class="info-row">📏 距离: <strong>${dist.toFixed(2)} km</strong></div>
+                                    ${c.notes ? `<div class="info-row" style="margin-top:6px;padding:6px;background:#f8f9fc;border-radius:4px;">📝 ${c.notes}</div>` : ''}
+                                </div>
+                            `);
+                        marker.addTo(map);
+                        customerMarkers.push(marker);
+                    }
+                }
+            });
+
+            // 更新附近列表
+            nearby.sort((a, b) => a._distance - b._distance);
+            renderNearbyList(nearby);
+        }
+
+        function renderNearbyList(nearby) {
+            document.getElementById('nearbyCount').textContent = nearby.length;
+            document.getElementById('nearbyInfo').textContent = `半径 ${radius} 公里内`;
+
+            const el = document.getElementById('nearbyList');
+            if (nearby.length === 0) {
+                el.innerHTML = '<div class="empty-state"><div class="icon">🗺️</div><div class="title">附近无客户</div><div>尝试增大搜索半径</div></div>';
+                return;
+            }
+
+            el.innerHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>客户</th>
+                            <th>公司</th>
+                            <th>分类</th>
+                            <th>距离</th>
+                            <th>电话</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${nearby.map((c, i) => `
+                            <tr>
+                                <td>${i + 1}</td>
+                                <td><strong>${c.name}</strong></td>
+                                <td>${c.company || '-'}</td>
+                                <td>${categoryBadge(c.category)}</td>
+                                <td><span class="badge badge-distance">${c._distance.toFixed(2)} km</span></td>
+                                <td>${c.phone || '-'}</td>
+                                <td><button class="btn btn-outline btn-sm" onclick="focusCustomer(${c.id})">在地图上查看</button></td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function focusCustomer(id) {
+            const c = allCustomers.find(x => x.id === id);
+            if (c && map) {
+                map.setView([c.latitude, c.longitude], 16);
+                // 找到对应的 marker 并打开 popup
+                const idx = allCustomers.filter(x => x.latitude && x.longitude && calcDistance(myLat, myLon, x.latitude, x.longitude) <= radius).sort((a,b) => calcDistance(myLat,myLon,a.latitude,a.longitude) - calcDistance(myLat,myLon,b.latitude,b.longitude)).findIndex(x => x.id === id);
+                if (idx >= 0 && customerMarkers[idx]) {
+                    customerMarkers[idx].openPopup();
+                }
+            }
+        }
+
+        function locateMe() {
+            if (!navigator.geolocation) {
+                showToast('您的浏览器不支持定位功能', 'error');
+                return;
+            }
+            showToast('正在获取您的位置...', '');
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    updateMyLocation(pos.coords.latitude, pos.coords.longitude);
+                    updateNearbyCustomers();
+                    showToast('已定位到您的当前位置', 'success');
+                },
+                (err) => {
+                    showToast('定位失败: ' + (err.message || '请检查浏览器权限'), 'error');
+                },
+                { enableHighAccuracy: true, timeout: 10000 }
+            );
+        }
+
+        async function resetToDefault() {
+            try {
+                const settings = await api('/api/settings');
+                const lat = parseFloat(settings.my_latitude) || 31.2036;
+                const lon = parseFloat(settings.my_longitude) || 121.6040;
+                updateMyLocation(lat, lon, false);
+                updateNearbyCustomers();
+                showToast('已恢复到默认位置', 'success');
+            } catch (e) {
+                showToast('恢复失败', 'error');
+            }
+        }
+
+        // Haversine 距离计算（km）
+        function calcDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        }
+
+        initMap();
+    </script>
+</body>
+</html>

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>导出项目到本地</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-brand">🏢 客户工作空间</div>
+        <ul class="navbar-nav">
+            <li><a href="/">📊 仪表盘</a></li>
+            <li><a href="/download">📦 导出</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <div class="card" style="text-align: center; padding: 40px 20px;">
+            <div style="font-size: 64px; margin-bottom: 16px;">📦</div>
+            <h1 style="margin-bottom: 12px;">导出项目到你的电脑</h1>
+            <p style="color: #888; margin-bottom: 24px;">
+                点击下方按钮，下载完整的客户管理工作空间安装包（含数据库、前端、文档）。<br>
+                下载后在电脑上按 <code>PC部署指南.md</code> 运行即可。
+            </p>
+            <a href="/download-project" class="btn btn-primary" style="font-size: 16px; padding: 14px 32px;">
+                ⬇ 下载安装包 (ZIP)
+            </a>
+            <p style="margin-top: 16px; font-size: 13px; color: #aaa;">
+                文件大小约 60KB，包含 7 个示例客户和 21 个示例事项
+            </p>
+        </div>
+
+        <div class="card">
+            <div class="card-title"><span>📋 下载后怎么用</span></div>
+            <div style="font-size: 14px; line-height: 2;">
+                <p>1. 解压 ZIP 到任意目录</p>
+                <p>2. 装依赖：<code>pip install -r requirements.txt</code></p>
+                <p>3. 启动：Windows 双击 <code>启动.bat</code>，Mac/Linux 运行 <code>./start.sh</code></p>
+                <p>4. 浏览器打开 <code>http://localhost:5000</code></p>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title"><span>📱 手机怎么用</span></div>
+            <div style="font-size: 14px; line-height: 2; color: #555;">
+                <p>手机和电脑同一 WiFi 下，浏览器打开 <code>http://电脑局域网IP:5000/m</code></p>
+                <p>随时随地使用需部署到公网，详见 <code>deploy.sh</code> 和 <code>钉钉集成指南.md</code></p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
