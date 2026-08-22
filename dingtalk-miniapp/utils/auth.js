@@ -57,13 +57,17 @@ function wrapError(prefix, raw) {
 }
 
 // 后端登录：用 authCode 换 token
-// 注意：钉钉纯血鸿蒙(HarmonyOS NEXT)真机下 dd.httpRequest 会被客户端安全策略拦截返回 error 14，
-// 即使 request 合法域名已正确配置。改用 fetch（同样受 request 合法域名约束，但不走 dd 的 14 号拦截逻辑），
-// 这是已知绕过方案，已在 Mate 80 / 卓易通环境验证可行。
+// 鸿蒙真机网络请求历经三轮：
+// 1. dd.httpRequest → 直接 error 14
+// 2. fetch        → 静默超时（请求/响应被沙箱化）
+// 3. dd.request   → 钉钉官方接替 httpRequest 的新 API，部分基础库放行更宽松
+// 若 dd.request 仍失败，最后走 fetch 兜底 + 手动输入 authCode 调试通道。
 function exchangeToken(authCode) {
   return new Promise((resolve, reject) => {
     console.log('[auth] POST /api/auth/login authCode=', authCode ? (authCode.slice(0, 8) + '...') : 'EMPTY');
     const url = config.apiBase + '/api/auth/login';
+
+    // 统一超时/结束控制
     let settled = false;
     const timer = setTimeout(() => {
       if (!settled) { settled = true; reject({ message: '登录请求超时(10s)' }); }
@@ -72,31 +76,58 @@ function exchangeToken(authCode) {
       if (settled) return;
       settled = true; clearTimeout(timer); fn(val);
     };
-    fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ authCode: authCode })
-    }).then((resp) => {
-      return resp.text().then((text) => {
-        let data = null;
-        try { data = text ? JSON.parse(text) : {}; } catch (e) { data = { message: '响应解析失败: ' + text }; }
-        console.log('[auth] /api/auth/login response', resp.status, data);
-        // 后端统一信封: { code:0, data:{ token, user:{ id,is_admin } } }
-        if (resp.status === 200 && data && data.code === 0 && data.data && data.data.token) {
-          const payload = data.data;
-          dd.setStorageSync({ key: 'sessionToken', value: payload.token });
-          dd.setStorageSync({ key: 'userId', value: payload.user.id });
-          finish(resolve, payload.user);
-        } else {
-          const msg = (data && data.message) ? data.message : '免登失败';
-          finish(reject, { message: msg, raw: data });
+
+    // 统一处理 http 响应体
+    const handleHttpRes = (status, bodyText, source) => {
+      console.log('[auth] /api/auth/login response', source, status, bodyText);
+      let data = null;
+      try { data = bodyText ? JSON.parse(bodyText) : {}; } catch (e) { data = { message: '响应解析失败: ' + bodyText }; }
+      if (status === 200 && data && data.code === 0 && data.data && data.data.token) {
+        const payload = data.data;
+        dd.setStorageSync({ key: 'sessionToken', value: payload.token });
+        dd.setStorageSync({ key: 'userId', value: payload.user.id });
+        finish(resolve, payload.user);
+      } else {
+        const msg = (data && data.message) ? data.message : '免登失败';
+        finish(reject, { message: msg, raw: data });
+      }
+    };
+
+    // 方案 A：dd.request（新 API，鸿蒙兼容更优）
+    if (typeof dd.request === 'function') {
+      dd.request({
+        url: url,
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        data: { authCode: authCode },
+        dataType: 'json',
+        success: (res) => {
+          const status = (res && res.status) || 200;
+          const body = res && res.data !== undefined ? JSON.stringify(res.data) : '';
+          handleHttpRes(status, body, 'dd.request');
+        },
+        fail: (err) => {
+          console.error('[auth] dd.request fail', err);
+          // 方案 A 失败 → 尝试方案 B：fetch
+          tryFetch();
         }
       });
-    }).catch((err) => {
-      console.error('[auth] /api/auth/login fetch fail', err);
-      // fetch 抛错通常是网络层被拦：可能仍是白名单/证书/网络问题
-      finish(reject, wrapError('登录请求失败(fetch)', err));
-    });
+    } else {
+      tryFetch();
+    }
+
+    function tryFetch() {
+      fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ authCode: authCode })
+      }).then((resp) => {
+        return resp.text().then((text) => handleHttpRes(resp.status, text, 'fetch'));
+      }).catch((err) => {
+        console.error('[auth] fetch fail', err);
+        finish(reject, wrapError('登录请求失败(fetch)', err));
+      });
+    }
   });
 }
 
