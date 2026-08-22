@@ -65,9 +65,13 @@ async function dingtalkH5Login() {
   }
 }
 
-// 给 api() 注入 dingtalk token（在 app.js 的 api 之上包装 Authorization 头）
+// 给 api() 注入 dingtalk token：捕获 app.js 暴露的全局 api，包装 Authorization 头
+// （mobile.js 自身不重定义 api，直接复用 app.js 的全局函数）
 (function patchApiForDingtalk() {
-  if (typeof window.api !== 'function') return;
+  if (typeof window.api !== 'function') {
+    console.warn('[dingtalk H5] window.api not found, skip patch');
+    return;
+  }
   const _origApi = window.api;
   window.api = async function(url, options = {}) {
     const token = getDingToken();
@@ -77,8 +81,7 @@ async function dingtalkH5Login() {
     try {
       return await _origApi(url, options);
     } catch (e) {
-      // token 失效（401）时清掉重来
-      if (e && e.message && e.message.indexOf('401') !== -1) {
+      if (e && e.message && String(e.message).indexOf('401') !== -1) {
         clearDingToken();
       }
       throw e;
