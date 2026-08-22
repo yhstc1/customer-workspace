@@ -11,13 +11,15 @@ function login() {
           method: 'POST',
           data: { authCode: res.code },
           success: (r) => {
-            // 后端返回结构: { token, user: { id, is_admin } }
-            if (r.status === 200 && r.data && r.data.token) {
-              dd.setStorageSync({ key: 'sessionToken', value: r.data.token });
-              dd.setStorageSync({ key: 'userId', value: r.data.user.id });
-              resolve(r.data.user);
+            // 后端统一信封: { code:0, data:{ token, user:{ id,is_admin } } }
+            if (r.status === 200 && r.data && r.data.code === 0 && r.data.data && r.data.data.token) {
+              const payload = r.data.data;
+              dd.setStorageSync({ key: 'sessionToken', value: payload.token });
+              dd.setStorageSync({ key: 'userId', value: payload.user.id });
+              resolve(payload.user);
             } else {
-              reject(r.data || { message: '免登失败' });
+              const msg = (r.data && r.data.message) ? r.data.message : '免登失败';
+              reject({ message: msg });
             }
           },
           fail: reject
