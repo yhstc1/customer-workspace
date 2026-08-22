@@ -84,6 +84,12 @@
             switchPage('tasks');
             // 进入软件后后台预拉「客户 / 业务 / 地图」数据，使首次点击对应 Tab 即本地渲染、不转圈
             if (window.preloadAllData) preloadAllData();
+            // 若免登未成功（非钉钉环境 / 免登失败），且本地无 token，则弹出密码登录浮层
+            let hasToken = false;
+            try { hasToken = !!localStorage.getItem('dingtalkAuthToken'); } catch (e) {}
+            if (!hasToken && typeof window.showH5Login === 'function') {
+                window.showH5Login('请输入手机号和密码登录');
+            }
         })();
     </script>
 </body>

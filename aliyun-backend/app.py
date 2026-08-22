@@ -12,12 +12,14 @@
 """
 import json
 import time
-from flask import Flask, request, jsonify, g
+import os
+from flask import Flask, request, jsonify, g, send_from_directory, render_template
+from werkzeug.security import check_password_hash
 import db
 import auth
 import config
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder="templates", static_folder=None)
 app.config["JSON_AS_ASCII"] = False
 
 
@@ -126,8 +128,64 @@ def api_login():
     return _ok({"token": token, "user": {"id": row["id"], "is_admin": bool(row.get("is_admin"))}})
 
 
-@app.route("/api/me")
-def api_me():
+@app.route("/api/password-login", methods=["POST"])
+def api_password_login():
+    """手机号+密码登录（H5 微应用非钉钉环境兜底，或用户主动用密码登录）。
+    校验通过后签发与钉钉免登相同的 JWT，前端统一存 localStorage 由 api() 带 Authorization。"""
+    data = request.json or {}
+    username = (data.get("phone") or data.get("username") or "").strip()
+    password = data.get("password") or ""
+    if not username or not password:
+        return _err("请输入手机号和密码")
+    row = db.query(
+        "SELECT id, phone, username, display_name, is_admin, password_hash, status FROM users WHERE phone=%s OR username=%s",
+        (username, username), one=True)
+    if not row or not row.get("password_hash") or not check_password_hash(row["password_hash"], password):
+        return _err("手机号或密码错误", http=401)
+    if row.get("status") == "pending":
+        return _err("账号待管理员审核，暂无法登录", code="pending", http=403)
+    token = auth.make_jwt(row["id"], bool(row.get("is_admin")))
+    return _ok({"token": token, "user": {"id": row["id"], "username": row.get("username"),
+                                          "display_name": row.get("display_name"), "is_admin": bool(row.get("is_admin"))}})
+
+
+# ==================== H5 移动端托管（前端静态资源） ====================
+# 把 PC 版的 templates/ 和 static/ 一并打进 FC 部署包，使函数既能跑 API 又能托管 H5，
+# 手机钉钉 H5 微应用主页直接指向本函数域名 /m，彻底脱离本地 PC / ngrok。
+_STATIC_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
+_TEMPLATE_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates")
+
+
+@app.route("/m")
+def h5_mobile_entry():
+    ua = request.headers.get("User-Agent", "").lower()
+    is_mobile = any(x in ua for x in ["mobile", "android", "iphone", "harmony", "phone"])
+    if not is_mobile:
+        # 桌面浏览器访问 /m 也允许预览（便于调试），不强制跳转
+        pass
+    try:
+        return render_template("mobile_index.html")
+    except Exception:
+        return _err("H5 页面未部署，请检查 FC 部署包是否包含 templates/mobile_index.html", http=404)
+
+
+@app.route("/static/<path:filename>")
+def h5_static(filename):
+    return send_from_directory(_STATIC_ROOT, filename)
+
+
+@app.route("/assets/<path:filename>")
+def h5_assets(filename):
+    # 移动端静态资源走 /assets/v{ver}/...，与 PC 版路径一致
+    return send_from_directory(_STATIC_ROOT, filename)
+
+
+@app.route("/")
+def h5_root():
+    return render_template("mobile_index.html") if os.path.exists(os.path.join(_TEMPLATE_ROOT, "mobile_index.html")) else jsonify({"ok": True, "msg": "CRM API"})
+
+
+
     row = db.query("SELECT id, username, phone, display_name, is_admin FROM users WHERE id=?",
                    (g.user_id,), one=True)
     if not row:

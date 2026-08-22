@@ -144,6 +144,64 @@ async function dingtalkH5Login() {
   };
 })();
 
+// ==================== H5 密码登录浮层 ====================
+// 免登失败或非钉钉环境时，手机号+密码登录（JWT 模式，与钉钉免登共用 DING_AUTH_KEY）。
+// 作为钉钉免登的兜底通道，也支持用户主动用密码登录。
+function showH5Login(defaultMsg) {
+  // 避免重复弹
+  if (document.getElementById('h5LoginMask')) return;
+  const mask = document.createElement('div');
+  mask.id = 'h5LoginMask';
+  mask.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:9999;padding:24px;';
+  mask.innerHTML = `
+    <div style="background:#fff;border-radius:14px;width:100%;max-width:340px;padding:22px 20px;box-shadow:0 8px 30px rgba(0,0,0,.18);">
+      <div style="font-size:18px;font-weight:700;margin-bottom:4px;color:#222;">客户管理平台</div>
+      <div id="h5LoginTip" style="font-size:13px;color:#e0483c;min-height:18px;margin-bottom:12px;">${defaultMsg || ''}</div>
+      <div style="margin-bottom:12px;">
+        <input id="h5LoginPhone" type="tel" inputmode="numeric" placeholder="手机号" style="width:100%;box-sizing:border-box;padding:11px 12px;border:1px solid #ddd;border-radius:9px;font-size:15px;">
+      </div>
+      <div style="margin-bottom:16px;">
+        <input id="h5LoginPwd" type="password" placeholder="密码" style="width:100%;box-sizing:border-box;padding:11px 12px;border:1px solid #ddd;border-radius:9px;font-size:15px;">
+      </div>
+      <button id="h5LoginBtn" style="width:100%;padding:12px;border:none;border-radius:9px;background:#1677ff;color:#fff;font-size:16px;font-weight:600;">登录</button>
+    </div>`;
+  document.body.appendChild(mask);
+
+  function doLogin() {
+    const phone = (document.getElementById('h5LoginPhone').value || '').trim();
+    const pwd = document.getElementById('h5LoginPwd').value || '';
+    const tip = document.getElementById('h5LoginTip');
+    const btn = document.getElementById('h5LoginBtn');
+    if (!phone || !pwd) { tip.textContent = '请输入手机号和密码'; return; }
+    btn.disabled = true; btn.textContent = '登录中…';
+    fetch('/api/password-login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone: phone, password: pwd })
+    }).then(r => r.json().catch(() => ({}))).then(d => {
+      if (d.code === 0 && d.data && d.data.token) {
+        setDingToken(d.data.token, d.data.user && d.data.user.id);
+        mask.remove();
+        // 登录成功后刷新当前页数据
+        if (typeof window.__mobileMarkDirty === 'function') window.__mobileMarkDirty();
+        const cp = window.currentPage || 'tasks';
+        if (typeof switchPage === 'function') switchPage(cp);
+        if (typeof window.preloadAllData === 'function') window.preloadAllData();
+      } else {
+        tip.textContent = (d && d.message) ? d.message : '登录失败';
+        btn.disabled = false; btn.textContent = '登录';
+      }
+    }).catch(err => {
+      tip.textContent = '网络错误，请重试';
+      btn.disabled = false; btn.textContent = '登录';
+    });
+  }
+
+  document.getElementById('h5LoginBtn').addEventListener('click', doLogin);
+  document.getElementById('h5LoginPwd').addEventListener('keydown', (e) => { if (e.key === 'Enter') doLogin(); });
+}
+window.showH5Login = showH5Login;
+
 let currentPage = 'tasks';
 
 // 运行环境标记：装在 App（APK）内时 window.CustomerApp 桥存在，给根节点加 m-apk 类，
