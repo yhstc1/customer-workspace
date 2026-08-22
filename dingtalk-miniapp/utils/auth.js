@@ -60,7 +60,18 @@ function exchangeToken(authCode) {
       },
       fail: (err) => {
         console.error('[auth] /api/auth/login fail', err);
-        reject(wrapError('登录请求失败', err));
+        // 钉钉真机 httpRequest 失败 error:4 = 网络请求被客户端拦截，
+        // 最常见原因是小程序的 request 合法域名（安全域名）未配置后端域名。
+        const blocked = err && (err.error === 4 || err.error === '4' ||
+          (err.errMsg && /fail|domain|跨域|无权/.test(err.errMsg)));
+        if (blocked) {
+          reject({
+            message: '网络请求被拦截(错误码4)：请在小程序后台「开发设置→服务器域名→request合法域名」添加 ' + config.apiBase,
+            raw: err
+          });
+        } else {
+          reject(wrapError('登录请求失败', err));
+        }
       }
     });
   });
