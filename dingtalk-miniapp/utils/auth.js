@@ -57,48 +57,35 @@ function wrapError(prefix, raw) {
 }
 
 // 后端登录：用 authCode 换 token
+// 注意：钉钉纯血鸿蒙(HarmonyOS NEXT)真机下 dd.httpRequest 会被客户端安全策略拦截返回 error 14，
+// 即使 request 合法域名已正确配置。改用 fetch（同样受 request 合法域名约束，但不走 dd 的 14 号拦截逻辑），
+// 这是已知绕过方案，已在 Mate 80 / 卓易通环境验证可行。
 function exchangeToken(authCode) {
   return new Promise((resolve, reject) => {
     console.log('[auth] POST /api/auth/login authCode=', authCode ? (authCode.slice(0, 8) + '...') : 'EMPTY');
-    dd.httpRequest({
-      url: config.apiBase + '/api/auth/login',
+    const url = config.apiBase + '/api/auth/login';
+    fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      dataType: 'json',
-      data: { authCode: authCode },
-      success: (r) => {
-        console.log('[auth] /api/auth/login response', r.status, r.data);
+      body: JSON.stringify({ authCode: authCode })
+    }).then((resp) => {
+      return resp.json().then((data) => {
+        console.log('[auth] /api/auth/login response', resp.status, data);
         // 后端统一信封: { code:0, data:{ token, user:{ id,is_admin } } }
-        if (r.status === 200 && r.data && r.data.code === 0 && r.data.data && r.data.data.token) {
-          const payload = r.data.data;
+        if (resp.status === 200 && data && data.code === 0 && data.data && data.data.token) {
+          const payload = data.data;
           dd.setStorageSync({ key: 'sessionToken', value: payload.token });
           dd.setStorageSync({ key: 'userId', value: payload.user.id });
           resolve(payload.user);
         } else {
-          const msg = (r.data && r.data.message) ? r.data.message : '免登失败';
-          reject({ message: msg, raw: r.data });
+          const msg = (data && data.message) ? data.message : '免登失败';
+          reject({ message: msg, raw: data });
         }
-      },
-      fail: (err) => {
-        console.error('[auth] /api/auth/login fail', err);
-        const errCode = String(err && (err.error !== undefined ? err.error : err.errorCode));
-        // 钉钉真机 httpRequest 失败常见错误码：
-        // error:4  = 网络请求被客户端拦截（request 合法域名未配置）
-        // error:14 = 证书/HTTPS/安全策略问题，或域名未加白名单但校验更严格
-        if (errCode === '4') {
-          reject({
-            message: '网络请求被拦截(错误码4)：请在小程序后台「开发设置→服务器域名→request合法域名」添加 ' + config.apiBase,
-            raw: err
-          });
-        } else if (errCode === '14') {
-          reject({
-            message: '网络请求被拦截(错误码14)：可能原因：① HTTPS 证书链不完整；② 域名未加 request 白名单；③ 真机网络受限。请确认已在开放平台「开发设置→服务器域名」添加 ' + config.apiBase + '，并尝试切换 4G/5G 流量。',
-            raw: err
-          });
-        } else {
-          reject(wrapError('登录请求失败', err));
-        }
-      }
+      });
+    }).catch((err) => {
+      console.error('[auth] /api/auth/login fetch fail', err);
+      // fetch 抛错通常是网络层被拦：可能仍是白名单/证书/网络问题
+      reject(wrapError('登录请求失败(fetch)', err));
     });
   });
 }

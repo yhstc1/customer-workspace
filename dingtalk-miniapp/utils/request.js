@@ -17,24 +17,25 @@ function request(path, options = {}) {
       return Promise.reject({ message: '未登录' });
     }
     return new Promise((resolve, reject) => {
-      dd.httpRequest({
-        url: config.apiBase + path,
+      // 同 auth.js：鸿蒙真机 dd.httpRequest 会被客户端拦截(error 14)，统一改用 fetch
+      const headers = Object.assign(
+        { 'Content-Type': 'application/json' },
+        options.headers || {},
+        token ? { 'Authorization': 'Bearer ' + token } : {}
+      );
+      fetch(config.apiBase + path, {
         method: options.method || 'GET',
-        headers: Object.assign(
-          { 'Content-Type': 'application/json' },
-          options.headers || {},
-          token ? { 'Authorization': 'Bearer ' + token } : {}
-        ),
-        data: options.data || {},
-        success: (res) => {
-          if (res.status === 200 && res.data && res.data.code === 0) {
-            resolve(res.data.data);
+        headers: headers,
+        body: options.data ? JSON.stringify(options.data) : undefined
+      }).then((resp) => {
+        return resp.json().then((data) => {
+          if (resp.status === 200 && data && data.code === 0) {
+            resolve(data.data);
           } else {
-            reject(res.data || { message: '请求失败' });
+            reject(data || { message: '请求失败' });
           }
-        },
-        fail: (err) => reject(err)
-      });
+        });
+      }).catch((err) => reject(err));
     });
   };
 
