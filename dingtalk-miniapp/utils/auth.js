@@ -1,12 +1,17 @@
 const config = require('../config.js');
 
+// 兜底 corpId：防止开发者工具热重载/缓存导致 config.corpId 为空
+const FALLBACK_CORP_ID = 'ding49b7555f7b0e7c421b9a8c00fa015bc5';
+
 // 兼容不同钉钉小程序运行时：
 // - 开发者工具模拟器用 dd.requestAuthCode
 // - 真机用 dd.getAuthCode
 function getAuthCode() {
   return new Promise((resolve, reject) => {
+    const corpId = config.corpId || FALLBACK_CORP_ID;
+    console.log('[auth] config.corpId=', config.corpId, 'useCorpId=', corpId);
     const opts = {
-      corpId: config.corpId,
+      corpId: corpId,
       success: (res) => resolve(res.authCode || res.code),
       fail: (err) => reject(err)
     };
