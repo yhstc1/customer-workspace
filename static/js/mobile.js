@@ -49,17 +49,37 @@ function waitForDingTalk(timeoutMs) {
 }
 
 async function dingtalkH5Login() {
-  const ready = await waitForDingTalk(3000);
+  const forced = /[?&]dd=1\b/.test(location.search);
+  const ready = await waitForDingTalk(forced ? 8000 : 3000);
   if (!ready) {
     console.warn('[dingtalk H5] dd runtime not ready, skip 免登');
+    if (typeof dd !== 'undefined' && dd.alert) {
+      dd.alert({ message: '钉钉JS-API未加载：dd 对象不存在。可能钉钉JS-API外链被拦，或页面未在钉钉内打开。' });
+    } else {
+      alert('钉钉JS-API未加载（非钉钉环境或非钉钉内核）');
+    }
     return false;
+  }
+  // corpId 优先从 URL 的 ?corpId= 参数取（开放平台主页地址配 .../m?corpId=$CORPID$ 会自动替换）
+  function getCorpId() {
+    try {
+      const p = new URLSearchParams(location.search);
+      const fromUrl = p.get('corpId');
+      if (fromUrl) return fromUrl;
+    } catch (e) {}
+    return window.DING_CORP_ID || 'ding49b7555f7b0e7c421b9a8c00fa015bc5';
   }
   try {
     const code = await new Promise((resolve, reject) => {
-      dd.runtime.permission.requestAuthCode({
-        corpId: window.DING_CORP_ID || 'ding49b7555f7b0e7c421b9a8c00fa015bc5',
-        success: (res) => resolve(res.code),
-        fail: (err) => reject(err)
+      dd.ready(function () {
+        dd.runtime.permission.requestAuthCode({
+          corpId: getCorpId(),
+          onSuccess: function (info) { resolve(info.code); },
+          onFail: function (err) {
+            // errorCode 3 = 根据 corpId 没查到使用当前页面域名的微应用（主页地址/域名不匹配）
+            reject(err);
+          }
+        });
       });
     });
     const resp = await fetch('/api/auth/login', {
@@ -72,7 +92,6 @@ async function dingtalkH5Login() {
       setDingToken(data.data.token, data.data.user && data.data.user.id);
       return true;
     } else {
-      // 免登失败但 dd 正常：大多是「该钉钉账号未绑定」或「应用无免登权限」，提示出来便于排查
       const msg = (data && data.message) ? data.message : '未知错误';
       console.error('[dingtalk H5] login failed:', msg);
       if (typeof dd !== 'undefined' && dd.alert) {
@@ -82,8 +101,20 @@ async function dingtalkH5Login() {
     }
   } catch (e) {
     console.error('[dingtalk H5] login error:', e);
+    let tip = 'requestAuthCode 失败';
+    if (e) {
+      if (e.errorCode === 3 || (e.errorMessage || '').indexOf('域名') !== -1) {
+        tip = 'errorCode 3：根据 corpId 未查到使用当前页面域名的微应用。请确认 H5 微应用主页地址域名与当前打开地址完全一致（含 ngrok 域名），且该企业下该域名已配为微应用主页。';
+      } else if (e.errMsg) {
+        tip = e.errMsg;
+      } else if (e.errorMessage) {
+        tip = e.errorMessage;
+      } else if (e.message) {
+        tip = e.message;
+      }
+    }
     if (typeof dd !== 'undefined' && dd.alert) {
-      dd.alert({ message: '钉钉免登异常：' + (e && e.errMsg ? e.errMsg : (e && e.message ? e.message : 'requestAuthCode 失败')) });
+      dd.alert({ message: '钉钉免登异常：' + tip });
     }
     return false;
   }
