@@ -13,6 +13,9 @@ function request(path, options = {}) {
   const doRequest = () => {
     const cached = dd.getStorageSync({ key: 'sessionToken' });
     const token = (cached && cached.data) || '';
+    if (!token && path !== '/api/auth/login') {
+      return Promise.reject({ message: '未登录' });
+    }
     return new Promise((resolve, reject) => {
       dd.httpRequest({
         url: config.apiBase + path,

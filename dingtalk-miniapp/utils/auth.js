@@ -1,6 +1,8 @@
 const config = require('../config.js');
 
-// 兼容不同钉钉小程序运行时：真机通常是 dd.getAuthCode，旧模拟器可能是 dd.requestAuthCode
+// 兼容不同钉钉小程序运行时：
+// - 开发者工具模拟器用 dd.requestAuthCode
+// - 真机用 dd.getAuthCode
 function getAuthCode() {
   return new Promise((resolve, reject) => {
     const opts = {
@@ -8,10 +10,10 @@ function getAuthCode() {
       success: (res) => resolve(res.authCode || res.code),
       fail: (err) => reject(err)
     };
-    if (typeof dd.getAuthCode === 'function') {
-      dd.getAuthCode(opts);
-    } else if (typeof dd.requestAuthCode === 'function') {
+    if (typeof dd.requestAuthCode === 'function') {
       dd.requestAuthCode(opts);
+    } else if (typeof dd.getAuthCode === 'function') {
+      dd.getAuthCode(opts);
     } else {
       reject({ message: '当前环境不支持钉钉免登' });
     }
