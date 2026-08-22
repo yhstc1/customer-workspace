@@ -16,34 +16,43 @@ function request(path, options = {}) {
     if (!token && path !== '/api/auth/login') {
       return Promise.reject({ message: '未登录' });
     }
+
     return new Promise((resolve, reject) => {
-      // 鸿蒙真机网络请求策略：dd.request 优先，fetch 兜底，10s 超时保护
       const url = config.apiBase + path;
       const headers = Object.assign(
         { 'Content-Type': 'application/json' },
         options.headers || {},
         token ? { 'Authorization': 'Bearer ' + token } : {}
       );
+
+      // 业务请求给足 30s：后端可能调外部服务（钉钉/腾讯地图），不要设太短
       let settled = false;
       const timer = setTimeout(() => {
-        if (!settled) { settled = true; reject({ message: '请求超时(10s)' }); }
-      }, 10000);
+        if (!settled) {
+          settled = true;
+          reject({ message: '请求超时(30s)：后端响应过慢或网络异常，请切换网络后重试' });
+        }
+      }, 30000);
+
       const finish = (fn, val) => {
         if (settled) return;
-        settled = true; clearTimeout(timer); fn(val);
+        settled = true;
+        clearTimeout(timer);
+        fn(val);
       };
-      const handleRes = (status, bodyText, source) => {
-        console.log('[request]', source, status, bodyText);
-        let data = null;
-        try { data = bodyText ? JSON.parse(bodyText) : {}; } catch (e) { data = { message: '响应解析失败: ' + bodyText }; }
-        if (status === 200 && data && data.code === 0) {
+
+      const handleRes = (res, source) => {
+        console.log('[request]', source, path, res);
+        // dd.request dataType:'json' 时 res.data 是后端返回对象
+        const data = (res && res.data) || null;
+        if (res && res.status === 200 && data && data.code === 0) {
           finish(resolve, data.data);
         } else {
           finish(reject, data || { message: '请求失败' });
         }
       };
 
-      // 方案 A：dd.request（新 API，鸿蒙兼容更优）
+      // 方案 A：dd.request
       if (typeof dd.request === 'function') {
         dd.request({
           url: url,
@@ -51,13 +60,9 @@ function request(path, options = {}) {
           headers: headers,
           data: options.data || {},
           dataType: 'json',
-          success: (res) => {
-            const status = (res && res.status) || 200;
-            const body = res && res.data !== undefined ? JSON.stringify(res.data) : '';
-            handleRes(status, body, 'dd.request');
-          },
+          success: (res) => handleRes(res, 'dd.request'),
           fail: (err) => {
-            console.error('[request] dd.request fail', err);
+            console.error('[request] dd.request fail', path, err);
             tryFetch();
           }
         });
@@ -71,7 +76,11 @@ function request(path, options = {}) {
           headers: headers,
           body: options.data ? JSON.stringify(options.data) : undefined
         }).then((resp) => {
-          return resp.text().then((text) => handleRes(resp.status, text, 'fetch'));
+          return resp.text().then((text) => {
+            let data = null;
+            try { data = text ? JSON.parse(text) : {}; } catch (e) { data = { message: '响应解析失败: ' + text }; }
+            handleRes({ status: resp.status, data: data }, 'fetch');
+          });
         }).catch((err) => finish(reject, err));
       }
     });

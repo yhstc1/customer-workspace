@@ -3,43 +3,6 @@ const config = require('../config.js');
 // 兜底 corpId：防止开发者工具热重载/缓存导致 config.corpId 为空
 const FALLBACK_CORP_ID = 'ding49b7555f7b0e7c421b9a8c00fa015bc5';
 
-// 兼容不同钉钉小程序运行时：
-// - 开发者工具模拟器用 dd.requestAuthCode
-// - 真机用 dd.getAuthCode
-function getAuthCode() {
-  return new Promise((resolve, reject) => {
-    const corpId = config.corpId || FALLBACK_CORP_ID;
-    console.log('[auth] config.corpId=', config.corpId, 'useCorpId=', corpId);
-
-    const call = (options) => {
-      if (typeof dd.requestAuthCode === 'function') {
-        dd.requestAuthCode(options);
-      } else if (typeof dd.getAuthCode === 'function') {
-        dd.getAuthCode(options);
-      } else {
-        reject({ message: '当前环境不支持钉钉免登' });
-      }
-    };
-
-    // 第 1 次：带 corpId（标准文档写法）
-    call({
-      corpId: corpId,
-      success: (res) => resolve(res.authCode || res.code),
-      fail: (err) => {
-        console.error('[auth] getAuthCode with corpId failed', err);
-        // 第 2 次兜底：不带 corpId（部分真机版本/鸿蒙钉钉传 corpId 会报 14）
-        call({
-          success: (res) => resolve(res.authCode || res.code),
-          fail: (err2) => {
-            console.error('[auth] getAuthCode without corpId failed', err2);
-            reject(wrapError('获取 authCode 失败', err2));
-          }
-        });
-      }
-    });
-  });
-}
-
 // 统一错误包装：把钉钉 SDK / httpRequest 的原始错误完整保留
 function wrapError(prefix, raw) {
   const keys = ['error', 'errorCode', 'errorMessage', 'errMsg', 'errCode', 'subError', 'subErrorCode', 'message'];
@@ -56,44 +19,75 @@ function wrapError(prefix, raw) {
   return { message: prefix + (detail ? ': ' + detail : ''), raw: raw };
 }
 
+// 兼容不同钉钉小程序运行时：开发者工具模拟器用 dd.requestAuthCode，真机用 dd.getAuthCode
+function getAuthCode() {
+  return new Promise((resolve, reject) => {
+    const corpId = config.corpId || FALLBACK_CORP_ID;
+    console.log('[auth] config.corpId=', config.corpId, 'useCorpId=', corpId);
+
+    const options = {
+      corpId: corpId,
+      success: (res) => {
+        const code = res && (res.authCode || res.code);
+        console.log('[auth] getAuthCode success code=', code ? (code.slice(0, 8) + '...') : 'EMPTY');
+        resolve(code);
+      },
+      fail: (err) => {
+        console.error('[auth] getAuthCode fail', err);
+        reject(wrapError('获取 authCode 失败', err));
+      }
+    };
+
+    if (typeof dd.getAuthCode === 'function') {
+      dd.getAuthCode(options);
+    } else if (typeof dd.requestAuthCode === 'function') {
+      dd.requestAuthCode(options);
+    } else {
+      reject({ message: '当前环境不支持钉钉免登' });
+    }
+  });
+}
+
 // 后端登录：用 authCode 换 token
-// 鸿蒙真机网络请求历经三轮：
-// 1. dd.httpRequest → 直接 error 14
-// 2. fetch        → 静默超时（请求/响应被沙箱化）
-// 3. dd.request   → 钉钉官方接替 httpRequest 的新 API，部分基础库放行更宽松
-// 若 dd.request 仍失败，最后走 fetch 兜底 + 手动输入 authCode 调试通道。
+// 关键：真机请求到 FC 后端往返可能较慢（gettoken+getuserinfo 链路可达 7-10s），
+// 必须给足超时，不要用 10s 这种比后端处理还短的值。
 function exchangeToken(authCode) {
   return new Promise((resolve, reject) => {
     console.log('[auth] POST /api/auth/login authCode=', authCode ? (authCode.slice(0, 8) + '...') : 'EMPTY');
     const url = config.apiBase + '/api/auth/login';
 
-    // 统一超时/结束控制
     let settled = false;
     const timer = setTimeout(() => {
-      if (!settled) { settled = true; reject({ message: '登录请求超时(10s)' }); }
-    }, 10000);
+      if (!settled) {
+        settled = true;
+        reject({ message: '登录请求超时(30s)：后端或网络响应过慢，请切换 4G/5G 后重试' });
+      }
+    }, 30000);
+
     const finish = (fn, val) => {
       if (settled) return;
-      settled = true; clearTimeout(timer); fn(val);
+      settled = true;
+      clearTimeout(timer);
+      fn(val);
     };
 
-    // 统一处理 http 响应体
-    const handleHttpRes = (status, bodyText, source) => {
-      console.log('[auth] /api/auth/login response', source, status, bodyText);
-      let data = null;
-      try { data = bodyText ? JSON.parse(bodyText) : {}; } catch (e) { data = { message: '响应解析失败: ' + bodyText }; }
-      if (status === 200 && data && data.code === 0 && data.data && data.data.token) {
+    const handleLoginRes = (res, source) => {
+      console.log('[auth] /api/auth/login response', source, res);
+      // dd.request 在 dataType:'json' 时，res.data 已经是后端返回的 JSON 对象
+      // 标准后端信封: { code: 0, data: { token, user } }
+      const data = (res && res.data) || null;
+      if (res && res.status === 200 && data && data.code === 0 && data.data && data.data.token) {
         const payload = data.data;
         dd.setStorageSync({ key: 'sessionToken', value: payload.token });
         dd.setStorageSync({ key: 'userId', value: payload.user.id });
         finish(resolve, payload.user);
       } else {
         const msg = (data && data.message) ? data.message : '免登失败';
-        finish(reject, { message: msg, raw: data });
+        finish(reject, { message: msg, raw: data, source: source });
       }
     };
 
-    // 方案 A：dd.request（新 API，鸿蒙兼容更优）
+    // 优先用 dd.request（钉钉官方新请求 API）
     if (typeof dd.request === 'function') {
       dd.request({
         url: url,
@@ -101,14 +95,10 @@ function exchangeToken(authCode) {
         headers: { 'Content-Type': 'application/json' },
         data: { authCode: authCode },
         dataType: 'json',
-        success: (res) => {
-          const status = (res && res.status) || 200;
-          const body = res && res.data !== undefined ? JSON.stringify(res.data) : '';
-          handleHttpRes(status, body, 'dd.request');
-        },
+        success: (res) => handleLoginRes(res, 'dd.request'),
         fail: (err) => {
           console.error('[auth] dd.request fail', err);
-          // 方案 A 失败 → 尝试方案 B：fetch
+          // 降级到 fetch（某些旧基础库没有 dd.request 时）
           tryFetch();
         }
       });
@@ -122,7 +112,11 @@ function exchangeToken(authCode) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ authCode: authCode })
       }).then((resp) => {
-        return resp.text().then((text) => handleHttpRes(resp.status, text, 'fetch'));
+        return resp.text().then((text) => {
+          let data = null;
+          try { data = text ? JSON.parse(text) : {}; } catch (e) { data = { message: '响应解析失败: ' + text }; }
+          handleLoginRes({ status: resp.status, data: data }, 'fetch');
+        });
       }).catch((err) => {
         console.error('[auth] fetch fail', err);
         finish(reject, wrapError('登录请求失败(fetch)', err));
