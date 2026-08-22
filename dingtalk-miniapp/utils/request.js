@@ -23,19 +23,31 @@ function request(path, options = {}) {
         options.headers || {},
         token ? { 'Authorization': 'Bearer ' + token } : {}
       );
+      // 超时保护：鸿蒙 fetch 偶发不触发 resolve/reject 导致页面永久 loading
+      let settled = false;
+      const timer = setTimeout(() => {
+        if (!settled) { settled = true; reject({ message: '请求超时(10s)' }); }
+      }, 10000);
+      const finish = (fn, val) => {
+        if (settled) return;
+        settled = true; clearTimeout(timer); fn(val);
+      };
       fetch(config.apiBase + path, {
         method: options.method || 'GET',
         headers: headers,
         body: options.data ? JSON.stringify(options.data) : undefined
       }).then((resp) => {
-        return resp.json().then((data) => {
+        // 先读 text 再 JSON.parse，避免 resp.json() 在异常 body 下静默挂起
+        return resp.text().then((text) => {
+          let data = null;
+          try { data = text ? JSON.parse(text) : {}; } catch (e) { data = { message: '响应解析失败: ' + text }; }
           if (resp.status === 200 && data && data.code === 0) {
-            resolve(data.data);
+            finish(resolve, data.data);
           } else {
-            reject(data || { message: '请求失败' });
+            finish(reject, data || { message: '请求失败' });
           }
         });
-      }).catch((err) => reject(err));
+      }).catch((err) => finish(reject, err));
     });
   };
 

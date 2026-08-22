@@ -64,28 +64,38 @@ function exchangeToken(authCode) {
   return new Promise((resolve, reject) => {
     console.log('[auth] POST /api/auth/login authCode=', authCode ? (authCode.slice(0, 8) + '...') : 'EMPTY');
     const url = config.apiBase + '/api/auth/login';
+    let settled = false;
+    const timer = setTimeout(() => {
+      if (!settled) { settled = true; reject({ message: '登录请求超时(10s)' }); }
+    }, 10000);
+    const finish = (fn, val) => {
+      if (settled) return;
+      settled = true; clearTimeout(timer); fn(val);
+    };
     fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ authCode: authCode })
     }).then((resp) => {
-      return resp.json().then((data) => {
+      return resp.text().then((text) => {
+        let data = null;
+        try { data = text ? JSON.parse(text) : {}; } catch (e) { data = { message: '响应解析失败: ' + text }; }
         console.log('[auth] /api/auth/login response', resp.status, data);
         // 后端统一信封: { code:0, data:{ token, user:{ id,is_admin } } }
         if (resp.status === 200 && data && data.code === 0 && data.data && data.data.token) {
           const payload = data.data;
           dd.setStorageSync({ key: 'sessionToken', value: payload.token });
           dd.setStorageSync({ key: 'userId', value: payload.user.id });
-          resolve(payload.user);
+          finish(resolve, payload.user);
         } else {
           const msg = (data && data.message) ? data.message : '免登失败';
-          reject({ message: msg, raw: data });
+          finish(reject, { message: msg, raw: data });
         }
       });
     }).catch((err) => {
       console.error('[auth] /api/auth/login fetch fail', err);
       // fetch 抛错通常是网络层被拦：可能仍是白名单/证书/网络问题
-      reject(wrapError('登录请求失败(fetch)', err));
+      finish(reject, wrapError('登录请求失败(fetch)', err));
     });
   });
 }
