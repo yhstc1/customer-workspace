@@ -13,10 +13,10 @@
   },
   "tabBar": {
     "items": [
-      { "name": "客户" },
-      { "name": "事项" },
-      { "name": "业务" },
-      { "name": "地图" }
+      { "name": "客户", "pagePath": "pages/customers/customers" },
+      { "name": "事项", "pagePath": "pages/matters/matters" },
+      { "name": "业务", "pagePath": "pages/business/business" },
+      { "name": "地图", "pagePath": "pages/map/map" }
     ]
   }
 }
