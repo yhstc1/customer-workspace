@@ -1,0 +1,13 @@
+<view class="page">
+  <view class="tabs">
+    <text class="tab" data-f="all" onTap="setFilter">全部</text>
+    <text class="tab" data-f="pending" onTap="setFilter">进行中</text>
+    <text class="tab" data-f="suspended" onTap="setFilter">已挂起</text>
+    <text class="tab" data-f="done" onTap="setFilter">已完结</text>
+  </view>
+  <view a:for="{{list}}" a:key="id" class="card">
+    <view class="title">{{item.title}}</view>
+    <view class="sub">{{item.customer_name}} · {{item.status}}</view>
+  </view>
+  <view a:if="{{list.length === 0}}" class="placeholder">暂无事项</view>
+</view>

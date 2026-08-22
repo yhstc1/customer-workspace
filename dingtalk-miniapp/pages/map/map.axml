@@ -1,0 +1,8 @@
+<view class="page">
+  <view class="hint">附近公司（基于你的定位）</view>
+  <view a:for="{{nearby}}" a:key="id" class="card" data-id="{{item.id}}" onTap="openNav">
+    <view class="title">{{item.name}}</view>
+    <view class="sub">距您 {{item.distance}} 米 · {{item.address}}</view>
+  </view>
+  <view a:if="{{nearby.length === 0}}" class="placeholder">附近暂无公司</view>
+</view>

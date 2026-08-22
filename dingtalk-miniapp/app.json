@@ -1,0 +1,22 @@
+{
+  "pages": [
+    "pages/customers/customers",
+    "pages/customer-detail/customer-detail",
+    "pages/matters/matters",
+    "pages/business/business",
+    "pages/map/map",
+    "pages/export/export"
+  ],
+  "window": {
+    "defaultTitle": "客户管理平台",
+    "titleBarColor": "#1677ff"
+  },
+  "tabBar": {
+    "items": [
+      { "name": "客户" },
+      { "name": "事项" },
+      { "name": "业务" },
+      { "name": "地图" }
+    ]
+  }
+}

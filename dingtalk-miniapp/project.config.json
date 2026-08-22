@@ -1,0 +1,9 @@
+{
+  "miniprogramRoot": "./",
+  "projectname": "customer-platform",
+  "appid": "dingnurzg7xk1gmitlar",
+  "setting": {
+    "urlCheck": false,
+    "es6": true
+  }
+}

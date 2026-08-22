@@ -1,0 +1,6 @@
+# 密钥文件（切勿提交）
+.internal_app_key
+.internal_app_secret
+*.secret
+.DS_Store
+node_modules/

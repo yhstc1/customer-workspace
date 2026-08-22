@@ -1,0 +1,3 @@
+.hint { padding: 16rpx 24rpx; color: #888; font-size: 24rpx; }
+.title { font-size: 30rpx; font-weight: 600; }
+.sub { color: #888; font-size: 24rpx; margin-top: 8rpx; }

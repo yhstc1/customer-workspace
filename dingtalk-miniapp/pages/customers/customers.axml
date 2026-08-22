@@ -1,0 +1,20 @@
+<view class="page">
+  <view class="action-bar">
+    <view class="action-btn" onTap="goExport">导出</view>
+    <view class="action-btn" onTap="goImport">导入</view>
+  </view>
+  <view class="search">
+    <input placeholder="搜索客户名称/联系人" onInput="onSearch" value="{{keyword}}" />
+  </view>
+  <view a:if="{{loading}}" class="placeholder">加载中…</view>
+  <view a:elif="{{list.length === 0}}" class="placeholder">暂无客户</view>
+  <view class="list">
+    <block a:for="{{list}}" a:key="id">
+      <view class="card" data-id="{{item.id}}" onTap="goDetail">
+        <view class="title">{{item.name}}</view>
+        <view class="sub">{{item.contact}} · {{item.phone}}</view>
+        <view class="tag">{{item.tier}}</view>
+      </view>
+    </block>
+  </view>
+</view>

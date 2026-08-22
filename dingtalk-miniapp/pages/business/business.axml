@@ -1,0 +1,16 @@
+<view class="page">
+  <view class="action-bar">
+    <view class="action-btn" onTap="goExport">导出</view>
+    <view class="action-btn" onTap="goImport">导入</view>
+  </view>
+  <view class="list">
+    <block a:for="{{list}}" a:key="id">
+      <view class="card">
+        <view class="title">{{item.company_name}}</view>
+        <view class="sub">{{item.business_type}} · {{item.business_level}}</view>
+        <view class="meta" a:if="{{item.contract_code}}">合同号：{{item.contract_code}}</view>
+      </view>
+    </block>
+    <view a:if="{{list.length === 0}}" class="placeholder">暂无业务台账</view>
+  </view>
+</view>
