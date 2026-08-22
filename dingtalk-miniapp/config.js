@@ -6,7 +6,9 @@ const config = {
   // Workbuddy连接 组织 corpId（免登 requestAuthCode 必填）
   corpId: 'ding49b7555f7b0e7c421b9a8c00fa015bc5',
   // 本应用 AppKey（已建，密钥存于 .internal_app_secret）
-  appKey: 'dingnurzg7xk1gmitlar'
+  appKey: 'dingnurzg7xk1gmitlar',
+  // 开发调试：模拟器拿不到 authCode 时允许手动输入（正式上线前关闭）
+  enableManualAuthCode: true
 };
 
 module.exports = config;

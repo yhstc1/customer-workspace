@@ -13,7 +13,9 @@ App({
       const cached = dd.getStorageSync({ key: 'sessionToken' });
       this.globalData.token = (cached && cached.data) || '';
     }).catch((e) => {
-      dd.alert({ content: '登录失败：' + (e.message || '请检查网络') });
+      const detail = (e && e.message) ? e.message : (e ? JSON.stringify(e) : '请检查网络');
+      console.error('[app] login failed', e);
+      dd.alert({ content: '登录失败：' + detail });
       throw e;
     });
   }
