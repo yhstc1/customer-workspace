@@ -5,8 +5,8 @@ const config = {
   apiBase: 'https://crm-api-ixbdhqkitv.cn-hangzhou.fcapp.run',
   // Workbuddy连接 组织 corpId（免登 requestAuthCode 必填）
   corpId: 'ding49b7555f7b0e7c421b9a8c00fa015bc5',
-  // 本应用 AppKey（重建后的企业内部应用 2026-08-22，AgentId 4888052753）
-  appKey: 'dingvksr3ogkjvhteeac',
+  // 本应用 AppKey（真小程序 2026-08-23 重建，AgentId 4888300256，MiniAppId 5000000006851992）
+  appKey: 'ding7bsv8daxdq1cr1jb',
   // 开发调试：模拟器拿不到 authCode 时允许手动输入（正式上线前关闭）
   enableManualAuthCode: true
 };
