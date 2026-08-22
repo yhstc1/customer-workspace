@@ -36,8 +36,24 @@ function isInDingTalk() {
   return typeof dd !== 'undefined' && dd && typeof dd.runtime !== 'undefined' && dd.runtime && typeof dd.runtime.permission !== 'undefined';
 }
 
+// 钉钉 JS-API(外链 CDN)可能晚于本脚本就绪，最多等 3s
+function waitForDingTalk(timeoutMs) {
+  return new Promise((resolve) => {
+    if (isInDingTalk()) return resolve(true);
+    const start = Date.now();
+    const timer = setInterval(() => {
+      if (isInDingTalk()) { clearInterval(timer); resolve(true); }
+      else if (Date.now() - start > (timeoutMs || 3000)) { clearInterval(timer); resolve(false); }
+    }, 100);
+  });
+}
+
 async function dingtalkH5Login() {
-  if (!isInDingTalk()) return false;
+  const ready = await waitForDingTalk(3000);
+  if (!ready) {
+    console.warn('[dingtalk H5] dd runtime not ready, skip 免登');
+    return false;
+  }
   try {
     const code = await new Promise((resolve, reject) => {
       dd.runtime.permission.requestAuthCode({
@@ -56,11 +72,19 @@ async function dingtalkH5Login() {
       setDingToken(data.data.token, data.data.user && data.data.user.id);
       return true;
     } else {
-      console.error('[dingtalk H5] login failed:', data.message || data);
+      // 免登失败但 dd 正常：大多是「该钉钉账号未绑定」或「应用无免登权限」，提示出来便于排查
+      const msg = (data && data.message) ? data.message : '未知错误';
+      console.error('[dingtalk H5] login failed:', msg);
+      if (typeof dd !== 'undefined' && dd.alert) {
+        dd.alert({ message: '钉钉免登失败：' + msg });
+      }
       return false;
     }
   } catch (e) {
     console.error('[dingtalk H5] login error:', e);
+    if (typeof dd !== 'undefined' && dd.alert) {
+      dd.alert({ message: '钉钉免登异常：' + (e && e.errMsg ? e.errMsg : (e && e.message ? e.message : 'requestAuthCode 失败')) });
+    }
     return false;
   }
 }
