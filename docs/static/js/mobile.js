@@ -1052,7 +1052,7 @@ function renderAboutMobile() {
     content.innerHTML =
         '<div class="m-card m-about-card">' +
             '<div class="m-about-logo-wrap">' +
-                '<img class="m-about-logo" src="/static/images/about-logo.png?v=' + (window.STATIC_VER || APP_VERSION.replace(/\./g, "")) + '" alt="logo">' +
+                '<img class="m-about-logo" src="./static/images/about-logo.png?v=' + (window.STATIC_VER || APP_VERSION.replace(/\./g, "")) + '" alt="logo">' +
             '</div>' +
             '<div class="m-about-title">客户管理平台</div>' +
             '<div class="m-about-version">版本 v' + esc(APP_VERSION) + ' · 构建 ' + esc(window.STATIC_VER || APP_VERSION.replace(/\./g, "")) + '</div>' +
