@@ -21,7 +21,7 @@ function showToast(message, type = '') {
 }
 
 // API 请求封装
-// 兼容两种登录态：① H5 微应用 JWT（localStorage 取 dingtalkAuthToken）② PC 版 cookie session（自动带）
+// 统一基于 session cookie 认证（credentials: include 自动带），无 JWT。
 async function api(url, options = {}) {
     // 静态托管版：相对路径 /api/... 自动拼 FC 后端域名（m.html 注入 window.API_BASE）
     if (url && url.indexOf('/') === 0 && window.API_BASE) {
@@ -32,12 +32,6 @@ async function api(url, options = {}) {
         credentials: 'include',  // 静态托管跨域访问 FC session 必须带 cookie
     };
     const config = { ...defaults, ...options };
-    // JWT 模式：从 localStorage 注入 Authorization（钉钉免登 / 密码登录共用）
-    let jwtToken = '';
-    try { jwtToken = localStorage.getItem('dingtalkAuthToken') || ''; } catch (e) {}
-    if (jwtToken) {
-        config.headers = Object.assign({}, config.headers, { 'Authorization': 'Bearer ' + jwtToken });
-    }
     if (config.body && typeof config.body === 'object') {
         config.body = JSON.stringify(config.body);
     }

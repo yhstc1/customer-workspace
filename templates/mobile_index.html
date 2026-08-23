@@ -71,24 +71,24 @@
     </nav>
 
     <script src="/static/js/app.js?v={{ static_ver }}"></script>
-    <!-- 钉钉 JS-API：H5 微应用免登依赖 dd.runtime.permission.requestAuthCode，必须先引入 -->
-    <script src="https://g.alicdn.com/dingtalk/open-develop/1.9.0/dingtalk.js"></script>
     <script src="/assets/v{{ static_ver }}/js/mobile.js"></script>
     <script>
-        // 钉钉 H5 免登：在钉钉内打开时自动登录，非钉钉环境跳过（回退密码登录）
+        // 纯账号密码登录：基于 session cookie，未登录直接弹密码登录浮层
         (async function() {
-            if (typeof dingtalkH5Login === 'function') {
-                try { await dingtalkH5Login(); } catch (e) { console.error('dingtalk login skip', e); }
-            }
             // 默认加载「事项」页（底栏首项）
             switchPage('tasks');
             // 进入软件后后台预拉「客户 / 业务 / 地图」数据，使首次点击对应 Tab 即本地渲染、不转圈
             if (window.preloadAllData) preloadAllData();
-            // 若免登未成功（非钉钉环境 / 免登失败），且本地无 token，则弹出密码登录浮层
-            let hasToken = false;
-            try { hasToken = !!localStorage.getItem('dingtalkAuthToken'); } catch (e) {}
-            if (!hasToken && typeof window.showH5Login === 'function') {
-                window.showH5Login('请输入手机号和密码登录');
+            // 检查登录态：未登录则弹出密码登录浮层
+            let me = null;
+            try {
+                const r = await fetch('/api/me', { method: 'GET', credentials: 'include' });
+                if (r.ok) me = await r.json().catch(function() { return null; });
+            } catch (e) {}
+            if (!me || !me.user) {
+                if (typeof window.showH5Login === 'function') {
+                    window.showH5Login('请输入手机号和密码登录');
+                }
             }
         })();
     </script>
