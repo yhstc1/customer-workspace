@@ -1004,7 +1004,7 @@ function showTopMenu() {
     overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
     var infoIcon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>';
     overlay.innerHTML =
-        '<div style="position:absolute;top:58px;right:12px;background:#fff;color:#111;border-radius:12px;min-width:150px;box-shadow:0 8px 30px rgba(0,0,0,0.3);overflow:hidden;animation:fadeIn .12s ease;">' +
+        '<div style="position:absolute;top:58px;right:max(12px, calc((100vw - 980px) / 2 + 12px));background:#fff;color:#111;border-radius:12px;min-width:150px;box-shadow:0 8px 30px rgba(0,0,0,0.3);overflow:hidden;animation:fadeIn .12s ease;">' +
             '<div style="position:absolute;top:-5px;right:16px;width:11px;height:11px;background:#fff;transform:rotate(45deg);"></div>' +
             '<div onclick="mTopMenuAction(\'settings\')" style="display:flex;align-items:center;gap:10px;padding:13px 16px;font-size:15px;cursor:pointer;border-bottom:1px solid #f0f0f0;">' + ICONS.settings.replace(/1em/g, '18px') + ' 设置</div>' +
             '<div onclick="mTopMenuAction(\'clearCache\')" style="display:flex;align-items:center;gap:10px;padding:13px 16px;font-size:15px;cursor:pointer;border-bottom:1px solid #f0f0f0;">' +

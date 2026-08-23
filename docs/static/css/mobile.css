@@ -1218,3 +1218,66 @@ textarea { resize: none; }
     font-size: 13px;
     color: var(--m-text-tertiary);
 }
+
+/* ==================== PC / 大屏适配（沿用移动端 H5，宽屏下居中限宽） ==================== */
+/* PC 版不再维护独立模板，直接复用 m.html。以下让其在电脑浏览器里呈「居中宽屏界面」，
+   避免控件贴边、满屏拉伸；手机端（<768px）完全不受影响。 */
+@media (min-width: 768px) {
+    :root { --m-desktop-max: 980px; }
+
+    /* 内容区：限制最大宽度并水平居中，桌面感左右留白 */
+    .mobile-content {
+        max-width: var(--m-desktop-max);
+        margin: 0 auto;
+        padding-left: 24px;
+        padding-right: 24px;
+    }
+    body.m-home-frost .mobile-content { padding-left: 24px; padding-right: 24px; }
+
+    /* 顶栏：跟随内容区宽度居中（否则标题贴最左、按钮贴最右） */
+    .mobile-header {
+        padding-left: max(16px, calc((100vw - var(--m-desktop-max)) / 2 + 24px));
+        padding-right: max(16px, calc((100vw - var(--m-desktop-max)) / 2 + 24px));
+    }
+
+    /* 底部 Tab 胶囊：缩小为居中窄条，不再横跨整屏 */
+    .mobile-tabbar {
+        left: auto;
+        right: auto;
+        width: auto;
+        max-width: 460px;
+        margin: 0 auto;
+    }
+
+    /* 悬浮加号按钮：跟随内容区右边缘 */
+    .m-fab {
+        right: max(16px, calc((100vw - var(--m-desktop-max)) / 2 + 24px));
+    }
+
+    /* 顶部「更多」菜单浮层：其 right 已由 mobile.js 内联 calc 跟随内容区右边缘，
+       此处仅作兜底（内联优先级更高，正常无需）。 */
+
+    /* 弹窗卡片：宽屏下限宽并居中（内联 max-width:300px 优先级高，须用 !important 覆盖） */
+    .m-popup-card {
+        max-width: 560px !important;
+    }
+}
+
+/* 超宽屏（≥1280px）进一步收窄为双列卡片网格，提升信息密度（仅作用于列表页直接子卡片） */
+@media (min-width: 1280px) {
+    .mobile-content {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px 20px;
+        align-items: start;
+    }
+    /* 搜索栏/空状态/分段控件等非卡片元素独占整行 */
+    .mobile-content > .m-search-bar,
+    .mobile-content > .m-segment,
+    .mobile-content > .m-empty,
+    .mobile-content > .m-page-head,
+    .mobile-content > .m-list-head {
+        grid-column: 1 / -1;
+    }
+    .mobile-content > .m-card { margin-bottom: 0; }
+}

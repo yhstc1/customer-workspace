@@ -12,7 +12,7 @@
     <script>
         // 由服务端实时注入的静态资源版本号（基于关键文件 mtime 哈希），供 JS 拼接带 ?v= 的资源 URL。
         // 改文件保存即变化 → 浏览器缓存自动失效，无需手动 bump 版本号。
-        window.STATIC_VER = "20260823b";
+        window.STATIC_VER = "20260823c";
         // ===== 静态托管版后端地址（FC 函数）=====
         // 前端部署在免费静态托管，业务 API 全部走 FC；FC 返回 JSON 给 JS 读，不受 attachment 影响。
         window.API_BASE = "https://crm-api-fc-nrfocbaaxv.cn-hangzhou.fcapp.run";
@@ -83,7 +83,7 @@
         </a>
     </nav>
 
-    <script src="./static/js/app.js?v=20260823b"></script>
+    <script src="./static/js/app.js?v=20260823c"></script>
     <!-- 钉钉 JS-API：H5 微应用免登依赖 dd.runtime.permission.requestAuthCode，必须先引入 -->
     <script src="https://g.alicdn.com/dingtalk/open-develop/1.9.0/dingtalk.js"></script>
     <script src="./static/js/mobile.js"></script>
