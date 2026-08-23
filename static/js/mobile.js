@@ -4903,11 +4903,10 @@ function syncThemeSeg() {
 }
 
 async function loadSettingsMobile() {
-    // 加载用户信息
+    // 加载用户信息（跨域静态托管必须带 session cookie，用 api() 而非裸 fetch）
     let userInfo = {};
     try {
-        const resp = await fetch('/api/me');
-        if (resp.ok) userInfo = await resp.json();
+        userInfo = await api('/api/me');
     } catch(e) {}
 
     let settings = {};
@@ -4965,7 +4964,7 @@ async function loadSettingsMobile() {
         ` : ''}
 
         <div style="text-align:center;margin:8px 0 12px;">
-            <button type="button" style="background:none;border:none;box-shadow:none;color:var(--m-accent);font-size:15px;font-weight:600;padding:12px;cursor:pointer;-webkit-tap-highlight-color:transparent;" onclick="window.location.href='/logout'">退出登录</button>
+            <button type="button" style="background:none;border:none;box-shadow:none;color:var(--m-accent);font-size:15px;font-weight:600;padding:12px;cursor:pointer;-webkit-tap-highlight-color:transparent;" onclick="logoutMobile()">退出登录</button>
         </div>
         <div style="height:20px;"></div>
     `;
@@ -4974,6 +4973,13 @@ async function loadSettingsMobile() {
     if (typeof renderIcons === 'function') renderIcons(content);  // 保证账号卡内图标正常渲染
 
     if (isAdmin) { loadPendingMobile(); loadResetsMobile(); }
+}
+
+async function logoutMobile() {
+    // H5 静态托管下不能跳 /logout（会指向 GitHub Pages 而非 FC），改为调 FC /api/logout 清 session 后刷新
+    try { await api('/api/logout', { method: 'POST' }); } catch (e) {}
+    try { localStorage.removeItem('cw_last_phone'); } catch (e) {}
+    location.reload();
 }
 
 async function saveSettingsMobile() {
@@ -4995,22 +5001,14 @@ async function changePasswordMobile() {
     if (newPwd.length < 6) { msgEl.innerHTML = '<span style="color:#c0392b;">新密码至少 6 位</span>'; return; }
     if (newPwd !== confirmPwd) { msgEl.innerHTML = '<span style="color:#c0392b;">两次输入的新密码不一致</span>'; return; }
     try {
-        const resp = await fetch('/api/change-password', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ old_password: oldPwd, new_password: newPwd })
-        });
-        const data = await resp.json();
-        if (resp.ok) {
-            msgEl.innerHTML = '<span style="color:#2e7d32;"><i class="m-icon" data-icon="done"></i> 密码修改成功</span>';
-            document.getElementById('mOldPwd').value = '';
-            document.getElementById('mNewPwd').value = '';
-            document.getElementById('mConfirmPwd').value = '';
-        } else {
-            msgEl.innerHTML = '<span style="color:#c0392b;"><i class="m-icon" data-icon="error"></i> ' + (data.error || '修改失败') + '</span>';
-        }
+        await api('/api/change-password', { method: 'POST', body: { old_password: oldPwd, new_password: newPwd } });
+        msgEl.innerHTML = '<span style="color:#2e7d32;"><i class="m-icon" data-icon="done"></i> 密码修改成功</span>';
+        document.getElementById('mOldPwd').value = '';
+        document.getElementById('mNewPwd').value = '';
+        document.getElementById('mConfirmPwd').value = '';
     } catch(e) {
-        msgEl.innerHTML = '<span style="color:#c0392b;"><i class="m-icon" data-icon="error"></i> 修改失败: ' + e.message + '</span>';
+        const d = e && e.data;
+        msgEl.innerHTML = '<span style="color:#c0392b;"><i class="m-icon" data-icon="error"></i> ' + ((d && d.error) || '修改失败') + '</span>';
     }
 }
 
@@ -5075,8 +5073,7 @@ function togglePwdMobile(inputId, btn) {
 
 async function loadPendingMobile() {
     try {
-        const resp = await fetch('/api/admin/pending');
-        const data = await resp.json();
+        const data = await api('/api/admin/pending');
         const arr = data.pending || [];
         document.getElementById('mPendingCount').textContent = arr.length;
         const listEl = document.getElementById('mPendingList');
@@ -5100,46 +5097,29 @@ async function loadPendingMobile() {
 
 async function approveMobile(userId) {
     try {
-        const resp = await fetch('/api/admin/approve', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ user_id: userId })
-        });
-        const data = await resp.json();
-        if (resp.ok) {
-            showToast('已通过', 'success');
-            loadPendingMobile();
-        } else {
-            showToast(data.error || '操作失败', 'error');
-        }
+        await api('/api/admin/approve', { method: 'POST', body: { user_id: userId } });
+        showToast('已通过', 'success');
+        loadPendingMobile();
     } catch(e) {
-        showToast('操作失败: ' + e.message, 'error');
+        const d = e && e.data;
+        showToast((d && d.error) || '操作失败', 'error');
     }
 }
 
 async function rejectMobile(userId) {
     try {
-        const resp = await fetch('/api/admin/reject', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ user_id: userId })
-        });
-        const data = await resp.json();
-        if (resp.ok) {
-            showToast('已拒绝', 'success');
-            loadPendingMobile();
-        } else {
-            showToast(data.error || '操作失败', 'error');
-        }
+        await api('/api/admin/reject', { method: 'POST', body: { user_id: userId } });
+        showToast('已拒绝', 'success');
+        loadPendingMobile();
     } catch(e) {
-        showToast('操作失败: ' + e.message, 'error');
+        const d = e && e.data;
+        showToast((d && d.error) || '操作失败', 'error');
     }
 }
 
 async function loadResetsMobile() {
     try {
-        const resp = await fetch('/api/admin/password-resets');
-        const data = await resp.json();
+        const data = await api('/api/admin/password-resets');
         const arr = data.resets || [];
         document.getElementById('mResetCount').textContent = arr.length;
         const listEl = document.getElementById('mResetList');
@@ -5164,39 +5144,23 @@ async function loadResetsMobile() {
 
 async function approveResetMobile(userId) {
     try {
-        const resp = await fetch('/api/admin/reset-approve', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ user_id: userId })
-        });
-        const data = await resp.json();
-        if (resp.ok) {
-            showToast('密码已重置', 'success');
-            loadResetsMobile();
-        } else {
-            showToast(data.error || '操作失败', 'error');
-        }
+        await api('/api/admin/reset-approve', { method: 'POST', body: { user_id: userId } });
+        showToast('密码已重置', 'success');
+        loadResetsMobile();
     } catch(e) {
-        showToast('操作失败: ' + e.message, 'error');
+        const d = e && e.data;
+        showToast((d && d.error) || '操作失败', 'error');
     }
 }
 
 async function rejectResetMobile(userId) {
     try {
-        const resp = await fetch('/api/admin/reset-reject', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ user_id: userId })
-        });
-        const data = await resp.json();
-        if (resp.ok) {
-            showToast('已拒绝', 'success');
-            loadResetsMobile();
-        } else {
-            showToast(data.error || '操作失败', 'error');
-        }
+        await api('/api/admin/reset-reject', { method: 'POST', body: { user_id: userId } });
+        showToast('已拒绝', 'success');
+        loadResetsMobile();
     } catch(e) {
-        showToast('操作失败: ' + e.message, 'error');
+        const d = e && e.data;
+        showToast((d && d.error) || '操作失败', 'error');
     }
 }
 

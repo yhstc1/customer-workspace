@@ -38,11 +38,15 @@ async function api(url, options = {}) {
         if (typeof window.showH5Login === 'function') {
             window.showH5Login(data.error || '登录已失效，请重新登录');
         }
-        throw new Error(data.error || '未登录');
+        const err = new Error(data.error || '未登录');
+        err.data = data;
+        throw err;
     }
     const data = await resp.json().catch(() => ({}));
     if (!resp.ok) {
-        throw new Error(data.error || `请求失败 (${resp.status})`);
+        const err = new Error(data.error || `请求失败 (${resp.status})`);
+        err.data = data;
+        throw err;
     }
     // 写操作（非 GET）成功后通知移动端标记页面缓存失效，保证返回/切 tab 时数据最新
     if (config.method && config.method.toUpperCase() !== 'GET') {
