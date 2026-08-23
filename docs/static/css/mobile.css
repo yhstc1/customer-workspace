@@ -381,6 +381,7 @@ body.m-map-frost  #mHeaderVeil { display: block; height: calc(56px + var(--m-ins
     margin-left: -12px;
     margin-right: -12px;
 }
+.m-section-title { font-size: 15px; font-weight: 700; color: var(--m-text); }
 .m-card-title {
     font-size: 17px;
     font-weight: 700;

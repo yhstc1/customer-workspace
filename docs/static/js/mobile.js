@@ -1010,6 +1010,8 @@ function showTopMenu() {
             '<div onclick="mTopMenuAction(\'clearCache\')" style="display:flex;align-items:center;gap:10px;padding:13px 16px;font-size:15px;cursor:pointer;border-bottom:1px solid #f0f0f0;">' +
                 '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg> 清除本地缓存</div>' +
             '<div onclick="mTopMenuAction(\'about\')" style="display:flex;align-items:center;gap:10px;padding:13px 16px;font-size:15px;cursor:pointer;">' + infoIcon + ' 关于</div>' +
+            '<div onclick="mTopMenuAction(\'data\')" style="display:flex;align-items:center;gap:10px;padding:13px 16px;font-size:15px;cursor:pointer;border-top:1px solid #f0f0f0;">' +
+                '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> 数据管理</div>' +
         '</div>';
     document.body.appendChild(overlay);
 }
@@ -1047,6 +1049,7 @@ function mTopMenuAction(action) {
     if (action === 'settings') openSettingsAsSubPage();
     else if (action === 'about') openAbout();
     else if (action === 'clearCache') clearLocalCache();
+    else if (action === 'data') openDataManageMobile();
 }
 
 // 清除本地缓存：仅清前端应用缓存（localStorage / sessionStorage），随后刷新页面重新拉取最新数据。
@@ -1064,6 +1067,105 @@ function clearLocalCache() {
     showToast('缓存已清除，正在刷新…', 'success');
     setTimeout(function() { location.reload(true); }, 800);
 }
+
+// ==================== 数据管理（导出 / 导入） ====================
+// PC 版沿用：导出为前端 CSV（downloadCsv），导入走后端 /api/customers/import、/api/business/import。
+// 导出列头与导入接口的中文列名一致，形成闭环（导出文件可直接再导入）。
+
+function openDataManageMobile() {
+    var prev = _prevTopPage || 'tasks';
+    var menu = document.getElementById('mTopMenu');
+    if (menu) menu.remove();
+    enterSubPage();
+    setHeaderMode('back');
+    var titleEl = document.getElementById('pageTitle');
+    if (titleEl) titleEl.textContent = '数据管理';
+    navPush('data', function() { switchPage(prev); });
+    renderDataManageMobile();
+}
+
+function renderDataManageMobile() {
+    var content = document.getElementById('pageContent');
+    var custCount = (window._allCustomersMobile || []).length;
+    var bizCount = (allBusinessesMobile || []).length;
+    content.innerHTML =
+        '<div class="m-card" style="padding:16px;">' +
+            '<div class="m-section-title" style="margin-bottom:12px;">导出数据</div>' +
+            '<div style="display:flex;flex-direction:column;gap:10px;">' +
+                '<button class="m-btn btn-primary" onclick="exportCustomersMobile()">📥 导出客户（' + custCount + ' 条）</button>' +
+                '<button class="m-btn btn-primary" onclick="exportBusinessMobile()">📥 导出业务（' + bizCount + ' 条）</button>' +
+            '</div>' +
+            '<div class="m-section-title" style="margin:20px 0 12px;">导入数据</div>' +
+            '<div style="display:flex;flex-direction:column;gap:10px;">' +
+                '<button class="m-btn btn-outline" onclick="importCustomersMobile()">📤 导入客户（CSV）</button>' +
+                '<button class="m-btn btn-outline" onclick="importBusinessMobile()">📤 导入业务（CSV）</button>' +
+            '</div>' +
+            '<div style="margin-top:16px;font-size:12px;color:#999;line-height:1.7;">' +
+                '导出为 UTF-8 CSV（Excel 可直接打开）。导入列名需与导出一致：' +
+                '客户含「公司名称/法人/联系人/联系方式/邮箱/地址/分类/优先级/备注」；' +
+                '业务含「公司名称/业务类型/业务套餐/合同编码/业务号码/合同金额/开始时间/结束时间/业务地址/备注」。' +
+            '</div>' +
+        '</div>';
+}
+
+// 导出客户：复用 PC 版列头与字段映射
+function exportCustomersMobile() {
+    var all = window._allCustomersMobile || [];
+    if (!all.length) { showToast('当前没有可导出的客户', 'error'); return; }
+    var headers = ['公司名称', '法人', '联系人', '联系方式', '邮箱', '地址', '分类', '优先级', '备注'];
+    var rows = all.map(function (c) {
+        return [c.company || '', c.name || '', c.contact || '', c.phone || '',
+            c.email || '', c.address || '', c.category || '', c.priority || '', c.notes || ''];
+    });
+    var d = new Date().toISOString().slice(0, 10);
+    downloadCsv('客户导出_' + d + '.csv', headers, rows);
+}
+
+// 导出业务：复用 PC 版列头与字段映射（含台账列）
+function exportBusinessMobile() {
+    var all = allBusinessesMobile || [];
+    if (!all.length) { showToast('当前没有可导出的业务', 'error'); return; }
+    var headers = ['公司名称', '业务类型', '业务套餐', '合同编码', '业务号码', '合同金额', '开始时间', '结束时间', '业务地址', '备注'];
+    var rows = all.map(function (b) {
+        return [b.company_name || '', b.business_type || '', b.business_package || '',
+            b.contract_code || '', (b.number || ''),
+            (b.contract_amount != null ? b.contract_amount : ''),
+            b.start_date || '', b.end_date || '', b.business_address || '', b.notes || ''];
+    });
+    var d = new Date().toISOString().slice(0, 10);
+    downloadCsv('业务导出_' + d + '.csv', headers, rows);
+}
+
+// 通用：弹出文件选择并上传到指定导入接口
+function _pickAndImport(apiPath, okHint) {
+    var input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.csv,text/csv';
+    input.onchange = function () {
+        var file = input.files && input.files[0];
+        if (!file) return;
+        var fd = new FormData();
+        fd.append('file', file);
+        showToast('正在导入…', 'success');
+        api(apiPath, { method: 'POST', body: fd })
+            .then(function (data) {
+                var msg = (data && data.message) ? data.message : (okHint || '导入完成');
+                showToast(msg, 'success');
+                // 刷新缓存，让新数据立即出现在列表
+                window._allCustomersMobile = null;
+                allBusinessesMobile = [];
+                window._businessNeedRefresh = true;
+            })
+            .catch(function (err) {
+                showToast('导入失败：' + (err && err.message ? err.message : err), 'error');
+            });
+    };
+    input.click();
+}
+
+function importCustomersMobile() { _pickAndImport('/api/customers/import', '客户导入完成'); }
+function importBusinessMobile() { _pickAndImport('/api/business/import', '业务导入完成'); }
+
 
 // 设置页以「子页」方式进入：隐藏底栏（#1）、显示返回按钮、返回手势/按钮回到进入前的一级页（#2）。
 // 不调用 switchPage，避免被当成顶级页（那样会显示底栏且返回走退出确认）。
