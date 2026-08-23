@@ -6,9 +6,20 @@
 """
 import sqlite3
 import os
+import re
 from datetime import datetime
+from werkzeug.security import generate_password_hash, check_password_hash
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "data", "customers.db")
+# 统一使用 pbkdf2:sha256：兼容性最好（阿里云 FC 的 Python3.10 运行时
+# 底层 OpenSSL 不支持 werkzeug 默认的 scrypt，会导致 check_password_hash 抛
+# "unsupported hash type scrypt" 而 500）。所有生成/校验都走此常量。
+PWD_METHOD = "pbkdf2:sha256"
+
+
+def make_password_hash(pwd):
+    return generate_password_hash(pwd, method=PWD_METHOD)
+
+DB_PATH = os.environ.get("CUSTOMER_DB_PATH") or os.path.join(os.path.dirname(__file__), "data", "customers.db")
 
 # 确保数据目录存在（云端容器首次部署时 data/ 可能不存在）
 os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
@@ -18,8 +29,54 @@ def get_db():
     """获取数据库连接"""
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
+    # WAL 模式 + 写忙等待：避免多请求并发（waitress 多线程）下出现
+    # "database is locked"，并让写冲突时等待而非直接报错。
+    try:
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA busy_timeout=5000")
+    except sqlite3.OperationalError:
+        pass
     conn.execute("PRAGMA foreign_keys = ON")
     return conn
+
+
+def normalize_company(name):
+    """
+    客户去重用的公司名归一化：
+    - 去首尾空白、转小写
+    - 全角括号 （）【】 转半角 ()[]
+    - 去除所有内部空白（含全/半角空格、制表符）
+    目的：让 "一彬丰田合成（武汉）汽车零部件有限公司" 与
+          "一彬丰田合成(武汉)汽车零部件有限公司" 被判定为同一客户。
+    """
+    if not name:
+        return ""
+    s = name.strip().lower()
+    s = s.replace("（", "(").replace("）", ")")
+    s = s.replace("【", "[").replace("】", "]")
+    s = re.sub(r"\s+", "", s)
+    return s
+
+
+def company_exists(conn, company, exclude_id=None, user_id=None):
+    """
+    判断归一化后的公司名是否已存在于 customers 表。
+    exclude_id 用于编辑场景（排除自身）。
+    user_id 用于多用户隔离：仅在该用户名下查重（None 表示不限）。
+    返回已存在客户的 id，不存在返回 False。
+    """
+    norm = normalize_company(company)
+    if not norm:
+        return False
+    rows = conn.execute("SELECT id, company, user_id FROM customers").fetchall()
+    for r in rows:
+        if exclude_id is not None and r["id"] == exclude_id:
+            continue
+        if user_id is not None and r["user_id"] != user_id:
+            continue
+        if normalize_company(r["company"]) == norm:
+            return r["id"]
+    return False
 
 
 def init_db():
@@ -31,7 +88,7 @@ def init_db():
     cur.execute("""
         CREATE TABLE IF NOT EXISTS customers (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,                  -- 客户名称
+            name TEXT NOT NULL,                  -- 法人（法定代表人）
             company TEXT,                        -- 公司
             phone TEXT,                          -- 电话
             email TEXT,                          -- 邮箱
@@ -46,6 +103,12 @@ def init_db():
         )
     """)
 
+    # 兼容已有数据库：新增「联系人」列（与「法人」区分，可为空）
+    try:
+        cur.execute("ALTER TABLE customers ADD COLUMN contact TEXT")
+    except sqlite3.OperationalError:
+        pass  # 列已存在则忽略
+
     # 事项跟进表
     cur.execute("""
         CREATE TABLE IF NOT EXISTS tasks (
@@ -53,9 +116,10 @@ def init_db():
             customer_id INTEGER NOT NULL,
             title TEXT NOT NULL,                 -- 事项标题
             description TEXT,                    -- 详细描述
-            status TEXT DEFAULT '待处理',         -- 待处理/进行中/已完成/已搁置
-            priority TEXT DEFAULT '中',           -- 优先级
-            progress INTEGER DEFAULT 0,          -- 进度 0-100
+            status TEXT DEFAULT '进行中',         -- 进行中/已完结/已归档
+            priority TEXT DEFAULT '重要不紧急',   -- 优先级：重要且紧急/重要不紧急/紧急不重要/不重要不紧急（前端已不再使用，保留列仅兼容旧数据）
+            progress INTEGER DEFAULT 0,          -- 进度 0-100（前端已不再使用，保留列仅兼容旧数据）
+            pinned INTEGER DEFAULT 0,            -- 置顶：1=置顶 0=普通
             due_date TEXT,                       -- 截止日期
             created_at TEXT DEFAULT (datetime('now', 'localtime')),
             updated_at TEXT DEFAULT (datetime('now', 'localtime')),
@@ -63,52 +127,313 @@ def init_db():
         )
     """)
 
-    # 设置表
+    # 子待办表
     cur.execute("""
-        CREATE TABLE IF NOT EXISTS settings (
-            key TEXT PRIMARY KEY,
-            value TEXT
+        CREATE TABLE IF NOT EXISTS subtasks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            task_id INTEGER NOT NULL,
+            title TEXT NOT NULL,
+            done INTEGER DEFAULT 0,
+            created_at TEXT DEFAULT (datetime('now', 'localtime')),
+            updated_at TEXT DEFAULT (datetime('now', 'localtime')),
+            FOREIGN KEY (task_id) REFERENCES tasks (id) ON DELETE CASCADE
         )
     """)
 
-    # 业务表
+    # 设置表（多用户：主键改为 (key, user_id)）
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS settings (
+            key TEXT NOT NULL,
+            user_id INTEGER NOT NULL DEFAULT 0,
+            value TEXT,
+            PRIMARY KEY (key, user_id)
+        )
+    """)
+
+    # 用户表（多用户架构：方案 B 独立账号 + 数据隔离 + 手机号注册）
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE NOT NULL,       -- 手机号
+            password_hash TEXT,
+            display_name TEXT,
+            is_admin INTEGER DEFAULT 0,          -- 1 = 管理员账号
+            status TEXT DEFAULT 'active',        -- active=已启用 / pending=待管理员审核
+            created_at TEXT DEFAULT (datetime('now', 'localtime'))
+        )
+    """)
+
+    # 迁移：users 加 phone 列（username=登录名；phone=手机号，二者独立）
+    try:
+        cur.execute("ALTER TABLE users ADD COLUMN phone TEXT")
+    except sqlite3.OperationalError:
+        pass  # 列已存在
+    # 回填：历史数据中 username 即手机号，迁移到 phone；新注册 username/phone 各自独立
+    try:
+        cur.execute("UPDATE users SET phone = username WHERE phone IS NULL OR phone = ''")
+    except Exception:
+        pass
+
+    # 密码重置申请表（忘记密码 → 待管理员审核）
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS password_resets (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            new_password_hash TEXT NOT NULL,
+            status TEXT DEFAULT 'pending',        -- pending=待审核 / done=已处理
+            created_at TEXT DEFAULT (datetime('now', 'localtime')),
+            FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+        )
+    """)
+
+    # 业务表（2.6.1 起合并 businesses + ledgers 为单表 businesses，超集字段池）
     cur.execute("""
         CREATE TABLE IF NOT EXISTS businesses (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             customer_id INTEGER,                       -- 关联客户
+            user_id INTEGER,                           -- 归属用户（数据隔离）
             company_name TEXT,                         -- 公司名称（冗余存储便于展示）
-            business_address TEXT,                     -- 业务地址
-            business_number TEXT,                      -- 业务号码
+            business_type TEXT,                        -- 业务类型：互联网专线/电路/算网项目/U+产品/数智惠企/冰激凌/魔方卡/副卡/宽带/固话
+            business_level TEXT,                       -- 业务层级（原台账 package_name「层级」）
+            number TEXT,                               -- 号码（合同类 business_number / 台账 number 统一）
             contract_code TEXT,                        -- 合同编码
-            business_type TEXT,                        -- 业务类型
             contract_amount REAL,                      -- 合同金额
             start_date TEXT,                           -- 开始时间
             end_date TEXT,                             -- 结束时间
+            business_address TEXT,                     -- 业务地址
+            date TEXT,                                 -- 办理日期（原台账 date）
+            user_name TEXT,                            -- 使用人（原台账 user_name）
+            parent_id INTEGER,                         -- 关联主卡（FK→businesses.id；原 parent_number 串号升级，选 B 方案）
+            business_package TEXT,                     -- 业务套餐（兼容旧合同数据，新表单不再渲染）
             notes TEXT,                                -- 备注
             created_at TEXT DEFAULT (datetime('now', 'localtime')),
             updated_at TEXT DEFAULT (datetime('now', 'localtime')),
-            FOREIGN KEY (customer_id) REFERENCES customers (id) ON DELETE CASCADE
+            FOREIGN KEY (customer_id) REFERENCES customers (id) ON DELETE CASCADE,
+            FOREIGN KEY (parent_id) REFERENCES businesses (id) ON DELETE SET NULL
         )
     """)
 
-    # 插入默认设置
-    cur.execute("INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)",
-                ("my_location_name", "上海市浦东新区张江高科技园区"))
-    cur.execute("INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)",
-                ("my_latitude", "31.2036"))
-    cur.execute("INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)",
-                ("my_longitude", "121.6040"))
-    cur.execute("INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)",
-                ("default_radius_km", "10"))
-
-    # 兼容已有数据：旧分类映射为新分类（核心要客 / TOP20 / 空）
+    # 兼容已有数据：旧分类映射为新分类（核心要客 / TOP20）
     cur.execute("UPDATE customers SET category='核心要客' WHERE category='VIP客户'")
     cur.execute("UPDATE customers SET category='TOP20' WHERE category='重要客户'")
-    cur.execute("UPDATE customers SET category='' WHERE category='普通客户'")
+    # '普通客户' 现为正式分类（见上方列 DEFAULT），不再清空为空。
+
+    # 迁移：添加 business_package 列
+    try:
+        cur.execute("ALTER TABLE businesses ADD COLUMN business_package TEXT")
+    except Exception:
+        pass  # 列已存在
+
+    # 迁移：为隔离加 user_id 列（幂等）
+    for tbl in ("customers", "tasks", "businesses"):
+        try:
+            cur.execute(f"ALTER TABLE {tbl} ADD COLUMN user_id INTEGER")
+        except sqlite3.OperationalError:
+            pass  # 列已存在
+
+    # 迁移：tasks 加 pinned 列（幂等）
+    try:
+        cur.execute("ALTER TABLE tasks ADD COLUMN pinned INTEGER DEFAULT 0")
+    except sqlite3.OperationalError:
+        pass  # 列已存在
+
+    # 迁移：事项状态枚举重构（待处理+进行中→进行中；已完成→已完结；已搁置→已归档）
+    cur.execute("UPDATE tasks SET status='进行中' WHERE status='待处理'")
+    cur.execute("UPDATE tasks SET status='已完结' WHERE status='已完成'")
+    cur.execute("UPDATE tasks SET status='已归档' WHERE status='已搁置'")
+    # 迁移：已挂起 → 已归档（状态重命名）
+    cur.execute("UPDATE tasks SET status='已归档' WHERE status='已挂起'")
+
+    # 迁移：subtasks 加 order_index 列（幂等，用于子待办排序）
+    try:
+        cur.execute("ALTER TABLE subtasks ADD COLUMN order_index INTEGER DEFAULT 0")
+    except sqlite3.OperationalError:
+        pass  # 列已存在则忽略
+
+    # ===== 2.6.1 合并迁移：旧 businesses / ledgers → 单表 businesses =====
+    # 判定依据：新 businesses 含 business_level 列；旧表没有 → 需要迁移（幂等）。
+    if not _column_exists(cur, "businesses", "business_level"):
+        # 旧表改名兜底（幂等：若 _bak 已存在先删，避免 ALTER RENAME 报已存在）
+        for t in ("businesses", "ledgers"):
+            bak = t + "_bak"
+            if _table_exists(cur, bak):
+                cur.execute("DROP TABLE " + bak)
+            if _table_exists(cur, t):
+                cur.execute("ALTER TABLE " + t + " RENAME TO " + bak)
+        # 重建新结构 businesses
+        cur.execute("""CREATE TABLE businesses (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            customer_id INTEGER, user_id INTEGER, company_name TEXT, business_type TEXT,
+            business_level TEXT, number TEXT, contract_code TEXT, contract_amount REAL,
+            start_date TEXT, end_date TEXT, business_address TEXT, date TEXT, user_name TEXT,
+            parent_id INTEGER, business_package TEXT, notes TEXT,
+            created_at TEXT DEFAULT (datetime('now','localtime')),
+            updated_at TEXT DEFAULT (datetime('now','localtime')),
+            FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE,
+            FOREIGN KEY (parent_id) REFERENCES businesses(id) ON DELETE SET NULL
+        )""")
+        # 复制旧 businesses（合同类）
+        for r in cur.execute("SELECT * FROM businesses_bak").fetchall():
+            r = dict(r)
+            cur.execute("""INSERT INTO businesses
+                (customer_id,user_id,company_name,business_type,number,contract_code,contract_amount,
+                 start_date,end_date,business_address,business_package,notes,created_at,updated_at)
+                VALUES (:customer_id,:user_id,:company_name,:business_type,:business_number,:contract_code,
+                        :contract_amount,:start_date,:end_date,:business_address,:business_package,:notes,:created_at,:updated_at)""", r)
+        # 复制旧 ledgers（台账类）→ 业务，并建立 旧id→新id、主卡 number→id 映射
+        old2new = {}
+        main_nums = {}
+        for r in cur.execute("SELECT * FROM ledgers_bak").fetchall():
+            r = dict(r)
+            cur.execute("""INSERT INTO businesses
+                (customer_id,user_id,company_name,business_type,business_level,number,date,user_name,created_at,updated_at)
+                VALUES (:customer_id,:user_id,:company,:package_type,:package_name,:number,:date,:user_name,:created_at,:updated_at)""", r)
+            nid = cur.lastrowid
+            old2new[r["id"]] = nid
+            if r["package_type"] in ("数智惠企", "冰激凌") and r["number"]:
+                main_nums[r["number"]] = nid
+        # parent_number（串号）→ parent_id（FK）解析：子卡关联主卡
+        for r in cur.execute("SELECT id, parent_number FROM ledgers_bak WHERE parent_number IS NOT NULL AND parent_number != ''").fetchall():
+            nid = old2new.get(r["id"])
+            pid = main_nums.get(r["parent_number"])
+            if nid and pid:
+                cur.execute("UPDATE businesses SET parent_id=? WHERE id=?", (pid, nid))
+        # 类型重命名：融合 → 宽带（原「固话」保持不变）
+        cur.execute("UPDATE businesses SET business_type='宽带' WHERE business_type='融合'")
+        # 彻底移除「移网」类型（数据已确认为 0 条，此句幂等兜底层）
+        cur.execute("DELETE FROM businesses WHERE business_type='移网'")
+        conn.commit()
+        print("[OK] 2.6.1 合并迁移完成：businesses/ledgers → 单表 businesses")
+
+    # 迁移：customers 加 source 列（标记客户来源，如「导入业务时自动添加」）
+    try:
+        cur.execute("ALTER TABLE customers ADD COLUMN source TEXT")
+    except sqlite3.OperationalError:
+        pass  # 列已存在
+    # 回填：历史的「导入业务时自动添加的」空壳客户（只有公司名，其余信息全空）标记为 auto_business_import
+    # 幂等：source 已设值的不再命中
+    cur.execute(
+        "UPDATE customers SET source='auto_business_import' "
+        "WHERE source IS NULL "
+        "AND COALESCE(name,'')='' AND COALESCE(contact,'')='' "
+        "AND COALESCE(phone,'')='' AND COALESCE(email,'')='' "
+        "AND COALESCE(address,'')='' AND COALESCE(notes,'')=''"
+    )
+
+    # 迁移：settings 表多用户化（旧结构无 user_id 且 PK 仅为 key）
+    if not _column_exists(cur, "settings", "user_id"):
+        cur.execute("""CREATE TABLE settings_new (
+            key TEXT NOT NULL, user_id INTEGER NOT NULL DEFAULT 0, value TEXT,
+            PRIMARY KEY (key, user_id))""")
+        cur.execute("INSERT INTO settings_new (key, user_id, value) SELECT key, 0, value FROM settings")
+        cur.execute("DROP TABLE settings")
+        cur.execute("ALTER TABLE settings_new RENAME TO settings")
+
+    # 迁移：users 表清理旧登录列、改用 is_admin（幂等）
+    if _column_exists(cur, "users", "dingtalk_userid") or not _column_exists(cur, "users", "is_admin"):
+        cur.execute("""CREATE TABLE users_new (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE NOT NULL,
+            password_hash TEXT,
+            display_name TEXT,
+            is_admin INTEGER DEFAULT 0,
+            status TEXT DEFAULT 'active',
+            created_at TEXT DEFAULT (datetime('now', 'localtime'))
+        )""")
+        cur.execute("""INSERT INTO users_new (id, username, password_hash, display_name, is_admin, status, created_at)
+                       SELECT id, username, password_hash, display_name,
+                              CASE WHEN COALESCE(is_current_user,0)=1 OR username='admin' THEN 1 ELSE 0 END,
+                              'active', created_at FROM users""")
+        cur.execute("DROP TABLE users")
+        cur.execute("ALTER TABLE users_new RENAME TO users")
+
+    # 迁移：为已有 users 表补充 status 列（幂等；真实库已建表但无此列）
+    if not _column_exists(cur, "users", "status"):
+        cur.execute("ALTER TABLE users ADD COLUMN status TEXT DEFAULT 'active'")
+
+    # 种子用户 + 默认设置（首次建库时）
+    _seed_users(cur)
+
+    # 迁移：把历史 'admin' 账号改为管理员手机号（幂等，已改则不再命中）
+    cur.execute(
+        "UPDATE users SET username=?, password_hash=?, display_name=?, is_admin=1 WHERE username='admin'",
+        ("18607184641", make_password_hash("123456"), "18607184641"),
+    )
+    cur.execute("UPDATE users SET is_admin=1 WHERE username='18607184641' AND COALESCE(is_admin,0)=0")
+
+    # 现有数据归属管理员账号：把所有 user_id 为空的行指向管理员
+    cur_user = cur.execute("SELECT id FROM users WHERE is_admin=1 ORDER BY id LIMIT 1").fetchone()
+    owner_id = cur_user[0] if cur_user else cur.execute("SELECT id FROM users ORDER BY id LIMIT 1").fetchone()[0]
+    for tbl in ("customers", "tasks", "businesses"):
+        cur.execute(f"UPDATE {tbl} SET user_id=? WHERE user_id IS NULL OR user_id=0", (owner_id,))
+    # settings：旧数据(user_id=0) 归管理员；若管理员无任何设置则补默认
+    cur.execute("UPDATE settings SET user_id=? WHERE user_id IS NULL OR user_id=0", (owner_id,))
+    if cur.execute("SELECT COUNT(*) FROM settings WHERE user_id=?", (owner_id,)).fetchone()[0] == 0:
+        _seed_user_settings(cur, owner_id)
+
+    # 打卡表
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS checkins (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            customer_id INTEGER NOT NULL,
+            year_month TEXT NOT NULL,   -- "YYYY-MM"
+            count INTEGER DEFAULT 0,
+            updated_at TEXT DEFAULT (datetime('now', 'localtime')),
+            UNIQUE(customer_id, year_month)
+        )
+    """)
+
+    # 密码哈希兼容性迁移：FC 运行时(Py3.10)底层 OpenSSL 不支持 scrypt，
+    # 存量 scrypt hash 会导致登录 500。统一重写为 pbkdf2:sha256（默认密码 123456，
+    # 与系统现状一致），保证所有账号在 FC 与本地均可正常登录。
+    cur.execute(
+        "UPDATE users SET password_hash=? WHERE password_hash IS NULL OR password_hash='' OR password_hash LIKE 'scrypt%'",
+        (make_password_hash("123456"),),
+    )
 
     conn.commit()
     conn.close()
     print(f"[OK] 数据库初始化完成: {DB_PATH}")
+
+
+def _column_exists(cur, table, column):
+    """检查表中是否存在某列（兼容 SQLite pragma）"""
+    rows = cur.execute(f"PRAGMA table_info({table})").fetchall()
+    return any(r[1] == column for r in rows)
+
+
+def _table_exists(cur, table):
+    """检查表是否存在"""
+    row = cur.execute(
+        "SELECT name FROM sqlite_master WHERE type IN ('table','view') AND name=?", (table,)
+    ).fetchone()
+    return row is not None
+
+
+def _seed_users(cur):
+    """首次建库时只创建管理员账号（手机号注册，默认密码 123456）。
+
+    其他成员通过 /api/register 自行用手机号注册（默认密码 123456）。
+    现有数据在 init_db 的迁移段统一归属到管理员账号。
+    """
+    if cur.execute("SELECT COUNT(*) FROM users").fetchone()[0] > 0:
+        return
+    cur.execute(
+        "INSERT INTO users (username, password_hash, display_name, is_admin) VALUES (?,?,?,1)",
+        ("18607184641", make_password_hash("123456"), "18607184641"),
+    )
+
+
+def _seed_user_settings(cur, user_id):
+    """为指定用户写入默认设置（幂等）。"""
+    defaults = (
+        ("my_location_name", "上海市浦东新区张江高科技园区"),
+        ("my_latitude", "31.2036"),
+        ("my_longitude", "121.6040"),
+        ("default_radius_km", "10"),
+    )
+    for k, v in defaults:
+        cur.execute("INSERT OR IGNORE INTO settings (key, user_id, value) VALUES (?,?,?)", (k, user_id, v))
 
 
 def seed_sample_data():
@@ -122,6 +447,10 @@ def seed_sample_data():
         print(f"[SKIP] 数据库已有 {count} 条客户数据，跳过填充")
         conn.close()
         return
+
+    # 示例数据归属管理员账号
+    cur_user = cur.execute("SELECT id FROM users WHERE is_admin=1 ORDER BY id LIMIT 1").fetchone()
+    owner_id = cur_user[0] if cur_user else None
 
     # 示例客户数据（上海张江附近）
     sample_customers = [
@@ -178,18 +507,19 @@ def seed_sample_data():
 
     for c in sample_customers:
         cur.execute("""
-            INSERT INTO customers (name, company, phone, email, address, latitude, longitude, category, priority, notes)
-            VALUES (:name, :company, :phone, :email, :address, :latitude, :longitude, :category, :priority, :notes)
-        """, c)
+            INSERT INTO customers (name, company, phone, email, address, latitude, longitude, category, priority, notes, user_id)
+            VALUES (:name, :company, :phone, :email, :address, :latitude, :longitude, :category, :priority, :notes, :user_id)
+        """, {**c, "user_id": owner_id})
         customer_id = cur.lastrowid
 
         # 为每个客户添加示例事项
         sample_tasks = generate_sample_tasks(c["name"], c["priority"])
         for t in sample_tasks:
             t["customer_id"] = customer_id
+            t["user_id"] = owner_id
             cur.execute("""
-                INSERT INTO tasks (customer_id, title, description, status, priority, progress, due_date)
-                VALUES (:customer_id, :title, :description, :status, :priority, :progress, :due_date)
+                INSERT INTO tasks (customer_id, title, description, status, priority, progress, due_date, user_id)
+                VALUES (:customer_id, :title, :description, :status, :priority, :progress, :due_date, :user_id)
             """, t)
 
     conn.commit()
@@ -217,7 +547,7 @@ def generate_sample_tasks(customer_name, priority):
         {
             "title": f"{customer_name}项目需求确认",
             "description": "收集客户需求文档，整理需求清单",
-            "status": "待处理",
+            "status": "进行中",
             "priority": "中",
             "progress": 0,
             "due_date": later
@@ -225,7 +555,7 @@ def generate_sample_tasks(customer_name, priority):
         {
             "title": f"{customer_name}季度回访",
             "description": "电话回访，了解使用情况",
-            "status": "已完成",
+            "status": "已完结",
             "priority": "低",
             "progress": 100,
             "due_date": overdue
