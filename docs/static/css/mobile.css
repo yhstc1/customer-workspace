@@ -844,6 +844,7 @@ html.m-apk body.m-map-frost .m-map-spacer { height: calc(181px + var(--m-inset-t
 .btn-primary { background: var(--m-accent); color: var(--m-text); }
 .btn { border-radius: var(--m-radius-pill); }
 .btn-outline { background: transparent; color: var(--m-accent); border: 1px solid var(--m-border); border-radius: var(--m-radius-pill); }
+.btn-ghost { background: var(--m-card-elevated); color: var(--m-text-secondary); border-radius: var(--m-radius-pill); }
 .btn-danger { background: var(--m-danger); color: var(--m-text); border-radius: var(--m-radius-pill); }
 .btn-sm { padding: 6px 12px; font-size: 12px; border-radius: var(--m-radius-pill); }
 

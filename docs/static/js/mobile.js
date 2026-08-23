@@ -1099,6 +1099,8 @@ function renderDataManageMobile() {
             '<div style="display:flex;flex-direction:column;gap:10px;">' +
                 '<button class="m-btn btn-outline" onclick="importCustomersMobile()">📤 导入客户（CSV）</button>' +
                 '<button class="m-btn btn-outline" onclick="importBusinessMobile()">📤 导入业务（CSV）</button>' +
+                '<button class="m-btn btn-ghost" onclick="downloadTemplate(\'customers\')">⬇️ 下载客户导入模板</button>' +
+                '<button class="m-btn btn-ghost" onclick="downloadTemplate(\'business\')">⬇️ 下载业务导入模板</button>' +
             '</div>' +
             '<div style="margin-top:16px;font-size:12px;color:#999;line-height:1.7;">' +
                 '导出为 UTF-8 CSV（Excel 可直接打开）。导入列名需与导出一致：' +
@@ -1134,6 +1136,24 @@ function exportBusinessMobile() {
     });
     var d = new Date().toISOString().slice(0, 10);
     downloadCsv('业务导出_' + d + '.csv', headers, rows);
+}
+
+// 下载导入模板：直接打开后端模板路由（fetch 拦截器会自动拼 API_BASE）
+function downloadTemplate(kind) {
+    var path = kind === 'business' ? '/api/business/template' : '/api/customers/template';
+    var label = kind === 'business' ? '业务' : '客户';
+    try {
+        // 用隐藏 iframe 触发下载，避免当前页被导航走（模板路由返回 attachment）
+        var ifr = document.createElement('iframe');
+        ifr.style.display = 'none';
+        ifr.src = (window.API_BASE || '') + path;
+        document.body.appendChild(ifr);
+        setTimeout(function () { if (ifr.parentNode) ifr.parentNode.removeChild(ifr); }, 4000);
+        showToast('已开始下载' + label + '导入模板', 'success');
+    } catch (e) {
+        // 兜底：直接打开
+        window.open((window.API_BASE || '') + path, '_blank');
+    }
 }
 
 // 通用：弹出文件选择并上传到指定导入接口
