@@ -29,6 +29,7 @@ async function api(url, options = {}) {
     }
     const defaults = {
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',  // 静态托管跨域访问 FC session 必须带 cookie
     };
     const config = { ...defaults, ...options };
     // JWT 模式：从 localStorage 注入 Authorization（钉钉免登 / 密码登录共用）

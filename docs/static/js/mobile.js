@@ -49,18 +49,18 @@ function waitForDingTalk(timeoutMs) {
 }
 
 async function dingtalkH5Login() {
+  // 当前 FC 后端尚未接入钉钉 authCode 免登；静默跳过，回退到手机号密码登录。
+  // 待后续在钉钉开放平台配置 H5 微应用并完成后端 /api/auth/login 后再恢复免登逻辑。
+  console.log('[dingtalk H5] skip：后端免登未就绪');
+  return false;
+
+  /* 保留的钉钉免登代码（待后端实现 /api/auth/login 后恢复）：
   const forced = /[?&]dd=1\b/.test(location.search);
   const ready = await waitForDingTalk(forced ? 8000 : 3000);
   if (!ready) {
     console.warn('[dingtalk H5] dd runtime not ready, skip 免登');
-    if (typeof dd !== 'undefined' && dd.alert) {
-      dd.alert({ message: '钉钉JS-API未加载：dd 对象不存在。可能钉钉JS-API外链被拦，或页面未在钉钉内打开。' });
-    } else {
-      alert('钉钉JS-API未加载（非钉钉环境或非钉钉内核）');
-    }
     return false;
   }
-  // corpId 优先从 URL 的 ?corpId= 参数取（开放平台主页地址配 .../m?corpId=$CORPID$ 会自动替换）
   function getCorpId() {
     try {
       const p = new URLSearchParams(location.search);
@@ -75,16 +75,14 @@ async function dingtalkH5Login() {
         dd.runtime.permission.requestAuthCode({
           corpId: getCorpId(),
           onSuccess: function (info) { resolve(info.code); },
-          onFail: function (err) {
-            // errorCode 3 = 根据 corpId 没查到使用当前页面域名的微应用（主页地址/域名不匹配）
-            reject(err);
-          }
+          onFail: function (err) { reject(err); }
         });
       });
     });
     const resp = await fetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ authCode: code })
     });
     const data = await resp.json().catch(() => ({}));
@@ -92,32 +90,14 @@ async function dingtalkH5Login() {
       setDingToken(data.data.token, data.data.user && data.data.user.id);
       return true;
     } else {
-      const msg = (data && data.message) ? data.message : '未知错误';
-      console.error('[dingtalk H5] login failed:', msg);
-      if (typeof dd !== 'undefined' && dd.alert) {
-        dd.alert({ message: '钉钉免登失败：' + msg });
-      }
+      console.error('[dingtalk H5] login failed:', data);
       return false;
     }
   } catch (e) {
     console.error('[dingtalk H5] login error:', e);
-    let tip = 'requestAuthCode 失败';
-    if (e) {
-      if (e.errorCode === 3 || (e.errorMessage || '').indexOf('域名') !== -1) {
-        tip = 'errorCode 3：根据 corpId 未查到使用当前页面域名的微应用。请确认 H5 微应用主页地址域名与当前打开地址完全一致（含 ngrok 域名），且该企业下该域名已配为微应用主页。';
-      } else if (e.errMsg) {
-        tip = e.errMsg;
-      } else if (e.errorMessage) {
-        tip = e.errorMessage;
-      } else if (e.message) {
-        tip = e.message;
-      }
-    }
-    if (typeof dd !== 'undefined' && dd.alert) {
-      dd.alert({ message: '钉钉免登异常：' + tip });
-    }
     return false;
   }
+  */
 }
 
 // 给 api() 注入 dingtalk token：捕获 app.js 暴露的全局 api，包装 Authorization 头
@@ -174,13 +154,15 @@ function showH5Login(defaultMsg) {
     const btn = document.getElementById('h5LoginBtn');
     if (!phone || !pwd) { tip.textContent = '请输入手机号和密码'; return; }
     btn.disabled = true; btn.textContent = '登录中…';
-    fetch('/api/password-login', {
+    fetch('/api/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ phone: phone, password: pwd })
     }).then(r => r.json().catch(() => ({}))).then(d => {
-      if (d.code === 0 && d.data && d.data.token) {
-        setDingToken(d.data.token, d.data.user && d.data.user.id);
+      if (d.ok && d.user) {
+        // session 模式：靠跨域 cookie + credentials 维持登录态，不存 JWT
+        clearDingToken();
         mask.remove();
         // 登录成功后刷新当前页数据
         if (typeof window.__mobileMarkDirty === 'function') window.__mobileMarkDirty();
