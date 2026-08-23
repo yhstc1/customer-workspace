@@ -1241,18 +1241,23 @@ textarea { resize: none; }
         padding-right: max(16px, calc((100vw - var(--m-desktop-max)) / 2 + 24px));
     }
 
-    /* 底部 Tab 胶囊：缩小为居中窄条，不再横跨整屏 */
+    /* 底部 Tab 胶囊：居中窄条（fixed 元素不能用 margin:auto 居中，须用 left:50%+translateX） */
     .mobile-tabbar {
-        left: auto;
+        left: 50%;
         right: auto;
-        width: auto;
-        max-width: 460px;
-        margin: 0 auto;
+        transform: translateX(-50%);
+        width: min(460px, calc(100vw - 48px));
     }
 
     /* 悬浮加号按钮：跟随内容区右边缘 */
     .m-fab {
         right: max(16px, calc((100vw - var(--m-desktop-max)) / 2 + 24px));
+    }
+
+    /* 地图容器：宽屏下不再撑满，跟随内容区限宽居中 */
+    .m-map-container {
+        left: max(12px, calc((100vw - var(--m-desktop-max)) / 2 + 24px));
+        right: max(12px, calc((100vw - var(--m-desktop-max)) / 2 + 24px));
     }
 
     /* 顶部「更多」菜单浮层：其 right 已由 mobile.js 内联 calc 跟随内容区右边缘，
