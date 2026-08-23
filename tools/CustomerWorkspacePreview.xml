@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ⚠️ 已废弃（OBSOLETE）：本静态 XML 不再需要手动导入。
+  自 2026-07-30 起，登录自启任务由 Launch-App.cmd 首次运行时自动注册：
+    - 路径用 %~dp0 在运行时反推，零硬编码，文件夹挪到任何位置都有效；
+    - 注册逻辑在 tools/register_autostart.py（动态生成下方等价 XML 并 schtasks /Create）；
+    - 任务名固定为 cw-preview。
+  仅当 Launch-App.cmd 自动注册失败、需完全手工处理时才用本文件：
+    先把第 28 行的路径改成新机器上 customer-workspace\tools\start_preview.cmd 的实际位置，
+    再执行：schtasks /Create /TN "cw-preview" /XML "本文件路径" /F
+-->
+<Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
+  <RegistrationInfo>
+    <Description>Auto-start Flask preview (supervisor) — OBSOLETE, see header</Description>
+  </RegistrationInfo>
+  <Triggers>
+    <LogonTrigger>
+      <Enabled>true</Enabled>
+    </LogonTrigger>
+  </Triggers>
+  <Principals>
+    <Principal id="Author">
+      <LogonType>InteractiveToken</LogonType>
+      <RunLevel>HighestAvailable</RunLevel>
+    </Principal>
+  </Principals>
+  <Settings>
+    <MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>
+    <DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries>
+    <StopIfGoingOnBatteries>false</StopIfGoingOnBatteries>
+    <ExecutionTimeLimit>PT0S</ExecutionTimeLimit>
+  </Settings>
+  <Actions>
+    <Exec>
+      <!-- 迁移模板：换机后只需把下面路径改成新机器上 customer-workspace\tools\start_preview.cmd 的实际位置即可。
+           start_preview.cmd 自身已用 %~dp0 反推位置（位置无关），故仅此一处需改，无需改动脚本内部。 -->
+      <Command>cmd.exe</Command>
+      <Arguments>/c "D:\Users\User185984\Desktop\customer-workspace\tools\start_preview.cmd"</Arguments>
+    </Exec>
+  </Actions>
+</Task>

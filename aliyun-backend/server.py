@@ -26,12 +26,16 @@ if CODE_DIR not in sys.path:
 
 
 def _prepare_db():
-    """FC 自定义运行时 /code 只读：把包内只读 db 复制到可写层后再用。
+    """准备存储后端。
 
-    - 通过环境变量 CUSTOMER_DB_PATH 指向可写路径（/tmp 在 FC 实例内可写，
-      冷启动自动从代码包恢复数据）。
-    - 若目标库不存在（首次/冷启动）则从包内 data/customers.db 拷贝。
+    - **MySQL 模式**（设置了 MYSQL_HOST）：数据全部在 RDS，无需本地 SQLite 文件，
+      直接跳过 /tmp 拷贝，避免冷启动把过期包内 db 拷进 /tmp 误导排查。
+    - **SQLite 模式**（未设置 MYSQL_HOST）：FC 自定义运行时 /code 只读，
+      把包内只读 db 复制到可写层 /tmp 后用（冷启动自动从代码包恢复数据）。
     """
+    if os.environ.get("MYSQL_HOST"):
+        print("[server] MySQL 模式：数据存 RDS，跳过本地 db 准备", flush=True)
+        return
     writable_db = os.environ.get("CUSTOMER_DB_PATH") or os.path.join("/tmp", "crm_data", "customers.db")
     os.environ["CUSTOMER_DB_PATH"] = writable_db
     db_dir = os.path.dirname(writable_db)

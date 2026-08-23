@@ -173,12 +173,12 @@ def cleanup_auto_imported_customer(cid):
 
 @app.after_request
 def caching_policy(response):
-    """缓存策略（兼顾「改完立即生效」与「省 ngrok 流量」）：
+    """缓存策略（兼顾「改完立即生效」与「省流量/减少重复加载」）：
 
     - 带版本号的静态资源（路径 /assets/v<ver>/... 或查询串 ?v=...，手机端
       mobile.css/mobile.js、以及带 ?v= 的 style.css/app.js、about-logo 图片走这条）：
       内容由版本号决定，URL 不变内容就不变 → 允许浏览器长期缓存（1 年）。手机加载一次后
-      留存本地，后续重载直接从本地取，不再走 ngrok 隧道，流量几乎归零。
+      留存本地，后续重载直接从本地取，不再重复请求，流量/加载几乎归零。
       版本号由 get_static_ver() 按静态文件修改时间实时计算，改完文件保存即自动失效缓存，
       无需重启、也无需手动 bump 版本号；手动 bump mobile.js 的 APP_VERSION 仍可强制刷新
       所有资源（URL 会随版本号变化）。
@@ -1892,7 +1892,7 @@ def download_project():
 
     with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
         # 导出时剪枝：虚拟环境 venv(2GB+)、依赖缓存、版本库、回收站等不进包，
-        # 只保留源码+数据+模板。否则一次 /download-project 就会把 ngrok 的 1GB 额度打满。
+        # 只保留源码+数据+模板。否则一次 /download-project 就会下载整个项目目录，体积过大。
         _exclude_dirs = {"__pycache__", "venv", "node_modules", ".git",
                          ".idea", "_cleanup_回收站"}
         for root, dirs, files in os.walk(project_dir):
@@ -2396,9 +2396,5 @@ if __name__ == "__main__":
     app.run(host="0.0.0.0", port=port, debug=False, use_reloader=False)
 
 
-# ==================== ngrok 公网地址变更监控 ====================
-# 看门狗已改为【独立 SYSTEM/ONSTART 计划任务 cw-ngrok-watchdog】运行
-# （见 tools/ngrok_watchdog_standalone.cmd 与 tools/install_watchdog_task.bat），
-# 不再寄生在 CRM/waitress 进程内，故 CRM 重启/停机期间也能持续监控、亲自记录断线态。
-# 手动排查：python ngrok_watchdog.py --once
+# Flask 由 tools/start_preview.cmd 循环保活（见 Launch-App.cmd / register_autostart.py）。
 

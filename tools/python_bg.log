@@ -1,0 +1,303 @@
+[2026-07-26 03:11:05] starting: D:\Users\User185984\Desktop\customer-workspace\venv\Scripts\python.exe -m waitress --host=0.0.0.0 --port=5000 app:app
+[2026-07-26 03:11:05] pid=7756
+[OK] Êı¾İ¿â³õÊ¼»¯Íê³É: D:\Users\User185984\Desktop\customer-workspace\data\customers.db
+[ngrok¼à¿Ø] Æô¶¯£¬ÂÖÑ¯¼ä¸ô 4h
+INFO:waitress:Serving on http://0.0.0.0:5000
+[ngrok¼à¿Ø] ÍÆËÍ±ä¸üÊ§°Ü: 'gbk' codec can't encode character '\u2705' in position 11: illegal multibyte sequence
+[2026-07-26 03:27:02] starting: D:\Users\User185984\Desktop\customer-workspace\venv\Scripts\python.exe -m waitress --host=0.0.0.0 --port=5000 app:app
+[2026-07-26 03:27:02] pid=10064
+[OK] Êı¾İ¿â³õÊ¼»¯Íê³É: D:\Users\User185984\Desktop\customer-workspace\data\customers.db
+[ngrok¼à¿Ø] Æô¶¯£¬ÂÖÑ¯¼ä¸ô 4h
+INFO:waitress:Serving on http://0.0.0.0:5000
+[2026-07-26 03:30:20] starting: D:\Users\User185984\Desktop\customer-workspace\venv\Scripts\python.exe -m waitress --host=0.0.0.0 --port=5000 app:app
+[2026-07-26 03:30:20] pid=3876
+[OK] Êı¾İ¿â³õÊ¼»¯Íê³É: D:\Users\User185984\Desktop\customer-workspace\data\customers.db
+[ngrok¼à¿Ø] Æô¶¯£¬ÂÖÑ¯¼ä¸ô 4h
+INFO:waitress:Serving on http://0.0.0.0:5000
+[ngrok¼à¿Ø] ÍÆËÍµôÏß¸æ¾¯Ê§°Ü: 'gbk' codec can't encode character '\u26a0' in position 11: illegal multibyte sequence
+[ngrok¼à¿Ø] ËíµÀÒÑ¶Ï¿ª£¨ÉÏ´ÎµØÖ·: https://joyride-morphing-senior.ngrok-free.dev£©£¬ÒÑÍÆËÍ¸æ¾¯
+[2026-07-26 03:33:04] starting: D:\Users\User185984\Desktop\customer-workspace\venv\Scripts\python.exe -m waitress --host=0.0.0.0 --port=5000 app:app
+[2026-07-26 03:33:04] pid=10112
+[OK] Êı¾İ¿â³õÊ¼»¯Íê³É: D:\Users\User185984\Desktop\customer-workspace\data\customers.db
+[ngrok¼à¿Ø] Æô¶¯£¬ÂÖÑ¯¼ä¸ô 4h
+INFO:waitress:Serving on http://0.0.0.0:5000
+[ngrok¼à¿Ø] ÍÆËÍ±ä¸üÊ§°Ü: 'gbk' codec can't encode character '\u2705' in position 11: illegal multibyte sequence
+[2026-07-26 03:35:42] starting: D:\Users\User185984\Desktop\customer-workspace\venv\Scripts\python.exe -m waitress --host=0.0.0.0 --port=5000 app:app
+[2026-07-26 03:35:42] pid=1592
+[OK] Êı¾İ¿â³õÊ¼»¯Íê³É: D:\Users\User185984\Desktop\customer-workspace\data\customers.db
+[ngrok¼à¿Ø] Æô¶¯£¬ÂÖÑ¯¼ä¸ô 4h
+INFO:waitress:Serving on http://0.0.0.0:5000
+[2026-07-26 03:40:36] starting: D:\Users\User185984\Desktop\customer-workspace\venv\Scripts\python.exe -m waitress --host=0.0.0.0 --port=5000 app:app
+[2026-07-26 03:40:36] pid=1040
+[OK] æ•°æ®åº“åˆå§‹åŒ–å®Œæˆ: D:\Users\User185984\Desktop\customer-workspace\data\customers.db
+[ngrokç›‘æ§] å¯åŠ¨ï¼Œè½®è¯¢é—´éš” 4h
+INFO:waitress:Serving on http://0.0.0.0:5000
+[2026-07-26 03:41:23] starting: D:\Users\User185984\Desktop\customer-workspace\venv\Scripts\python.exe -m waitress --host=0.0.0.0 --port=5000 app:app
+[2026-07-26 03:41:23] pid=9284
+[OK] æ•°æ®åº“åˆå§‹åŒ–å®Œæˆ: D:\Users\User185984\Desktop\customer-workspace\data\customers.db
+[ngrokç›‘æ§] å¯åŠ¨ï¼Œè½®è¯¢é—´éš” 4h
+INFO:waitress:Serving on http://0.0.0.0:5000
+[2026-07-26 03:57:51] starting: D:\Users\User185984\Desktop\customer-workspace\venv\Scripts\python.exe -m waitress --host=0.0.0.0 --port=5000 app:app
+[2026-07-26 03:57:51] pid=4556
+[OK] Êı¾İ¿â³õÊ¼»¯Íê³É: D:\Users\User185984\Desktop\customer-workspace\data\customers.db
+[ngrok¼à¿Ø] Æô¶¯£¬ÂÖÑ¯¼ä¸ô 4h
+INFO:waitress:Serving on http://0.0.0.0:5000
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 2
+WARNING:waitress.queue:Task queue depth is 3
+WARNING:waitress.queue:Task queue depth is 4
+WARNING:waitress.queue:Task queue depth is 5
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 2
+WARNING:waitress.queue:Task queue depth is 3
+WARNING:waitress.queue:Task queue depth is 4
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 2
+WARNING:waitress.queue:Task queue depth is 3
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 2
+WARNING:waitress.queue:Task queue depth is 3
+[2026-07-27 19:01:53] starting: D:\Users\User185984\Desktop\customer-workspace\venv\Scripts\python.exe -m waitress --host=0.0.0.0 --port=5000 app:app
+[2026-07-27 19:01:54] pid=5988
+[OK] Êı¾İ¿â³õÊ¼»¯Íê³É: D:\Users\User185984\Desktop\customer-workspace\data\customers.db
+[ngrok¼à¿Ø] Æô¶¯£¬ÂÖÑ¯¼ä¸ô 4h
+INFO:waitress:Serving on http://0.0.0.0:5000
+[ngrok¼à¿Ø] ÍÆËÍµôÏß¸æ¾¯Ê§°Ü: 'gbk' codec can't encode character '\u26a0' in position 11: illegal multibyte sequence
+[ngrok¼à¿Ø] ËíµÀÒÑ¶Ï¿ª£¨ÉÏ´ÎµØÖ·: https://joyride-morphing-senior.ngrok-free.dev£©£¬ÒÑÍÆËÍ¸æ¾¯
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 2
+WARNING:waitress.queue:Task queue depth is 3
+WARNING:waitress.queue:Task queue depth is 4
+WARNING:waitress.queue:Task queue depth is 3
+WARNING:waitress.queue:Task queue depth is 2
+WARNING:waitress.queue:Task queue depth is 3
+[2026-07-27 21:06:13] starting: D:\Users\User185984\Desktop\customer-workspace\venv\Scripts\python.exe -m waitress --host=0.0.0.0 --port=5000 app:app
+[2026-07-27 21:06:13] pid=10408
+[OK] Êı¾İ¿â³õÊ¼»¯Íê³É: D:\Users\User185984\Desktop\customer-workspace\data\customers.db
+[ngrok¼à¿Ø] Æô¶¯£¬ÂÖÑ¯¼ä¸ô 4h
+INFO:waitress:Serving on http://0.0.0.0:5000
+[ngrok¼à¿Ø] ÍÆËÍ±ä¸üÊ§°Ü: 'gbk' codec can't encode character '\u2705' in position 11: illegal multibyte sequence
+[2026-07-27 22:04:46] starting: D:\Users\User185984\Desktop\customer-workspace\venv\Scripts\python.exe -m waitress --host=0.0.0.0 --port=5000 app:app
+[2026-07-27 22:04:46] pid=6244
+[OK] Êı¾İ¿â³õÊ¼»¯Íê³É: D:\Users\User185984\Desktop\customer-workspace\data\customers.db
+[ngrok¼à¿Ø] Æô¶¯£¬ÂÖÑ¯¼ä¸ô 4h
+INFO:waitress:Serving on http://0.0.0.0:5000
+[ngrok¼à¿Ø] ÍÆËÍµôÏß¸æ¾¯Ê§°Ü: 'gbk' codec can't encode character '\u26a0' in position 11: illegal multibyte sequence
+[ngrok¼à¿Ø] ËíµÀÒÑ¶Ï¿ª£¨ÉÏ´ÎµØÖ·: https://joyride-morphing-senior.ngrok-free.dev£©£¬ÒÑÍÆËÍ¸æ¾¯
+[2026-07-27 23:59:53] starting: D:\Users\User185984\Desktop\customer-workspace\venv\Scripts\python.exe -m waitress --host=0.0.0.0 --port=5000 app:app
+[2026-07-27 23:59:53] pid=1452
+[OK] Êı¾İ¿â³õÊ¼»¯Íê³É: D:\Users\User185984\Desktop\customer-workspace\data\customers.db
+[ngrok¼à¿Ø] Æô¶¯£¬ÂÖÑ¯¼ä¸ô 4h
+INFO:waitress:Serving on http://0.0.0.0:5000
+[ngrok¼à¿Ø] ÍÆËÍ±ä¸üÊ§°Ü: 'gbk' codec can't encode character '\u2705' in position 11: illegal multibyte sequence
+[2026-07-28 12:45:09] starting: D:\Users\User185984\Desktop\customer-workspace\venv\Scripts\python.exe -m waitress --host=0.0.0.0 --port=5000 app:app
+[2026-07-28 12:45:09] pid=5100
+[OK] Êı¾İ¿â³õÊ¼»¯Íê³É: D:\Users\User185984\Desktop\customer-workspace\data\customers.db
+[ngrok¼à¿Ø] Æô¶¯£¬ÂÖÑ¯¼ä¸ô 4h
+INFO:waitress:Serving on http://0.0.0.0:5000
+[ngrok¼à¿Ø] ÍÆËÍµôÏß¸æ¾¯Ê§°Ü: 'gbk' codec can't encode character '\u26a0' in position 11: illegal multibyte sequence
+[ngrok¼à¿Ø] ËíµÀÒÑ¶Ï¿ª£¨ÉÏ´ÎµØÖ·: https://joyride-morphing-senior.ngrok-free.dev£©£¬ÒÑÍÆËÍ¸æ¾¯
+[2026-07-28 14:43:14] starting: D:\Users\User185984\Desktop\customer-workspace\venv\Scripts\python.exe -m waitress --host=0.0.0.0 --port=5000 app:app
+[2026-07-28 14:43:14] pid=1496
+[OK] Êı¾İ¿â³õÊ¼»¯Íê³É: D:\Users\User185984\Desktop\customer-workspace\data\customers.db
+[ngrok¼à¿Ø] Æô¶¯£¬ÂÖÑ¯¼ä¸ô 4h
+INFO:waitress:Serving on http://0.0.0.0:5000
+[ngrok¼à¿Ø] ÍÆËÍ±ä¸üÊ§°Ü: 'gbk' codec can't encode character '\u2705' in position 11: illegal multibyte sequence
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 2
+WARNING:waitress.queue:Task queue depth is 3
+WARNING:waitress.queue:Task queue depth is 4
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 2
+WARNING:waitress.queue:Task queue depth is 3
+[2026-08-01 14:04:46] starting: D:\Users\User185984\Desktop\customer-workspace\venv\Scripts\python.exe -m waitress --host=0.0.0.0 --port=5000 app:app
+[2026-08-01 14:04:46] pid=3184
+[OK] Êı¾İ¿â³õÊ¼»¯Íê³É: D:\Users\User185984\Desktop\customer-workspace\data\customers.db
+[ngrok¼à¿Ø] Æô¶¯£¬ÂÖÑ¯¼ä¸ô 4h
+INFO:waitress:Serving on http://0.0.0.0:5000
+[ngrok¼à¿Ø] ÍÆËÍµôÏß¸æ¾¯Ê§°Ü: 'gbk' codec can't encode character '\u26a0' in position 11: illegal multibyte sequence
+[ngrok¼à¿Ø] ËíµÀÒÑ¶Ï¿ª£¨ÉÏ´ÎµØÖ·: https://joyride-morphing-senior.ngrok-free.dev£©£¬ÒÑÍÆËÍ¸æ¾¯
+[ngrok¼à¿Ø] ÍÆËÍ±ä¸üÊ§°Ü: 'gbk' codec can't encode character '\u2705' in position 11: illegal multibyte sequence
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 2
+WARNING:waitress.queue:Task queue depth is 3
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 2
+WARNING:waitress.queue:Task queue depth is 3
+[2026-08-05 10:16:20] starting: D:\Users\User185984\Desktop\customer-workspace\venv\Scripts\python.exe -m waitress --host=0.0.0.0 --port=5000 app:app
+[2026-08-05 10:16:21] pid=7060
+[OK] Êı¾İ¿â³õÊ¼»¯Íê³É: D:\Users\User185984\Desktop\customer-workspace\data\customers.db
+[ngrok¼à¿Ø] Æô¶¯£¬ÂÖÑ¯¼ä¸ô 4h
+INFO:waitress:Serving on http://0.0.0.0:5000
+[ngrok¼à¿Ø] ÍÆËÍµôÏß¸æ¾¯Ê§°Ü: 'gbk' codec can't encode character '\u26a0' in position 11: illegal multibyte sequence
+[ngrok¼à¿Ø] ËíµÀÒÑ¶Ï¿ª£¨ÉÏ´ÎµØÖ·: https://joyride-morphing-senior.ngrok-free.dev£©£¬ÒÑÍÆËÍ¸æ¾¯
+Exception in thread Thread-2 (_readerthread):
+Traceback (most recent call last):
+  File "C:\Users\User185984\.workbuddy\binaries\python\versions\3.13.12\Lib\threading.py", line 1044, in _bootstrap_inner
+    self.run()
+    ~~~~~~~~^^
+  File "C:\Users\User185984\.workbuddy\binaries\python\versions\3.13.12\Lib\threading.py", line 995, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User185984\.workbuddy\binaries\python\versions\3.13.12\Lib\subprocess.py", line 1615, in _readerthread
+    buffer.append(fh.read())
+                  ~~~~~~~^^
+UnicodeDecodeError: 'gbk' codec can't decode byte 0xa1 in position 109: illegal multibyte sequence
+Exception in thread Thread-4 (_readerthread):
+Traceback (most recent call last):
+  File "C:\Users\User185984\.workbuddy\binaries\python\versions\3.13.12\Lib\threading.py", line 1044, in _bootstrap_inner
+    self.run()
+    ~~~~~~~~^^
+  File "C:\Users\User185984\.workbuddy\binaries\python\versions\3.13.12\Lib\threading.py", line 995, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User185984\.workbuddy\binaries\python\versions\3.13.12\Lib\subprocess.py", line 1615, in _readerthread
+    buffer.append(fh.read())
+                  ~~~~~~~^^
+UnicodeDecodeError: 'gbk' codec can't decode byte 0xaf in position 167: illegal multibyte sequence
+Exception in thread Thread-6 (_readerthread):
+Traceback (most recent call last):
+  File "C:\Users\User185984\.workbuddy\binaries\python\versions\3.13.12\Lib\threading.py", line 1044, in _bootstrap_inner
+    self.run()
+    ~~~~~~~~^^
+  File "C:\Users\User185984\.workbuddy\binaries\python\versions\3.13.12\Lib\threading.py", line 995, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User185984\.workbuddy\binaries\python\versions\3.13.12\Lib\subprocess.py", line 1615, in _readerthread
+    buffer.append(fh.read())
+                  ~~~~~~~^^
+UnicodeDecodeError: 'gbk' codec can't decode byte 0xaf in position 167: illegal multibyte sequence
+Exception in thread Thread-8 (_readerthread):
+Traceback (most recent call last):
+  File "C:\Users\User185984\.workbuddy\binaries\python\versions\3.13.12\Lib\threading.py", line 1044, in _bootstrap_inner
+    self.run()
+    ~~~~~~~~^^
+  File "C:\Users\User185984\.workbuddy\binaries\python\versions\3.13.12\Lib\threading.py", line 995, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User185984\.workbuddy\binaries\python\versions\3.13.12\Lib\subprocess.py", line 1615, in _readerthread
+    buffer.append(fh.read())
+                  ~~~~~~~^^
+UnicodeDecodeError: 'gbk' codec can't decode byte 0xa1 in position 109: illegal multibyte sequence
+Exception in thread Thread-10 (_readerthread):
+Traceback (most recent call last):
+  File "C:\Users\User185984\.workbuddy\binaries\python\versions\3.13.12\Lib\threading.py", line 1044, in _bootstrap_inner
+    self.run()
+    ~~~~~~~~^^
+  File "C:\Users\User185984\.workbuddy\binaries\python\versions\3.13.12\Lib\threading.py", line 995, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User185984\.workbuddy\binaries\python\versions\3.13.12\Lib\subprocess.py", line 1615, in _readerthread
+    buffer.append(fh.read())
+                  ~~~~~~~^^
+UnicodeDecodeError: 'gbk' codec can't decode byte 0xaf in position 167: illegal multibyte sequence
+Exception in thread Thread-12 (_readerthread):
+Traceback (most recent call last):
+  File "C:\Users\User185984\.workbuddy\binaries\python\versions\3.13.12\Lib\threading.py", line 1044, in _bootstrap_inner
+    self.run()
+    ~~~~~~~~^^
+  File "C:\Users\User185984\.workbuddy\binaries\python\versions\3.13.12\Lib\threading.py", line 995, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User185984\.workbuddy\binaries\python\versions\3.13.12\Lib\subprocess.py", line 1615, in _readerthread
+    buffer.append(fh.read())
+                  ~~~~~~~^^
+UnicodeDecodeError: 'gbk' codec can't decode byte 0xaf in position 166: illegal multibyte sequence
+[µØÀí±àÂë´íÎó] µØÖ· '»·´äÇø»ğ¾æ°Ë½Ö-1ºÅ': 'NoneType' object has no attribute 'strip'
+[ÄæµØÀí±àÂë´íÎó]: 'NoneType' object has no attribute 'strip'
+[ÄæµØÀí±àÂë´íÎó]: 'NoneType' object has no attribute 'strip'
+[µØÀí±àÂë´íÎó] µØÖ· 'Íşº£ÊĞ»·´äÇø»ğ¾æ°Ë½Ö-1ºÅ': 'NoneType' object has no attribute 'strip'
+[ÄæµØÀí±àÂë´íÎó]: 'NoneType' object has no attribute 'strip'
+[ÄæµØÀí±àÂë´íÎó]: 'NoneType' object has no attribute 'strip'
+[ngrok¼à¿Ø] ÍÆËÍ±ä¸üÊ§°Ü: 'gbk' codec can't encode character '\u2705' in position 11: illegal multibyte sequence
+[2026-08-07 09:49:37] starting: D:\Users\User185984\Desktop\customer-workspace\venv\Scripts\python.exe -m waitress --host=0.0.0.0 --port=5000 app:app
+[2026-08-07 09:49:37] pid=6716
+[OK] Êı¾İ¿â³õÊ¼»¯Íê³É: D:\Users\User185984\Desktop\customer-workspace\data\customers.db
+[ngrok¼à¿Ø] Æô¶¯£¬ÂÖÑ¯¼ä¸ô 4h
+INFO:waitress:Serving on http://0.0.0.0:5000
+[ngrok¼à¿Ø] ÍÆËÍµôÏß¸æ¾¯Ê§°Ü: 'gbk' codec can't encode character '\u26a0' in position 11: illegal multibyte sequence
+[ngrok¼à¿Ø] ËíµÀÒÑ¶Ï¿ª£¨ÉÏ´ÎµØÖ·: https://joyride-morphing-senior.ngrok-free.dev£©£¬ÒÑÍÆËÍ¸æ¾¯
+[ngrok¼à¿Ø] ÍÆËÍ±ä¸üÊ§°Ü: 'gbk' codec can't encode character '\u2705' in position 11: illegal multibyte sequence
+[2026-08-08 14:55:16] starting: D:\Users\User185984\Desktop\customer-workspace\venv\Scripts\python.exe -m waitress --host=0.0.0.0 --port=5000 app:app
+[2026-08-08 14:55:16] pid=9968
+[OK] Êı¾İ¿â³õÊ¼»¯Íê³É: D:\Users\User185984\Desktop\customer-workspace\data\customers.db
+[ngrok¼à¿Ø] Æô¶¯£¬ÂÖÑ¯¼ä¸ô 4h
+INFO:waitress:Serving on http://0.0.0.0:5000
+[ngrok¼à¿Ø] ÍÆËÍµôÏß¸æ¾¯Ê§°Ü: 'gbk' codec can't encode character '\u26a0' in position 11: illegal multibyte sequence
+[ngrok¼à¿Ø] ËíµÀÒÑ¶Ï¿ª£¨ÉÏ´ÎµØÖ·: https://joyride-morphing-senior.ngrok-free.dev£©£¬ÒÑÍÆËÍ¸æ¾¯
+[ngrok¼à¿Ø] ÍÆËÍ±ä¸üÊ§°Ü: 'gbk' codec can't encode character '\u2705' in position 11: illegal multibyte sequence
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 2
+WARNING:waitress.queue:Task queue depth is 3
+[2026-08-09 20:17:34] starting: D:\Users\User185984\Desktop\customer-workspace\venv\Scripts\python.exe -m waitress --host=0.0.0.0 --port=5000 app:app
+[2026-08-09 20:17:34] pid=7732
+INFO:waitress:Serving on http://0.0.0.0:5000
+[2026-08-10 02:30:48] starting: ./venv/Scripts/python.exe -m waitress --host=0.0.0.0 --port=5000 app:app
+[2026-08-10 02:30:48] pid=2764
+INFO:waitress:Serving on http://0.0.0.0:5000
+[2026-08-10 02:38:01] starting: ./venv/Scripts/python.exe -m waitress --host=0.0.0.0 --port=5000 app:app
+[2026-08-10 02:38:01] pid=4460
+INFO:waitress:Serving on http://0.0.0.0:5000
+[2026-08-10 03:16:32] starting: D:\Users\User185984\Desktop\customer-workspace\venv\Scripts\python.exe -m waitress --host=0.0.0.0 --port=5000 app:app
+[2026-08-10 03:16:32] pid=6988
+INFO:waitress:Serving on http://0.0.0.0:5000
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 1
+[2026-08-11 13:36:50] starting: D:\Users\User185984\Desktop\customer-workspace\venv\Scripts\python.exe -m waitress --host=0.0.0.0 --port=5000 app:app
+[2026-08-11 13:36:51] pid=9516
+INFO:waitress:Serving on http://0.0.0.0:5000
+Exception in thread Thread-1 (_readerthread):
+Traceback (most recent call last):
+  File "C:\Users\User185984\.workbuddy\binaries\python\versions\3.13.12\Lib\threading.py", line 1044, in _bootstrap_inner
+    self.run()
+    ~~~~~~~~^^
+  File "C:\Users\User185984\.workbuddy\binaries\python\versions\3.13.12\Lib\threading.py", line 995, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User185984\.workbuddy\binaries\python\versions\3.13.12\Lib\subprocess.py", line 1615, in _readerthread
+    buffer.append(fh.read())
+                  ~~~~~~~^^
+UnicodeDecodeError: 'gbk' codec can't decode byte 0xb7 in position 114: illegal multibyte sequence
+WARNING:waitress.queue:Task queue depth is 1
+[2026-08-15 17:05:08] starting: D:\Users\User185984\Desktop\customer-workspace\venv\Scripts\python.exe -m waitress --host=0.0.0.0 --port=5000 app:app
+[2026-08-15 17:05:08] pid=3400
+INFO:waitress:Serving on http://0.0.0.0:5000
+[2026-08-17 17:24:50] starting: D:\Users\User185984\Desktop\customer-workspace\venv\Scripts\python.exe -m waitress --host=0.0.0.0 --port=5000 app:app
+[2026-08-17 17:24:50] pid=10096
+INFO:waitress:Serving on http://0.0.0.0:5000
+WARNING:waitress.queue:Task queue depth is 1
+Exception in thread Thread-1 (_readerthread):
+Traceback (most recent call last):
+  File "C:\Users\User185984\.workbuddy\binaries\python\versions\3.13.12\Lib\threading.py", line 1044, in _bootstrap_inner
+    self.run()
+    ~~~~~~~~^^
+  File "C:\Users\User185984\.workbuddy\binaries\python\versions\3.13.12\Lib\threading.py", line 995, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User185984\.workbuddy\binaries\python\versions\3.13.12\Lib\subprocess.py", line 1615, in _readerthread
+    buffer.append(fh.read())
+                  ~~~~~~~^^
+UnicodeDecodeError: 'gbk' codec can't decode byte 0xad in position 157: illegal multibyte sequence
+Exception in thread Thread-3 (_readerthread):
+Traceback (most recent call last):
+  File "C:\Users\User185984\.workbuddy\binaries\python\versions\3.13.12\Lib\threading.py", line 1044, in _bootstrap_inner
+    self.run()
+    ~~~~~~~~^^
+  File "C:\Users\User185984\.workbuddy\binaries\python\versions\3.13.12\Lib\threading.py", line 995, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User185984\.workbuddy\binaries\python\versions\3.13.12\Lib\subprocess.py", line 1615, in _readerthread
+    buffer.append(fh.read())
+                  ~~~~~~~^^
+UnicodeDecodeError: 'gbk' codec can't decode byte 0xad in position 157: illegal multibyte sequence
+[2026-08-21 16:44:18] starting: D:\Users\User185984\Desktop\customer-workspace\venv\Scripts\python.exe -m waitress --host=0.0.0.0 --port=5000 app:app
+[2026-08-21 16:44:18] pid=9780
+INFO:waitress:Serving on http://0.0.0.0:5000
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 2
+WARNING:waitress.queue:Task queue depth is 3

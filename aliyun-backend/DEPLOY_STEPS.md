@@ -91,11 +91,13 @@ curl https://<你的FC地址>/api/healthz
 
 ---
 
-## 第 4 步：小程序填 apiBase 联调
+## 第 4 步：（已弃用）小程序联调说明
 
-1. 打开 `dingtalk-miniapp/config.js`，把 `apiBase` 改成第 3 步拿到的 FC 地址。
-2. 钉钉开发者工具导入 `dingtalk-miniapp/` 项目（appid = `dingnurzg7xk1gmitlar`）。
-3. 真机/模拟器登录 → 验证 `/api/auth/login` 拿到 token → 客户/业务/导入导出/去重全链路跑通。
+> 小程序方案已于 2026-08-23 弃用，前端改为钉钉 H5 微应用（GitHub Pages 部署，`docs/m.html`）。
+> 原 `dingtalk-miniapp/` 目录已从仓库删除。如需恢复小程序，概述如下：
+> 1. 打开小程序 `config.js`，把 `apiBase` 改成第 3 步拿到的 FC 地址。
+> 2. 钉钉开发者工具导入小程序项目（appid = `dingnurzg7xk1gmitlar`）。
+> 3. 真机/模拟器登录 → 验证 `/api/auth/login` 拿到 token → 客户/业务/导入导出/去重全链路跑通。
 
 ---
 

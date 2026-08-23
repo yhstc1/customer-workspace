@@ -13,7 +13,7 @@ echo ""
 echo "请选择部署方式："
 echo "  1) 内网穿透（cpolar）— 快速试用，电脑不关机即可访问"
 echo "  2) 生成云服务器部署包 — 部署到阿里云/腾讯云"
-echo "  3) 仅查看钉钉配置指南"
+echo "  3) 查看登录/注册说明"
 echo ""
 read -p "请输入选项 (1/2/3): " choice
 
@@ -78,11 +78,7 @@ services:
       - ./data:/app/data
       - ./reports:/app/reports
     environment:
-      - DINGTALK_APP_KEY=${DINGTALK_APP_KEY:-}
-      - DINGTALK_APP_SECRET=${DINGTALK_APP_SECRET:-}
-      - DINGTALK_CORP_ID=${DINGTALK_CORP_ID:-}
-      - DINGTALK_AGENT_ID=${DINGTALK_AGENT_ID:-}
-      - APP_BASE_URL=${APP_BASE_URL:-http://localhost:5000}
+      - PORT=5000
     restart: unless-stopped
 EOF
 
@@ -115,16 +111,8 @@ docker-compose up -d
 docker-compose logs -f
 ```
 
-## 4. 配置钉钉（可选）
-```bash
-# 编辑 docker-compose.yml，填入钉钉凭证
-vi docker-compose.yml
-# 重启
-docker-compose restart
-```
-
-## 5. 配置域名 + HTTPS（推荐）
-钉钉微应用要求 HTTPS，可用 Nginx + Let's Encrypt：
+## 4. 配置域名 + HTTPS（推荐）
+可用 Nginx + Let's Encrypt 反代到 5000 端口：
 ```bash
 apt install nginx certbot python3-certbot-nginx
 # 配置 Nginx 反向代理到 5000 端口
@@ -141,16 +129,14 @@ EOF
         ;;
     3)
         echo ""
-        echo "=== 钉钉配置指南 ==="
+        echo "=== 登录 / 注册说明 ==="
         echo ""
-        echo "1. 打开 https://open-dev.dingtalk.com"
-        echo "2. 注册/登录钉钉开发者后台"
-        echo "3. 创建 H5 微应用，获取 AppKey / AppSecret / AgentId"
-        echo "4. 在应用首页地址填入你的公网 URL + /dingtalk"
-        echo "5. 在本项目的 dingtalk_config.py 中填入凭证"
+        echo "本系统采用「手机号自助注册」登录，无需任何第三方凭证。"
         echo ""
-        echo "详细说明见项目目录下: 钉钉集成指南.md"
-        cat /workspace/customer-workspace/钉钉集成指南.md 2>/dev/null || echo "(指南文件待生成)"
+        echo "管理员初始账号：手机号 18607184641 / 密码 123456"
+        echo "其他成员：在登录页用手机号自助注册，默认密码 123456。"
+        echo ""
+        echo "部署到公网后，手机浏览器打开公网地址即可登录使用。"
         ;;
     *)
         echo "无效选项"

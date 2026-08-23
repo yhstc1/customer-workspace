@@ -4,36 +4,41 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>客户管理</title>
-    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/style.css?v={{ static_ver }}">
 </head>
 <body>
-    <nav class="navbar">
-        <div class="navbar-brand">🏢 客户工作空间</div>
-        <ul class="navbar-nav">
-            <li><a href="/">📊 仪表盘</a></li>
-            <li><a href="/customers">👥 客户管理</a></li>
-            <li><a href="/business">💼 业务</a></li>
-            <li><a href="/map">🗺️ 地图视图</a></li>
-            <li><a href="/tasks">📝 事项看板</a></li>
-            <li><a href="/reports">📊 每日报告</a></li>
-            <li><a href="/settings">⚙️ 设置</a></li>
-            <li><a href="/logout">🚪 退出</a></li>
-        </ul>
-    </nav>
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#007FFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="3" width="20" height="16" rx="2"/><path d="M2 9h20"/><path d="M12 9v10"/>
+            </svg>
+            客户管理平台
+        </div>
+        <nav class="sidebar-nav">
+            <a href="/customers" class="nav-item active"><span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18"><ellipse cx="9.5" cy="7.5" rx="3.5" ry="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M1 21v-2a6 6 0 0 1 6-6h5a6 6 0 0 1 6 6v2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M17.5 9.5a3 3 0 1 0 0-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M23 21v-1a4.5 4.5 0 0 0-3.5-4.33" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><span class="nav-label">客户管理</span></a>
+            <a href="/business" class="nav-item"><span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18"><rect x="2" y="7" width="20" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><span class="nav-label">业务</span></a>
+            <a href="/map" class="nav-item"><span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 2a8 8 0 0 0-8 8c0 5.5 8 12 8 12s8-6.5 8-12a8 8 0 0 0-8-8z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="10" r="3" fill="none" stroke="currentColor" stroke-width="2"/></svg></span><span class="nav-label">地图视图</span></a>
+            <a href="/tasks" class="nav-item"><span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18"><rect x="3" y="3" width="18" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="m9 12 2 2 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="nav-label">事项看板</span></a>
+            <a href="/settings" class="nav-item"><span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" fill="none" stroke="currentColor" stroke-width="2"/></svg></span><span class="nav-label">设置</span></a>
+            <div class="sidebar-spacer"></div>
+            <a href="/logout" class="nav-item nav-logout"><span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><polyline points="16 17 21 12 16 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><line x1="21" y1="12" x2="9" y2="12" fill="none" stroke="currentColor" stroke-width="2"/></svg></span><span class="nav-label">退出登录</span></a>
+        </nav>
+    </aside>
 
     <div class="container">
         <div class="toolbar">
             <div class="toolbar-left">
-                <input type="text" class="form-control" id="searchInput" placeholder="🔍 搜索公司名称/联系人/地址/电话..." style="width: 300px;" oninput="loadCustomers()">
+                <input type="text" class="form-control" id="searchInput" placeholder="🔍 搜索公司名称/法人/联系人/地址/电话..." style="width: 300px;" oninput="loadCustomers()">
                 <select class="form-control" id="categoryFilter" style="width: 140px;" onchange="loadCustomers()">
                     <option value="">全部分类</option>
+                    <option value="普通客户">普通客户</option>
                     <option value="核心要客">核心要客</option>
                     <option value="TOP20">TOP20</option>
                 </select>
             </div>
             <div class="toolbar-right">
-                <button class="btn btn-outline" onclick="downloadTemplate()">📥 下载模板</button>
                 <button class="btn btn-outline" onclick="openImportModal()">📤 批量导入</button>
+                <button class="btn btn-outline" onclick="exportCustomers()">📥 导出</button>
                 <button class="btn btn-primary" onclick="openCustomerModal()">➕ 新增客户</button>
             </div>
         </div>
@@ -60,12 +65,13 @@
                         <input type="text" class="form-control" id="company" required>
                     </div>
                     <div class="form-group">
-                        <label>联系人</label>
+                        <label>法人</label>
                         <input type="text" class="form-control" id="name">
                     </div>
-                    <div class="form-group">
-                        <label>联系方式</label>
-                        <input type="text" class="form-control" id="phone">
+                    <div class="form-group" style="grid-column:1/3;">
+                        <label>联系人组 <span style="font-size:12px;color:#888;">（最多4组）</span></label>
+                        <div id="contactGroupContainer"></div>
+                        <button type="button" class="btn btn-outline btn-sm" onclick="addContactGroup()" style="margin-top:6px;font-size:12px;">+ 添加联系人</button>
                     </div>
                     <div class="form-group">
                         <label>邮箱</label>
@@ -74,7 +80,7 @@
                     <div class="form-group">
                         <label>分类</label>
                         <select class="form-control" id="category">
-                            <option value="">（不设置）</option>
+                            <option value="普通客户" selected>普通客户</option>
                             <option value="核心要客">核心要客</option>
                             <option value="TOP20">TOP20</option>
                         </select>
@@ -134,7 +140,8 @@
             </div>
             <div class="alert alert-info" style="margin-bottom:12px;">
                 请先<a href="javascript:void(0)" onclick="downloadTemplate()" style="font-weight:600;">下载模板</a>，按列填写后上传（支持 CSV，UTF-8 或 GBK 编码）。<br>
-                列：公司名称、联系人、联系方式、邮箱、地址、分类（核心要客/TOP20/留空）、优先级（高/中/低）、备注。
+                列：公司名称、法人、联系人、联系方式、邮箱、地址、分类（普通客户/核心要客/TOP20，留空默认普通客户）、优先级（高/中/低）、备注。
+                <br><span style="color:#888;font-size:12px;">💡 多组联系人可用 || 分隔，如：联系人="张三||李四"，联系方式="138xxx||139xxx"</span>
             </div>
             <div class="form-group">
                 <label>选择 CSV 文件</label>
@@ -148,9 +155,29 @@
         </div>
     </div>
 
-    <script src="/static/js/app.js"></script>
+    <script src="/static/js/biz-fields.js?v={{ static_ver }}"></script>
+    <script src="/static/js/app.js?v={{ static_ver }}"></script>
     <script>
         let allCustomers = [];
+        let customerBusinesses = [];      // 当前客户详情中的业务列表（供业务树渲染 / 只读详情面板复用）
+        let currentCustomerDetail = null; // { c, businesses, tasks } 备用
+
+        // 分类筛选下拉：各分类名称后追加（数量）。「全部分类」为聚合项，不加数量。
+        const CATEGORY_BASE = { '普通客户': '普通客户', '核心要客': '核心要客', 'TOP20': 'TOP20' };
+        async function updateCategoryCounts() {
+            try {
+                const counts = await api('/api/customers/category-counts');
+                const sel = document.getElementById('categoryFilter');
+                if (!sel) return;
+                Array.from(sel.options).forEach(opt => {
+                    const v = opt.value;
+                    if (v === '') return; // 全部分类
+                    const base = CATEGORY_BASE[v] || v;
+                    const n = counts[v] || 0;
+                    opt.textContent = base + '（' + n + '）';
+                });
+            } catch (e) { /* 静默：计数仅为辅助信息 */ }
+        }
 
         async function loadCustomers() {
             const search = document.getElementById('searchInput').value;
@@ -179,27 +206,23 @@
                     <thead>
                         <tr>
                             <th>公司名称</th>
-                            <th>联系人</th>
-                            <th>联系方式</th>
-                            <th>地址</th>
+                            <th>联系人/电话</th>
                             <th>分类</th>
                             <th>优先级</th>
-                            <th>操作</th>
+                            <th style="text-align:center;">操作</th>
                         </tr>
                     </thead>
                     <tbody>
                         ${customers.map(c => `
                             <tr>
-                                <td><strong>${c.company || '-'}</strong></td>
-                                <td>${c.name || '-'}</td>
-                                <td>${c.phone || '-'}</td>
-                                <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${c.address || ''}">${c.address || '-'}</td>
+                                <td><strong style="cursor:pointer;color:var(--primary);" onclick="viewCustomer(${c.id})">${c.company || '-'}</strong></td>
+                                <td style="font-size:13px;">${displayContact(c)}</td>
                                 <td>${categoryBadge(c.category)}</td>
                                 <td><span class="badge priority-${c.priority}">${c.priority}</span></td>
-                                <td>
+                                <td style="text-align:center;">
                                     <button class="btn btn-outline btn-sm" onclick="viewCustomer(${c.id})">详情</button>
                                     <button class="btn btn-outline btn-sm" onclick="editCustomer(${c.id})">编辑</button>
-                                    <button class="btn btn-danger btn-sm" onclick="deleteCustomer(${c.id}, '${c.name}')">删除</button>
+                                    <button class="btn btn-danger btn-sm" onclick="deleteCustomer(${c.id}, '${(c.company || c.name || '').replace(/'/g, '')}')">删除</button>
                                 </td>
                             </tr>
                         `).join('')}
@@ -219,7 +242,6 @@
                 document.getElementById('customerId').value = customer.id;
                 document.getElementById('name').value = customer.name || '';
                 document.getElementById('company').value = customer.company || '';
-                document.getElementById('phone').value = customer.phone || '';
                 document.getElementById('email').value = customer.email || '';
                 document.getElementById('address').value = customer.address || '';
                 document.getElementById('latitude').value = customer.latitude || '';
@@ -227,15 +249,86 @@
                 document.getElementById('category').value = customer.category || '';
                 document.getElementById('priority').value = customer.priority || '中';
                 document.getElementById('notes').value = customer.notes || '';
+                initContactGroups(customer);
             } else {
                 title.textContent = '新增客户';
                 document.getElementById('customerId').value = '';
+                document.getElementById('name').value = '';
+                document.getElementById('company').value = '';
+                document.getElementById('email').value = '';
+                document.getElementById('address').value = '';
+                document.getElementById('latitude').value = '';
+                document.getElementById('longitude').value = '';
+                document.getElementById('category').value = '';
+                document.getElementById('priority').value = '中';
+                document.getElementById('notes').value = '';
+                initContactGroups({contact: '', phone: ''});
             }
             modal.classList.add('show');
         }
 
         function closeCustomerModal() {
             document.getElementById('customerModal').classList.remove('show');
+        }
+
+        // ===== 联系人组管理 =====
+        let contactGroupCount = 0;
+        function initContactGroups(customer) {
+            const container = document.getElementById('contactGroupContainer');
+            const contacts = (customer.contact || '').split('||');
+            const phones = (customer.phone || '').split('||');
+            const groups = [];
+            for (let i = 0; i < Math.max(contacts.length, phones.length, 1); i++) {
+                groups.push({ name: contacts[i] || '', phone: phones[i] || '' });
+            }
+            container.innerHTML = groups.map((g, i) => renderContactGroup(i, g.name, g.phone)).join('');
+            contactGroupCount = groups.length;
+            updateContactAddBtn();
+        }
+        function renderContactGroup(idx, name, phone) {
+            return `<div class="contact-group" style="display:flex;gap:6px;margin-bottom:4px;align-items:center;">
+                <input type="text" class="form-control" placeholder="联系人" value="${name.replace(/"/g,'&quot;')}"
+                    style="flex:1;font-size:13px;padding:6px 8px;" data-contact-name="${idx}">
+                <input type="text" class="form-control" placeholder="联系电话" value="${phone.replace(/"/g,'&quot;')}"
+                    style="flex:1;font-size:13px;padding:6px 8px;" data-contact-phone="${idx}">
+                <button type="button" class="btn btn-danger btn-sm" onclick="removeContactGroup(this)" ${idx === 0 ? 'disabled style="opacity:0.4"' : ''} style="flex-shrink:0;">✕</button>
+            </div>`;
+        }
+        function addContactGroup() {
+            if (contactGroupCount >= 4) { showToast('最多添加4组联系人', 'error'); return; }
+            const container = document.getElementById('contactGroupContainer');
+            container.insertAdjacentHTML('beforeend', renderContactGroup(contactGroupCount, '', ''));
+            contactGroupCount++;
+            updateContactAddBtn();
+        }
+        function removeContactGroup(btn) {
+            btn.closest('.contact-group').remove();
+            // 重新编号
+            const groups = document.querySelectorAll('.contact-group');
+            groups.forEach((g, i) => {
+                g.querySelector('[data-contact-name]').dataset.contactName = i;
+                g.querySelector('[data-contact-phone]').dataset.contactPhone = i;
+            });
+            contactGroupCount = groups.length;
+            updateContactAddBtn();
+            // 第一组不让删除
+            if (groups.length > 0) {
+                groups[0].querySelector('.btn-danger').disabled = true;
+                groups[0].querySelector('.btn-danger').style.opacity = '0.4';
+            }
+        }
+        function updateContactAddBtn() {
+            const btn = document.querySelector('[onclick="addContactGroup()"]');
+            if (btn) btn.style.display = contactGroupCount >= 4 ? 'none' : '';
+        }
+        function getAllContacts() {
+            const names = [], phones = [];
+            document.querySelectorAll('.contact-group').forEach(g => {
+                const n = g.querySelector('[data-contact-name]').value.trim();
+                const p = g.querySelector('[data-contact-phone]').value.trim();
+                if (n || p) { names.push(n); phones.push(p); }
+            });
+            return { contact: names.join('||'), phone: phones.join('||') };
         }
 
         function editCustomer(id) {
@@ -246,15 +339,17 @@
         async function saveCustomer() {
             const id = document.getElementById('customerId').value;
             const company = document.getElementById('company').value.trim();
-            const contact = document.getElementById('name').value.trim();
+            const legal = document.getElementById('name').value.trim();
             if (!company) {
                 showToast('请填写公司名称', 'error');
                 return;
             }
+            const allContacts = getAllContacts();
             const data = {
-                name: contact || company,
+                name: legal || company,
                 company: company,
-                phone: document.getElementById('phone').value,
+                contact: allContacts.contact,
+                phone: allContacts.phone,
                 email: document.getElementById('email').value,
                 address: document.getElementById('address').value,
                 latitude: parseFloat(document.getElementById('latitude').value) || null,
@@ -274,8 +369,14 @@
                 }
                 closeCustomerModal();
                 loadCustomers();
+                updateCategoryCounts();
             } catch (e) {
-                showToast('保存失败: ' + e.message, 'error');
+                // 服务器返回 "该客户已存在" 等去重提示时，直接展示原话
+                if (e.message && e.message.indexOf('已存在') !== -1) {
+                    showToast(e.message, 'error');
+                } else {
+                    showToast('保存失败: ' + e.message, 'error');
+                }
             }
         }
 
@@ -285,6 +386,20 @@
                 await api(`/api/customers/${id}`, { method: 'DELETE' });
                 showToast('客户已删除', 'success');
                 loadCustomers();
+                updateCategoryCounts();
+            } catch (e) {
+                showToast('删除失败: ' + e.message, 'error');
+            }
+        }
+
+        async function deleteCustomerFromDetail(id, name) {
+            if (!confirm(`确定删除客户"${name}"及其所有事项吗？`)) return;
+            try {
+                await api(`/api/customers/${id}`, { method: 'DELETE' });
+                showToast('客户已删除', 'success');
+                closeDetailModal();
+                loadCustomers();
+                updateCategoryCounts();
             } catch (e) {
                 showToast('删除失败: ' + e.message, 'error');
             }
@@ -292,19 +407,38 @@
 
         async function viewCustomer(id) {
             try {
-                const data = await api(`/api/customers/${id}`);
+                // 先打开详情弹窗骨架
+                document.getElementById('detailTitle').textContent = '客户详情';
+                document.getElementById('detailContent').innerHTML = '<div style="text-align:center;padding:30px;color:#888;font-size:14px;">⏳ 加载中...</div>';
+                document.getElementById('detailModal').classList.add('show');
+
+                // 并行加载客户信息和业务列表
+                var results = await Promise.all([
+                    api('/api/customers/' + id),
+                    api('/api/customers/' + id + '/businesses').catch(function() { return []; })
+                ]);
+                const data = results[0];
                 const c = data.customer;
-                let businesses = [];
-                try {
-                    businesses = await api(`/api/customers/${id}/businesses`);
-                } catch (e) { businesses = []; }
+                if (!c) {
+                    showToast('未找到该客户信息', 'error');
+                    return;
+                }
+                const businesses = results[1] || [];
+                customerBusinesses = businesses;
+                currentCustomerDetail = { c: c, businesses: businesses, tasks: data.tasks };
+                // 业务树：与业务页共用 renderBizTreeHtml（主卡 + 可折叠子卡），点击打开同一份只读详情面板
+                const bizSection = buildCustomerBizSection(businesses);
 
                 document.getElementById('detailTitle').textContent = `客户详情 - ${c.company || c.name}`;
                 document.getElementById('detailContent').innerHTML = `
+                    <div style="position:sticky;top:0;background:#fff;z-index:10;padding-bottom:12px;margin-bottom:12px;border-bottom:1px solid #eee;display:flex;gap:8px;justify-content:flex-end;">
+                        <button class="btn btn-outline btn-sm" onclick="editCustomer(${c.id});closeDetailModal();">✏️ 编辑</button>
+                        <button class="btn btn-danger btn-sm" onclick="deleteCustomerFromDetail(${c.id}, '${(c.company || c.name || '').replace(/'/g, '')}')">🗑️ 删除</button>
+                    </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
                         <div><strong>公司名称:</strong> ${c.company || '-'}</div>
-                        <div><strong>联系人:</strong> ${c.name || '-'}</div>
-                        <div><strong>联系方式:</strong> ${c.phone || '-'}</div>
+                        <div><strong>法人:</strong> ${c.name || '-'}</div>
+                        <div style="grid-column:1/3;"><strong>联系人:</strong><br>${renderContacts(c)}</div>
                         <div><strong>邮箱:</strong> ${c.email || '-'}</div>
                         <div><strong>分类:</strong> ${categoryBadge(c.category)}</div>
                         <div><strong>优先级:</strong> <span class="badge priority-${c.priority}">${c.priority}</span></div>
@@ -312,25 +446,16 @@
                     </div>
                     ${c.notes ? `<div class="alert alert-info">📝 ${c.notes}</div>` : ''}
 
-                    <h4 style="margin: 20px 0 12px; border-bottom: 2px solid #eee; padding-bottom: 8px;">💼 业务 (${businesses.length})</h4>
-                    ${businesses.length === 0 ? '<div class="empty-state"><div class="icon">📭</div><div>暂无业务</div></div>' : `
-                        <table>
-                            <thead><tr><th>业务类型</th><th>合同编码</th><th>合同金额</th><th>业务号码</th><th>起止时间</th></tr></thead>
-                            <tbody>
-                                ${businesses.map(b => `
-                                    <tr>
-                                        <td>${b.business_type || '-'}</td>
-                                        <td>${b.contract_code || '-'}</td>
-                                        <td>${b.contract_amount != null ? '¥' + Number(b.contract_amount).toLocaleString() : '-'}</td>
-                                        <td>${b.business_number || '-'}</td>
-                                        <td>${(b.start_date || '?')} ~ ${(b.end_date || '?')}</td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
-                    `}
+                    <h4 style="margin: 20px 0 12px; border-bottom: 2px solid #eee; padding-bottom: 8px;">
+                        💼 业务 (${businesses.length})
+                        <button class="btn btn-primary btn-sm" style="float:right;font-size:11px;padding:3px 10px;" onclick="closeDetailModal();window.location.href='/business?cid=${c.id}&cname='+encodeURIComponent('${(c.company || c.name || '').replace(/'/g, '')}')">➕ 新增</button>
+                    </h4>
+                    <div id="customerBizSection">${bizSection}</div>
 
-                    <h4 style="margin: 20px 0 12px; border-bottom: 2px solid #eee; padding-bottom: 8px;">📋 跟进事项 (${data.tasks.length})</h4>
+                    <h4 style="margin: 20px 0 12px; border-bottom: 2px solid #eee; padding-bottom: 8px;">
+                        📋 跟进事项 (${data.tasks.length})
+                        <button class="btn btn-primary btn-sm" style="float:right;font-size:11px;padding:3px 10px;" onclick="closeDetailModal();window.location.href='/tasks?cid=${c.id}&cname='+encodeURIComponent('${(c.company || c.name || '').replace(/'/g, '')}')">➕ 新增</button>
+                    </h4>
                     ${data.tasks.length === 0 ? '<div class="empty-state"><div class="icon">📭</div><div>暂无事项</div></div>' : `
                         <table>
                             <thead><tr><th>事项</th><th>状态</th><th>优先级</th><th>进度</th><th>截止</th></tr></thead>
@@ -352,6 +477,22 @@
             } catch (e) {
                 showToast('加载失败: ' + e.message, 'error');
             }
+        }
+
+        // 业务树区块构建（与业务页共用 renderBizTreeHtml）：主卡 + 可折叠子卡，点击打开同一份只读详情面板
+        function buildCustomerBizSection(businesses) {
+            if (!businesses || !businesses.length) return '<div class="empty-state"><div class="icon">📭</div><div>暂无业务</div></div>';
+            return '<table><thead><tr><th style="width:32px;"></th><th>公司名称</th><th>业务类型</th><th>合同编码</th><th>合同金额</th><th>业务号码</th><th>起止时间</th><th>操作</th></tr></thead><tbody>'
+                + renderBizTreeHtml(businesses, businesses, { expandState: window._bizExpanded || {}, actions: false, listVar: 'customerBusinesses' })
+                + '</tbody></table>';
+        }
+
+        // 业务树折叠/展开（客户详情页版）：仅重渲染业务区块，无需重新拉取数据
+        function toggleBizExpand(id) {
+            if (!window._bizExpanded) window._bizExpanded = {};
+            window._bizExpanded[id] = window._bizExpanded[id] === false;
+            const el = document.getElementById('customerBizSection');
+            if (el) el.innerHTML = buildCustomerBizSection(customerBusinesses);
         }
 
         function closeDetailModal() {
@@ -401,7 +542,29 @@
             }
         }
 
-        loadCustomers();
+        loadCustomers().then(() => {
+            updateCategoryCounts();
+            const params = new URLSearchParams(window.location.search);
+            const detailId = params.get('detail');
+            if (detailId) {
+                const id = parseInt(detailId);
+                if (!isNaN(id)) {
+                    setTimeout(() => viewCustomer(id), 400);
+                }
+            }
+        });
+
+        // 导出当前筛选/搜索结果（allCustomers 即 loadCustomers 返回的已过滤集合）
+        function exportCustomers() {
+            if (!allCustomers.length) { showToast('当前没有可导出的客户', 'error'); return; }
+            const headers = ['公司名称', '法人', '联系人', '联系方式', '邮箱', '地址', '分类', '优先级', '备注'];
+            const rows = allCustomers.map(c => [
+                c.company || '', c.name || '', c.contact || '', c.phone || '',
+                c.email || '', c.address || '', c.category || '', c.priority || '', c.notes || ''
+            ]);
+            const d = new Date().toISOString().slice(0, 10);
+            downloadCsv('客户导出_' + d + '.csv', headers, rows);
+        }
     </script>
 </body>
 </html>

@@ -4,33 +4,37 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>地图视图</title>
-    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/style.css?v={{ static_ver }}">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
-        #map { height: 600px; width: 100%; }
+        #map { height: 600px; width: 100%; background: #e8eaed; }
         .customer-popup { font-size: 14px; min-width: 180px; }
         .customer-popup h4 { margin-bottom: 6px; }
         .customer-popup .info-row { margin: 2px 0; color: #555; font-size: 13px; }
         .my-location-popup { font-size: 14px; }
-        .my-location-popup h4 { color: #667eea; margin-bottom: 4px; }
+        .my-location-popup h4 { color: #007FFF; margin-bottom: 4px; }
         .leaflet-popup-content { margin: 12px 16px; }
     </style>
 </head>
 <body>
-    <nav class="navbar">
-        <div class="navbar-brand">🏢 客户工作空间</div>
-        <ul class="navbar-nav">
-            <li><a href="/">📊 仪表盘</a></li>
-            <li><a href="/customers">👥 客户管理</a></li>
-            <li><a href="/business">💼 业务</a></li>
-            <li><a href="/map">🗺️ 地图视图</a></li>
-            <li><a href="/tasks">📝 事项看板</a></li>
-            <li><a href="/reports">📊 每日报告</a></li>
-            <li><a href="/settings">⚙️ 设置</a></li>
-            <li><a href="/logout">🚪 退出</a></li>
-        </ul>
-    </nav>
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#007FFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="3" width="20" height="16" rx="2"/><path d="M2 9h20"/><path d="M12 9v10"/>
+            </svg>
+            客户管理平台
+        </div>
+        <nav class="sidebar-nav">
+            <a href="/customers" class="nav-item"><span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18"><ellipse cx="9.5" cy="7.5" rx="3.5" ry="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M1 21v-2a6 6 0 0 1 6-6h5a6 6 0 0 1 6 6v2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M17.5 9.5a3 3 0 1 0 0-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M23 21v-1a4.5 4.5 0 0 0-3.5-4.33" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><span class="nav-label">客户管理</span></a>
+            <a href="/business" class="nav-item"><span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18"><rect x="2" y="7" width="20" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><span class="nav-label">业务</span></a>
+            <a href="/map" class="nav-item active"><span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 2a8 8 0 0 0-8 8c0 5.5 8 12 8 12s8-6.5 8-12a8 8 0 0 0-8-8z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="10" r="3" fill="none" stroke="currentColor" stroke-width="2"/></svg></span><span class="nav-label">地图视图</span></a>
+            <a href="/tasks" class="nav-item"><span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18"><rect x="3" y="3" width="18" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="m9 12 2 2 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="nav-label">事项看板</span></a>
+            <a href="/settings" class="nav-item"><span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" fill="none" stroke="currentColor" stroke-width="2"/></svg></span><span class="nav-label">设置</span></a>
+            <div class="sidebar-spacer"></div>
+            <a href="/logout" class="nav-item nav-logout"><span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><polyline points="16 17 21 12 16 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><line x1="21" y1="12" x2="9" y2="12" fill="none" stroke="currentColor" stroke-width="2"/></svg></span><span class="nav-label">退出登录</span></a>
+        </nav>
+    </aside>
 
     <div class="container">
         <div class="card" style="padding: 0; overflow: hidden; position: relative;">
@@ -40,31 +44,22 @@
             <div class="map-controls">
                 <div style="font-weight: 700; font-size: 14px; margin-bottom: 4px;">📍 我的位置</div>
                 <div id="myLocationName" style="font-size: 13px; color: #555; margin-bottom: 8px;">加载中...</div>
-                <div class="form-group" style="margin: 0;">
-                    <label style="font-size: 12px;">搜索半径</label>
-                    <div style="display: flex; gap: 4px; align-items: center;">
-                        <input type="range" id="radiusSlider" min="1" max="50" value="10" style="flex: 1;">
-                        <span id="radiusValue" style="font-weight: 600; min-width: 45px;">10 km</span>
-                    </div>
-                </div>
-                <button class="btn btn-primary btn-sm" onclick="locateMe()" style="margin-top: 4px;">📡 定位到我</button>
-                <button class="btn btn-outline btn-sm" onclick="resetToDefault()" style="margin-top: 2px;">🏠 恢复默认位置</button>
+                <button class="btn btn-primary btn-sm" onclick="refreshLocation()" id="refreshBtn" style="margin-top: 4px;">🔄 刷新定位</button>
             </div>
 
             <!-- 图例 -->
-            <div class="map-legend">
-                <div style="font-weight: 700; margin-bottom: 4px;">图例</div>
-                <div class="legend-item">
-                    <span class="legend-dot" style="background: #e74c3c;"></span> 我的位置
+            <div class="map-legend" style="display:flex;flex-wrap:nowrap;gap:10px;align-items:center;font-size:12px;padding:6px 10px;">
+                <div class="legend-item" style="display:flex;align-items:center;gap:3px;">
+                    <span class="legend-dot" style="width:10px;height:10px;background: #e74c3c;"></span> 我的位置
                 </div>
-                <div class="legend-item">
-                    <span class="legend-dot" style="background: #f39c12; border: 2px solid #e65100;"></span> VIP客户
+                <div class="legend-item" style="display:flex;align-items:center;gap:3px;">
+                    <span class="legend-dot" style="width:10px;height:10px;background: #f39c12; border: 2px solid #e65100;"></span> 核心要客
                 </div>
-                <div class="legend-item">
-                    <span class="legend-dot" style="background: #3498db;"></span> 重要客户
+                <div class="legend-item" style="display:flex;align-items:center;gap:3px;">
+                    <span class="legend-dot" style="width:10px;height:10px;background: #3498db;"></span> TOP20
                 </div>
-                <div class="legend-item">
-                    <span class="legend-dot" style="background: #95a5a6;"></span> 普通客户
+                <div class="legend-item" style="display:flex;align-items:center;gap:3px;">
+                    <span class="legend-dot" style="width:10px;height:10px;background: #95a5a6;"></span> 普通客户
                 </div>
             </div>
         </div>
@@ -81,27 +76,80 @@
         </div>
     </div>
 
-    <script src="/static/js/app.js"></script>
+    <script src="/static/js/app.js?v={{ static_ver }}"></script>
     <script>
         let map = null;
         let myMarker = null;
-        let circle = null;
         let customerMarkers = [];
-        let myLat = 31.2036;
-        let myLon = 121.6040;
-        let radius = 10;
+        let myLat = 30.37558;
+        let myLon = 114.320884;
         let allCustomers = [];
+        let currentProj = 'gcj02';   // 默认底图投影：高德(GCJ02)；可切换为 wgs84
+
+        /* ============ 坐标转换：WGS84 -> GCJ02 ============ */
+        function transformLat(lng, lat) {
+            let ret = -100.0 + 2.0 * lng + 3.0 * lat + 0.2 * lat * lat + 0.1 * lng * lat + 0.2 * Math.sqrt(Math.abs(lng));
+            ret += (20.0 * Math.sin(6.0 * lng * Math.PI) + 20.0 * Math.sin(2.0 * lng * Math.PI)) * 2.0 / 3.0;
+            ret += (20.0 * Math.sin(lat * Math.PI) + 40.0 * Math.sin(lat / 3.0 * Math.PI)) * 2.0 / 3.0;
+            ret += (160.0 * Math.sin(lat / 12.0 * Math.PI) + 320 * Math.sin(lat * Math.PI / 30.0)) * 2.0 / 3.0;
+            return ret;
+        }
+        function transformLng(lng, lat) {
+            let ret = 300.0 + lng + 2.0 * lat + 0.1 * lng * lng + 0.1 * lng * lat + 0.1 * Math.sqrt(Math.abs(lng));
+            ret += (20.0 * Math.sin(6.0 * lng * Math.PI) + 20.0 * Math.sin(2.0 * lng * Math.PI)) * 2.0 / 3.0;
+            ret += (20.0 * Math.sin(lng * Math.PI) + 40.0 * Math.sin(lng / 3.0 * Math.PI)) * 2.0 / 3.0;
+            ret += (150.0 * Math.sin(lng / 12.0 * Math.PI) + 300.0 * Math.sin(lng / 30.0 * Math.PI)) * 2.0 / 3.0;
+            return ret;
+        }
+        function outOfChina(lng, lat) {
+            return !(lng > 73.66 && lng < 135.05 && lat > 3.86 && lat < 53.55);
+        }
+        function wgs84ToGcj02(lng, lat) {
+            if (outOfChina(lng, lat)) return [lng, lat];
+            const a = 6378245.0, ee = 0.00669342162296594323;
+            let dlat = transformLat(lng - 105.0, lat - 35.0);
+            let dlng = transformLng(lng - 105.0, lat - 35.0);
+            const radlat = lat / 180.0 * Math.PI;
+            let magic = Math.sin(radlat);
+            magic = 1 - ee * magic * magic;
+            const sqrtmagic = Math.sqrt(magic);
+            dlat = (dlat * 180.0) / ((a * (1 - ee)) / (magic * sqrtmagic) * Math.PI);
+            dlng = (dlng * 180.0) / (a / sqrtmagic * Math.cos(radlat) * Math.PI);
+            return [lng + dlng, lat + dlat];
+        }
+        // 按当前底图投影返回 [lng, lat]
+        function projLngLat(lng, lat) {
+            return currentProj === 'gcj02' ? wgs84ToGcj02(lng, lat) : [lng, lat];
+        }
+
+        /* ============ 打开系统导航 ============ */
+        function openNavigation(lat, lon, name, btn) {
+            // lat/lon 是 WGS84，高德需 GCJ02
+            const [gcjLon, gcjLat] = wgs84ToGcj02(lon, lat);
+            const url = 'https://uri.amap.com/navigation?to=' + gcjLon + ',' + gcjLat + ',' + encodeURIComponent(name || '目的地') + '&mode=car&coordinate=gcj02';
+            // 移动端用 location.href（微信内 window.open 被拦截），PC 用 window.open 不跳走
+            if (/Android|iPhone|iPad|iPod|Harmony|HarmonyOS|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+                window.location.href = url;
+            } else {
+                window.open(url, '_blank');
+            }
+        }
+
+        /* ============ 底图（国内可达，无需 Key） ============ */
+        const baseLayers = {
+            '高德地图': L.tileLayer('https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}', {
+                subdomains: '1234', maxZoom: 18, attribution: '© 高德地图'
+            })
+        };
+        // 单一底图，投影固定为 GCJ02（高德）
 
         async function initMap() {
             // 加载设置
             try {
                 const settings = await api('/api/settings');
-                myLat = parseFloat(settings.my_latitude) || 31.2036;
-                myLon = parseFloat(settings.my_longitude) || 121.6040;
-                radius = parseFloat(settings.default_radius_km) || 10;
+                myLat = parseFloat(settings.my_latitude) || 30.37558;
+                myLon = parseFloat(settings.my_longitude) || 114.320884;
                 document.getElementById('myLocationName').textContent = settings.my_location_name || '未设置';
-                document.getElementById('radiusSlider').value = radius;
-                document.getElementById('radiusValue').textContent = radius + ' km';
             } catch (e) {
                 console.error('设置加载失败', e);
             }
@@ -114,13 +162,13 @@
                 return;
             }
 
-            // 初始化地图
-            map = L.map('map').setView([myLat, myLon], 13);
+            // 初始化地图（仅高德地图，GCJ02 投影）
+            const [mlng, mlat] = projLngLat(myLon, myLat);
+            map = L.map('map').setView([mlat, mlng], 11);
 
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                maxZoom: 19,
-                attribution: '© OpenStreetMap'
-            }).addTo(map);
+            baseLayers['高德地图'].addTo(map);
+
+            // 仅保留「高德地图」单一底图，无需瓦片自动降级
 
             // 我的位置标记
             updateMyLocation(myLat, myLon, false);
@@ -128,11 +176,63 @@
             // 绘制客户标记和搜索圆
             updateNearbyCustomers();
 
-            // 半径滑块事件
-            document.getElementById('radiusSlider').addEventListener('input', function() {
-                radius = parseInt(this.value);
-                document.getElementById('radiusValue').textContent = radius + ' km';
-                updateNearbyCustomers();
+            // 初次加载：自动缩放以显示全部客户分布
+            if (customerMarkers.length) {
+                map.fitBounds(buildBounds().pad(0.1));
+            }
+
+            // 半径滑块事件（已移除）
+
+            // 页面加载时尝试获取GPS定位，成功后覆盖数据库坐标
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        const lat = pos.coords.latitude;
+                        const lon = pos.coords.longitude;
+                        // 更新为GPS坐标，不写入数据库（刷新页面或手动刷新定位时再获取）
+                        updateMyLocation(lat, lon, false);
+                        updateNearbyCustomers();
+                        // 逆地理编码获取地址名称
+                        fetch('/api/reverse_geocode?lat=' + lat.toFixed(6) + '&lon=' + lon.toFixed(6))
+                            .then(r => r.json())
+                            .then(d => {
+                                document.getElementById('myLocationName').textContent = d.address || (lat.toFixed(4) + ', ' + lon.toFixed(4));
+                            })
+                            .catch(() => {
+                                document.getElementById('myLocationName').textContent = lat.toFixed(4) + ', ' + lon.toFixed(4);
+                            });
+                    },
+                    () => {
+                        // GPS定位失败，保留数据库坐标，名称已从数据库加载
+                        console.log('初始GPS定位失败，使用数据库保存的坐标');
+                    },
+                    { enableHighAccuracy: true, timeout: 8000 }
+                );
+            }
+        }
+
+        // 当前投影下所有点的边界
+        function buildBounds() {
+            const pts = [];
+            const [mlng, mlat] = projLngLat(myLon, myLat);
+            pts.push([mlat, mlng]);
+            allCustomers.forEach(c => {
+                if (c.latitude && c.longitude) {
+                    const [lng, lat] = projLngLat(c.longitude, c.latitude);
+                    pts.push([lat, lng]);
+                }
+            });
+            return L.latLngBounds(pts);
+        }
+
+        // 单一底图，投影固定为 GCJ02，无需重绘投影
+
+        function myMarkerIcon() {
+            return L.divIcon({
+                className: 'my-location-icon',
+                html: '<div style="width:20px;height:20px;background:#e74c3c;border:3px solid #fff;border-radius:50%;box-shadow:0 0 8px rgba(231,76,60,0.6);"></div>',
+                iconSize: [20, 20],
+                iconAnchor: [10, 10]
             });
         }
 
@@ -144,14 +244,8 @@
                 map.removeLayer(myMarker);
             }
 
-            const icon = L.divIcon({
-                className: 'my-location-icon',
-                html: '<div style="width:20px;height:20px;background:#e74c3c;border:3px solid #fff;border-radius:50%;box-shadow:0 0 8px rgba(231,76,60,0.6);"></div>',
-                iconSize: [20, 20],
-                iconAnchor: [10, 10]
-            });
-
-            myMarker = L.marker([lat, lon], { icon }).addTo(map)
+            const [mlng, mlat] = projLngLat(lon, lat);
+            myMarker = L.marker([mlat, mlng], { icon: myMarkerIcon() }).addTo(map)
                 .bindPopup(`
                     <div class="my-location-popup">
                         <h4>📍 我的位置</h4>
@@ -160,7 +254,7 @@
                     </div>
                 `);
 
-            map.setView([lat, lon], 13);
+            map.setView([mlat, mlng], 13);
 
             if (saveToDb) {
                 // 保存到数据库
@@ -180,99 +274,102 @@
             customerMarkers.forEach(m => map.removeLayer(m));
             customerMarkers = [];
 
-            // 清除旧圆
-            if (circle) map.removeLayer(circle);
-
-            // 画搜索范围圆
-            circle = L.circle([myLat, myLon], {
-                radius: radius * 1000,
-                color: '#667eea',
-                fillColor: '#667eea',
-                fillOpacity: 0.08,
-                weight: 2,
-                dashArray: '5, 5'
-            }).addTo(map);
-
-            // 计算距离并筛选
+            // 计算距离并筛选（不再按半径筛选，全部含坐标客户进入附近列表）
             const nearby = [];
+            const colors = {
+                '核心要客': { fill: '#f39c12', border: '#e65100' },
+                'TOP20': { fill: '#3498db', border: '#2980b9' },
+                '普通客户': { fill: '#95a5a6', border: '#7f8c8d' }
+            };
+
             allCustomers.forEach(c => {
                 if (c.latitude && c.longitude) {
                     const dist = calcDistance(myLat, myLon, c.latitude, c.longitude);
-                    if (dist <= radius) {
-                        c._distance = dist;
-                        nearby.push(c);
+                    const color = colors[c.category] || colors['普通客户'];
 
-                        // 根据分类设置颜色
-                        const colors = {
-                            'VIP客户': { fill: '#f39c12', border: '#e65100' },
-                            '重要客户': { fill: '#3498db', border: '#2980b9' },
-                            '普通客户': { fill: '#95a5a6', border: '#7f8c8d' }
-                        };
-                        const color = colors[c.category] || colors['普通客户'];
+                    // 所有含坐标客户都进入「附近列表」（不再按半径筛选），按距离排序
+                    c._distance = dist;
+                    nearby.push(c);
 
-                        const icon = L.divIcon({
-                            className: 'customer-icon',
-                            html: `<div style="width:14px;height:14px;background:${color.fill};border:2px solid ${color.border};border-radius:50%;"></div>`,
-                            iconSize: [14, 14],
-                            iconAnchor: [7, 7]
-                        });
+                    // 所有含坐标客户都在地图上打点，保证客户分布可见
+                    const [lng, lat] = projLngLat(c.longitude, c.latitude);
+                    const icon = L.divIcon({
+                        className: 'customer-icon',
+                        html: `<div style="width:14px;height:14px;background:${color.fill};border:2px solid ${color.border};border-radius:50%;"></div>`,
+                        iconSize: [14, 14],
+                        iconAnchor: [7, 7]
+                    });
 
-                        const marker = L.marker([c.latitude, c.longitude], { icon })
-                            .bindPopup(`
-                                <div class="customer-popup">
-                                    <h4>${c.name}</h4>
-                                    <div class="info-row">🏢 ${c.company || '-'}</div>
-                                    <div class="info-row">📞 ${c.phone || '-'}</div>
-                                    <div class="info-row">📍 ${c.address || '-'}</div>
-                                    <div class="info-row">🏷️ ${categoryBadge(c.category)}</div>
-                                    <div class="info-row">📏 距离: <strong>${dist.toFixed(2)} km</strong></div>
-                                    ${c.notes ? `<div class="info-row" style="margin-top:6px;padding:6px;background:#f8f9fc;border-radius:4px;">📝 ${c.notes}</div>` : ''}
-                                </div>
-                            `);
-                        marker.addTo(map);
-                        customerMarkers.push(marker);
-                    }
+                    const navDest = encodeURIComponent(c.company || c.name || '目的地');
+                    const marker = L.marker([lat, lng], { icon });
+                    marker._cid = c.id;
+                    marker.addTo(map);
+                    customerMarkers.push(marker);
+                    // 点击标记时先 fetch 打卡次数再构建弹窗
+                    marker.on('click', function() {
+                        var self = this;
+                        fetch('/api/customers/' + c.id + '/checkin')
+                            .then(function(r) { return r.json(); })
+                            .then(function(d) {
+                                var cnt = d.count || 0;
+                                var html = '<div class="customer-popup"><h4>🏢 ' + (c.company || c.name || '-') + '</h4><div class="info-row">📍 ' + (c.address || '-') + '</div><div class="info-row">📏 距离: <strong>' + dist.toFixed(2) + ' km</strong></div><div class="info-row" style="margin-top:8px;text-align:center;">' +
+                                    '<a class="btn btn-primary btn-sm" style="display:inline-block;padding:7px 20px;border-radius:20px;text-decoration:none;font-size:12px;" href="javascript:void(0)" onclick="openNavigation(' + c.latitude + ', ' + c.longitude + ", '" + navDest + "', this)" + '">🗺️ 导航</a>' +
+                                    '<span style="display:inline-block;width:12px;"></span>' +
+                                    '<span style="display:inline-flex;align-items:center;padding:7px 20px;border-radius:20px;background:#e6f7ee;font-size:12px;">' +
+                                        '<a style="text-decoration:none;color:#00B578;cursor:pointer;" href="javascript:void(0)" onclick="editPcCheckin(' + c.id + ')">本月<span id="pci_' + c.id + '">' + cnt + '</span></a>' +
+                                        '<span style="color:#b8e6cc;margin:0 6px;">|</span>' +
+                                        '<a style="text-decoration:none;color:#00B578;cursor:pointer;" href="javascript:void(0)" onclick="doPcCheckin(' + c.id + ')">+1</a>' +
+                                    '</span></div></div>';
+                                self.bindPopup(html).openPopup();
+                            })
+                            .catch(function() {
+                                var html = '<div class="customer-popup"><h4>🏢 ' + (c.company || c.name || '-') + '</h4><div class="info-row">📍 ' + (c.address || '-') + '</div><div class="info-row">📏 距离: <strong>' + dist.toFixed(2) + ' km</strong></div><div class="info-row" style="margin-top:8px;text-align:center;">' +
+                                    '<a class="btn btn-primary btn-sm" style="display:inline-block;padding:7px 20px;border-radius:20px;text-decoration:none;font-size:12px;" href="javascript:void(0)" onclick="openNavigation(' + c.latitude + ', ' + c.longitude + ", '" + navDest + "', this)" + '">🗺️ 导航</a>' +
+                                    '<span style="display:inline-block;width:12px;"></span>' +
+                                    '<span style="display:inline-flex;align-items:center;padding:7px 20px;border-radius:20px;background:#e6f7ee;font-size:12px;">' +
+                                        '<a style="text-decoration:none;color:#00B578;cursor:pointer;" href="javascript:void(0)" onclick="editPcCheckin(' + c.id + ')">本月<span id="pci_' + c.id + '">0</span></a>' +
+                                        '<span style="color:#b8e6cc;margin:0 6px;">|</span>' +
+                                        '<a style="text-decoration:none;color:#00B578;cursor:pointer;" href="javascript:void(0)" onclick="doPcCheckin(' + c.id + ')">+1</a>' +
+                                    '</span></div></div>';
+                                self.bindPopup(html).openPopup();
+                            });
+                    });
                 }
             });
 
-            // 更新附近列表
+            // 更新附近列表（先按距离排序；分类筛选在 renderMapNearbyList 内完成，列表与标记解耦，与移动端一致）
             nearby.sort((a, b) => a._distance - b._distance);
-            renderNearbyList(nearby);
+            window._mapNearby = nearby;
+            renderMapNearbyList();
         }
 
-        function renderNearbyList(nearby) {
-            document.getElementById('nearbyCount').textContent = nearby.length;
-            document.getElementById('nearbyInfo').textContent = `半径 ${radius} 公里内`;
+        // 分类筛选状态（空数组 = 全部分类，与移动端一致：默认显示全部）
+        let selectedCats = [];
 
-            const el = document.getElementById('nearbyList');
+        // 构建附近客户表格 HTML（仅列表，不影响地图标记）
+        function buildNearbyTable(nearby) {
             if (nearby.length === 0) {
-                el.innerHTML = '<div class="empty-state"><div class="icon">🗺️</div><div class="title">附近无客户</div><div>尝试增大搜索半径</div></div>';
-                return;
+                return '<div class="empty-state"><div class="icon">🗺️</div><div class="title">附近无客户</div><div>尝试切换分类</div></div>';
             }
 
-            el.innerHTML = `
+            return `
                 <table>
                     <thead>
                         <tr>
-                            <th>#</th>
-                            <th>客户</th>
                             <th>公司</th>
                             <th>分类</th>
-                            <th>距离</th>
-                            <th>电话</th>
                             <th>操作</th>
                         </tr>
                     </thead>
                     <tbody>
-                        ${nearby.map((c, i) => `
+                        ${nearby.map((c) => `
                             <tr>
-                                <td>${i + 1}</td>
-                                <td><strong>${c.name}</strong></td>
-                                <td>${c.company || '-'}</td>
+                                <td><strong>${c.company || c.name || '-'}</strong></td>
                                 <td>${categoryBadge(c.category)}</td>
-                                <td><span class="badge badge-distance">${c._distance.toFixed(2)} km</span></td>
-                                <td>${c.phone || '-'}</td>
-                                <td><button class="btn btn-outline btn-sm" onclick="focusCustomer(${c.id})">在地图上查看</button></td>
+                                <td class="action-cell">
+                                    <button class="btn btn-outline btn-sm" onclick="focusCustomer(${c.id})">🗺️ 地图</button>
+                                    <button class="btn btn-primary btn-sm" onclick="window.location.href='/customers?detail=${c.id}'">📋 详情</button>
+                                </td>
                             </tr>
                         `).join('')}
                     </tbody>
@@ -280,62 +377,145 @@
             `;
         }
 
+        // 渲染「附近客户列表」卡片：分类筛选条 + 列表（仅筛选列表，地图标记保持全量显示）
+        function renderMapNearbyList() {
+            const nearbyAll = window._mapNearby || [];
+            const catList = ['核心要客', 'TOP20', '普通客户'];
+            const allSelected = selectedCats.length === 0 || selectedCats.length === catList.length;
+
+            // 各分类的总数
+            const catCount = {};
+            nearbyAll.forEach(c => {
+                const cat = c.category || '普通客户';
+                catCount[cat] = (catCount[cat] || 0) + 1;
+            });
+
+            const nearby = allSelected ? nearbyAll.slice() : nearbyAll.filter(c => selectedCats.includes(c.category || '普通客户'));
+
+            // 更新计数与提示
+            document.getElementById('nearbyCount').textContent = nearby.length;
+            document.getElementById('nearbyInfo').textContent = '';
+
+            // 分类筛选 chips（复用移动端逻辑：空选=全部）
+            const chips = '<div style="display:flex;flex-wrap:nowrap;gap:6px;padding:0 0 10px 0;overflow-x:auto;">' +
+                '<span style="font-size:12px;padding:3px 10px;border-radius:8px;border:1px solid #ddd;cursor:pointer;white-space:nowrap;' + (allSelected ? 'background:#007FFF;color:#fff;border-color:#007FFF;' : 'background:#fff;color:#555;') + '" onclick="selectedCats=[];renderMapNearbyList()">全部</span>' +
+                catList.map(cat => {
+                    const active = !allSelected && selectedCats.indexOf(cat) !== -1;
+                    return '<span style="font-size:12px;padding:3px 10px;border-radius:8px;border:1px solid #ddd;cursor:pointer;white-space:nowrap;' + (active ? 'background:#007FFF;color:#fff;border-color:#007FFF;' : 'background:#fff;color:#555;') + '" onclick="toggleMapCat(\'' + cat.replace(/'/g, "\\'") + '\')">' + cat + '</span>';
+                }).join('') +
+                '</div>';
+
+            document.getElementById('nearbyList').innerHTML = chips + buildNearbyTable(nearby);
+        }
+
+        // 切换某一客户分类的显隐（仅影响附近列表，不影响地图标记）
+        function toggleMapCat(cat) {
+            const idx = selectedCats.indexOf(cat);
+            selectedCats = idx >= 0 ? selectedCats.filter(c => c !== cat) : selectedCats.concat([cat]);
+            renderMapNearbyList();
+        }
+
         function focusCustomer(id) {
             const c = allCustomers.find(x => x.id === id);
             if (c && map) {
-                map.setView([c.latitude, c.longitude], 16);
-                // 找到对应的 marker 并打开 popup
-                const idx = allCustomers.filter(x => x.latitude && x.longitude && calcDistance(myLat, myLon, x.latitude, x.longitude) <= radius).sort((a,b) => calcDistance(myLat,myLon,a.latitude,a.longitude) - calcDistance(myLat,myLon,b.latitude,b.longitude)).findIndex(x => x.id === id);
-                if (idx >= 0 && customerMarkers[idx]) {
-                    customerMarkers[idx].openPopup();
-                }
+                const [lng, lat] = projLngLat(c.longitude, c.latitude);
+                map.setView([lat, lng], 16);
+                const m = customerMarkers.find(mk => mk._cid === id);
+                if (m) m.openPopup();
+                // 平滑滚动到地图区域
+                document.getElementById('map').scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
         }
 
-        function locateMe() {
+        function refreshLocation() {
             if (!navigator.geolocation) {
                 showToast('您的浏览器不支持定位功能', 'error');
                 return;
             }
-            showToast('正在获取您的位置...', '');
+            const btn = document.getElementById('refreshBtn');
+            btn.disabled = true;
+            btn.innerHTML = '⏳ 定位中...';
+
             navigator.geolocation.getCurrentPosition(
                 (pos) => {
-                    updateMyLocation(pos.coords.latitude, pos.coords.longitude);
+                    const lat = pos.coords.latitude;
+                    const lon = pos.coords.longitude;
+                    updateMyLocation(lat, lon, false);
                     updateNearbyCustomers();
-                    showToast('已定位到您的当前位置', 'success');
+                    // 逆地理编码获取地址名称
+                    fetch('/api/reverse_geocode?lat=' + lat.toFixed(6) + '&lon=' + lon.toFixed(6))
+                        .then(r => r.json())
+                        .then(d => {
+                            document.getElementById('myLocationName').textContent = d.address || (lat.toFixed(4) + ', ' + lon.toFixed(4));
+                        })
+                        .catch(() => {
+                            document.getElementById('myLocationName').textContent = lat.toFixed(4) + ', ' + lon.toFixed(4);
+                        });
+                    showToast('已刷新到当前位置', 'success');
+                    btn.disabled = false;
+                    btn.innerHTML = '🔄 刷新定位';
                 },
                 (err) => {
-                    showToast('定位失败: ' + (err.message || '请检查浏览器权限'), 'error');
+                    let msg = '定位失败';
+                    if (err.code === 1) msg = '定位失败: 请允许浏览器获取位置权限';
+                    else if (err.code === 2) msg = '定位失败: 无法获取位置信息，请检查GPS/网络';
+                    else if (err.code === 3) msg = '定位失败: 定位请求超时，请重试';
+                    else msg = '定位失败: ' + (err.message || '未知错误');
+                    showToast(msg, 'error');
+                    btn.disabled = false;
+                    btn.innerHTML = '🔄 刷新定位';
                 },
                 { enableHighAccuracy: true, timeout: 10000 }
             );
         }
 
-        async function resetToDefault() {
-            try {
-                const settings = await api('/api/settings');
-                const lat = parseFloat(settings.my_latitude) || 31.2036;
-                const lon = parseFloat(settings.my_longitude) || 121.6040;
-                updateMyLocation(lat, lon, false);
-                updateNearbyCustomers();
-                showToast('已恢复到默认位置', 'success');
-            } catch (e) {
-                showToast('恢复失败', 'error');
-            }
-        }
-
-        // Haversine 距离计算（km）
+        // Haversine 距离计算（km，使用 WGS84 原始坐标）
         function calcDistance(lat1, lon1, lat2, lon2) {
             const R = 6371;
             const dLat = (lat2 - lat1) * Math.PI / 180;
             const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
                 Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                Math.sin(dLon/2) * Math.sin(dLon/2);
-            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         }
 
         initMap();
+
+        // ==================== 打卡 ====================
+
+        async function doPcCheckin(cid) {
+            if (!confirm('是否打卡')) return;
+            try {
+                var resp = await fetch('/api/customers/' + cid + '/checkin', { method: 'POST' });
+                var d = await resp.json();
+                var el = document.getElementById('pci_' + cid);
+                if (el) el.textContent = d.count;
+                showToast('已打卡（本月 ' + d.count + ' 次）', 'success');
+            } catch(e) {
+                showToast('打卡失败', 'error');
+            }
+        }
+
+        function editPcCheckin(cid) {
+            var el = document.getElementById('pci_' + cid);
+            var current = parseInt(el ? el.textContent : '0');
+            var newVal = prompt('编辑当月打卡次数', current);
+            if (newVal === null || newVal === '') return;
+            var count = parseInt(newVal);
+            if (isNaN(count) || count < 0) { showToast('请输入有效数字', 'error'); return; }
+            fetch('/api/customers/' + cid + '/checkin', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ count: count })
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(d) {
+                if (el) el.textContent = d.count;
+                showToast('已更新为 ' + d.count + ' 次', 'success');
+            })
+            .catch(function() { showToast('更新失败', 'error'); });
+        }
     </script>
 </body>
 </html>

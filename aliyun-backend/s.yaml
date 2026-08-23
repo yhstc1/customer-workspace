@@ -1,0 +1,63 @@
+# 阿里云函数计算 FC · 部署描述（Serverless Devs / s 工具规范）
+# 用法：
+#   1. 安装 s 工具：npm install -g @serverless-devs/s   （或装 serverless-devs）
+#   2. 改下方 <占位> 为你真实的值（region / serviceName / 函数名等）
+#   3. s deploy    （会把当前目录代码 + requirements.txt 打包上传到 FC）
+#
+# 注意：敏感信息（MYSQL_PASSWORD / DING_APP_SECRET 等）不要写进本文件，
+#       通过 `s deploy` 后到 FC 控制台「环境变量」里手动填，或用 s 的 `props.environmentVariables` 从本地 .env 注入（.env 加 .gitignore）。
+
+edition: 3.0.0
+name: crm-backend
+access: default          # 你的 FC 账号密钥别名（s config add 配置）
+
+vars:
+  region: cn-hangzhou    # 与 RDS / OSS 同地域
+
+services:
+  crm-fn:
+    component: fc3       # FC 3.0
+    props:
+      region: ${vars.region}
+      functionName: crm-backend
+      description: 客户管理平台钉钉小程序后端
+      runtime: python3.10
+      timeout: 30
+      memorySize: 128
+      cpu: 0.15
+      # 入口：自定义运行时填 index.handler；若控制台选「Flask 框架」则填 app.app
+      handler: index.handler
+      # 代码目录（本目录）
+      code: ./
+      # 环境变量（密钥务必从本地 .env 读取或部署后在控制台填，勿明文提交）
+      environmentVariables:
+        MYSQL_HOST: ${env.MYSQL_HOST}
+        MYSQL_PORT: "3306"
+        MYSQL_USER: ${env.MYSQL_USER}
+        MYSQL_PASSWORD: ${env.MYSQL_PASSWORD}
+        MYSQL_DB: crm
+        DING_APP_KEY: ${env.DING_APP_KEY}
+        DING_APP_SECRET: ${env.DING_APP_SECRET}
+        JWT_SECRET: ${env.JWT_SECRET}
+        TENCENT_MAP_KEY: ${env.TENCENT_MAP_KEY}
+        OSS_ENDPOINT: ${env.OSS_ENDPOINT}
+        OSS_BUCKET: ${env.OSS_BUCKET}
+        OSS_AK: ${env.OSS_AK}
+        OSS_SK: ${env.OSS_SK}
+        ALLOW_ORIGIN: "*"
+      # HTTP 触发器（免鉴权，鉴权由应用 JWT 负责）
+      triggers:
+        - triggerName: httpTrigger
+          triggerType: http
+          description: http trigger
+          qualifier: LATEST
+          triggerConfig:
+            authType: anonymous
+            methods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+      # 自定义域名（可选，上线后绑定你备案过的域名；调试阶段用系统分配的 *.fcapp.run 即可）
+      # customDomains: []

@@ -1,4 +1,0 @@
-.tabs { display: flex; background: #fff; padding: 16rpx; }
-.tab { flex: 1; text-align: center; color: #666; padding: 8rpx 0; }
-.title { font-size: 30rpx; font-weight: 600; }
-.sub { color: #888; font-size: 24rpx; margin-top: 8rpx; }

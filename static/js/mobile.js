@@ -104,7 +104,7 @@ async function dingtalkH5Login() {
     let tip = 'requestAuthCode 失败';
     if (e) {
       if (e.errorCode === 3 || (e.errorMessage || '').indexOf('域名') !== -1) {
-        tip = 'errorCode 3：根据 corpId 未查到使用当前页面域名的微应用。请确认 H5 微应用主页地址域名与当前打开地址完全一致（含 ngrok 域名），且该企业下该域名已配为微应用主页。';
+        tip = 'errorCode 3：根据 corpId 未查到使用当前页面域名的微应用。请确认 H5 微应用主页地址域名与当前打开地址完全一致（含穿透/外部域名），且该企业下该域名已配为微应用主页。';
       } else if (e.errMsg) {
         tip = e.errMsg;
       } else if (e.errorMessage) {

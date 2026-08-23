@@ -4,32 +4,34 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>事项看板</title>
-    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/style.css?v={{ static_ver }}">
 </head>
 <body>
-    <nav class="navbar">
-        <div class="navbar-brand">🏢 客户工作空间</div>
-        <ul class="navbar-nav">
-            <li><a href="/">📊 仪表盘</a></li>
-            <li><a href="/customers">👥 客户管理</a></li>
-            <li><a href="/business">💼 业务</a></li>
-            <li><a href="/map">🗺️ 地图视图</a></li>
-            <li><a href="/tasks">📝 事项看板</a></li>
-            <li><a href="/reports">📊 每日报告</a></li>
-            <li><a href="/settings">⚙️ 设置</a></li>
-            <li><a href="/logout">🚪 退出</a></li>
-        </ul>
-    </nav>
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#007FFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="3" width="20" height="16" rx="2"/><path d="M2 9h20"/><path d="M12 9v10"/>
+            </svg>
+            客户管理平台
+        </div>
+        <nav class="sidebar-nav">
+            <a href="/customers" class="nav-item"><span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18"><ellipse cx="9.5" cy="7.5" rx="3.5" ry="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M1 21v-2a6 6 0 0 1 6-6h5a6 6 0 0 1 6 6v2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M17.5 9.5a3 3 0 1 0 0-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M23 21v-1a4.5 4.5 0 0 0-3.5-4.33" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><span class="nav-label">客户管理</span></a>
+            <a href="/business" class="nav-item"><span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18"><rect x="2" y="7" width="20" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><span class="nav-label">业务</span></a>
+            <a href="/map" class="nav-item"><span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 2a8 8 0 0 0-8 8c0 5.5 8 12 8 12s8-6.5 8-12a8 8 0 0 0-8-8z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="10" r="3" fill="none" stroke="currentColor" stroke-width="2"/></svg></span><span class="nav-label">地图视图</span></a>
+            <a href="/tasks" class="nav-item active"><span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18"><rect x="3" y="3" width="18" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="m9 12 2 2 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="nav-label">事项看板</span></a>
+            <a href="/settings" class="nav-item"><span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" fill="none" stroke="currentColor" stroke-width="2"/></svg></span><span class="nav-label">设置</span></a>
+            <div class="sidebar-spacer"></div>
+            <a href="/logout" class="nav-item nav-logout"><span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><polyline points="16 17 21 12 16 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><line x1="21" y1="12" x2="9" y2="12" fill="none" stroke="currentColor" stroke-width="2"/></svg></span><span class="nav-label">退出登录</span></a>
+        </nav>
+    </aside>
 
     <div class="container">
         <div class="toolbar">
             <div class="toolbar-left">
                 <select class="form-control" id="statusFilter" style="width: 140px;" onchange="loadTasks()">
                     <option value="">全部状态</option>
-                    <option value="待处理">待处理</option>
                     <option value="进行中">进行中</option>
-                    <option value="已完成">已完成</option>
-                    <option value="已搁置">已搁置</option>
+                    <option value="已完结">已完结</option>
                 </select>
             </div>
             <div class="toolbar-right">
@@ -39,21 +41,13 @@
 
         <!-- 看板视图 -->
         <div class="kanban-board" id="kanbanBoard">
-            <div class="kanban-column" id="col-待处理">
-                <div class="kanban-column-header"><span>📋 待处理</span><span class="count" id="count-待处理">0</span></div>
-                <div id="cards-待处理"></div>
-            </div>
             <div class="kanban-column" id="col-进行中">
                 <div class="kanban-column-header"><span>🔄 进行中</span><span class="count" id="count-进行中">0</span></div>
                 <div id="cards-进行中"></div>
             </div>
-            <div class="kanban-column" id="col-已搁置">
-                <div class="kanban-column-header"><span="⏸️ 已搁置</span><span class="count" id="count-已搁置">0</span></div>
-                <div id="cards-已搁置"></div>
-            </div>
-            <div class="kanban-column" id="col-已完成">
-                <div class="kanban-column-header"><span>✅ 已完成</span><span class="count" id="count-已完成">0</span></div>
-                <div id="cards-已完成"></div>
+            <div class="kanban-column" id="col-已完结">
+                <div class="kanban-column-header"><span>✅ 已完结</span><span class="count" id="count-已完结">0</span></div>
+                <div id="cards-已完结"></div>
             </div>
         </div>
     </div>
@@ -80,35 +74,23 @@
                     <label>详细描述</label>
                     <textarea class="form-control" id="taskDesc" rows="3"></textarea>
                 </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                    <div class="form-group">
-                        <label>状态</label>
-                        <select class="form-control" id="taskStatus">
-                            <option value="待处理">待处理</option>
-                            <option value="进行中">进行中</option>
-                            <option value="已完成">已完成</option>
-                            <option value="已搁置">已搁置</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>优先级</label>
-                        <select class="form-control" id="taskPriority">
-                            <option value="低">低</option>
-                            <option value="中" selected>中</option>
-                            <option value="高">高</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>进度 (%)</label>
-                        <input type="range" class="form-control" id="taskProgress" min="0" max="100" value="0" oninput="document.getElementById('progressLabel').textContent=this.value+'%'">
-                        <span id="progressLabel" style="font-weight:600;">0%</span>
-                    </div>
-                    <div class="form-group">
-                        <label>截止日期</label>
-                        <input type="date" class="form-control" id="taskDueDate">
-                    </div>
+                <div class="form-group">
+                    <label>截止日期</label>
+                    <input type="date" class="form-control" id="taskDueDate">
                 </div>
             </form>
+
+            <!-- 子待办 - 仅在编辑已有事项时显示 -->
+            <div id="subtaskSection" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid #eee;">
+                <div style="font-size:14px;font-weight:600;margin-bottom:8px;">📋 子待办</div>
+                <div id="subtaskList"></div>
+                <div style="display:flex;gap:6px;margin-top:8px;">
+                    <input type="text" class="form-control" id="subtaskInput" placeholder="添加子待办..." style="flex:1;font-size:13px;"
+                        onkeydown="if(event.key==='Enter')addSubtask()">
+                    <button class="btn btn-primary btn-sm" onclick="addSubtask()" style="flex-shrink:0;">+ 添加</button>
+                </div>
+            </div>
+
             <div class="modal-footer">
                 <button class="btn btn-outline" onclick="closeTaskModal()">取消</button>
                 <button class="btn btn-primary" onclick="saveTask()">保存</button>
@@ -116,21 +98,36 @@
         </div>
     </div>
 
-    <script src="/static/js/app.js"></script>
+    <script src="/static/js/app.js?v={{ static_ver }}"></script>
     <script>
         let allTasks = [];
         let allCustomers = [];
 
-        async function loadTasks() {
-            try {
-                const status = document.getElementById('statusFilter').value;
-                const params = status ? `?status=${status}` : '';
-                allTasks = await api('/api/tasks' + params);
-                renderKanban(allTasks);
-            } catch (e) {
-                showToast('加载失败: ' + e.message, 'error');
-            }
+    // 缓存全部子待办（按 task_id 分组），用于看板内显示进度
+    let _allPcSubs = {};
+
+    async function loadAllSubs() {
+        try {
+            const subs = await api('/api/tasks/subtasks');
+            _allPcSubs = {};
+            subs.forEach(function(s) {
+                if (!_allPcSubs[s.task_id]) _allPcSubs[s.task_id] = [];
+                _allPcSubs[s.task_id].push(s);
+            });
+        } catch(e) { /* 静默失败，不影响主列表 */ }
+    }
+
+    async function loadTasks() {
+        try {
+            await loadAllSubs();
+            const status = document.getElementById('statusFilter').value;
+            const params = status ? `?status=${status}` : '';
+            allTasks = await api('/api/tasks' + params);
+            renderKanban(allTasks);
+        } catch (e) {
+            showToast('加载失败: ' + e.message, 'error');
         }
+    }
 
         async function loadCustomersForSelect() {
             try {
@@ -166,8 +163,7 @@
         }
 
         function renderKanban(tasks) {
-            const statuses = ['待处理', '进行中', '已搁置', '已完成'];
-            const today = new Date().toISOString().substring(0, 10);
+            const statuses = ['进行中', '已完结'];
 
             statuses.forEach(status => {
                 const colTasks = tasks.filter(t => t.status === status);
@@ -175,24 +171,30 @@
                 const container = document.getElementById(`cards-${status}`);
 
                 if (colTasks.length === 0) {
-                    container.innerHTML = '<div style="text-align:center;color:#ccc;padding:20px;font-size:13px;">暂无</div>';
+                    container.innerHTML = '<div style="text-align:center;color:#ccc;padding:24px;font-size:13px;">暂无事项</div>';
                 } else {
                     container.innerHTML = colTasks.map(t => {
+                        const subs = _allPcSubs[t.id] || [];
+                        const doneCount = subs.filter(s => s.done).length;
                         const overdue = isOverdue(t.due_date, t.status);
+
+                        // 标题下方小字行：子待办进度 · 截止日期
+                        const metaParts = [];
+                        if (subs.length) metaParts.push(`已完成 ${doneCount}/${subs.length}`);
+                        if (t.due_date) {
+                            const dd = formatDate(t.due_date);
+                            metaParts.push(`<span class="${overdue ? 'overdue' : ''}">${overdue ? '⚠ ' : '📅 '}${dd}</span>`);
+                        }
+                        const metaHtml = metaParts.length ? `<div class="meta">${metaParts.join('<span>·</span>')}</div>` : '';
+
                         return `
-                            <div class="kanban-card priority-${t.priority}" onclick="editTask(${t.id})">
+                            <div class="kanban-card" onclick="editTask(${t.id})">
                                 <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px;">
                                     <div class="title" style="flex:1;">${t.title}</div>
                                     <button class="task-del-btn" title="删除事项" onclick="event.stopPropagation();deleteTask(${t.id})">🗑</button>
                                 </div>
-                                <div class="customer">👤 ${t.customer_name} ${t.customer_company ? '· ' + t.customer_company : ''}</div>
-                                <div style="display:flex;gap:4px;margin:6px 0;">
-                                    <span class="badge priority-${t.priority}">${t.priority}</span>
-                                </div>
-                                <div class="progress-bar" style="margin: 6px 0;">
-                                    <div class="progress-fill" style="width:${t.progress}%">${t.progress}%</div>
-                                </div>
-                                ${t.due_date ? `<div class="due ${overdue ? '' : 'not-overdue'}">${overdue ? '⚠ ' : '📅 '}${formatDate(t.due_date)}</div>` : ''}
+                                <div class="customer">🏢 ${t.customer_company || t.customer_name || '未知公司'}</div>
+                                ${metaHtml}
                             </div>
                         `;
                     }).join('');
@@ -201,9 +203,11 @@
         }
 
         async function openTaskModal(task = null) {
-            if (allCustomers.length === 0) {
-                await loadCustomersForSelect();
-            }
+            // 重置子待办
+            _activeTaskId = null;
+            document.getElementById('subtaskSection').style.display = 'none';
+            document.getElementById('subtaskList').innerHTML = '';
+            document.getElementById('subtaskInput').value = '';
 
             const modal = document.getElementById('taskModal');
             const title = document.getElementById('taskModalTitle');
@@ -211,23 +215,32 @@
             document.getElementById('customerSearch').value = '';
             renderCustomerOptions('');
 
+            // 先显示模态框，客户数据后台加载
+            modal.classList.add('show');
+
+            if (allCustomers.length === 0) {
+                await loadCustomersForSelect();
+            }
+
             if (task) {
                 title.textContent = '编辑事项';
                 document.getElementById('taskId').value = task.id;
                 document.getElementById('customerId').value = task.customer_id;
                 document.getElementById('taskTitle').value = task.title;
                 document.getElementById('taskDesc').value = task.description || '';
-                document.getElementById('taskStatus').value = task.status;
-                document.getElementById('taskPriority').value = task.priority;
-                document.getElementById('taskProgress').value = task.progress;
-                document.getElementById('progressLabel').textContent = task.progress + '%';
                 document.getElementById('taskDueDate').value = task.due_date ? task.due_date.substring(0, 10) : '';
             } else {
                 title.textContent = '新增事项';
                 document.getElementById('taskId').value = '';
-                document.getElementById('progressLabel').textContent = '0%';
             }
             modal.classList.add('show');
+
+            // 编辑模式下加载子待办
+            if (task) {
+                _activeTaskId = task.id;
+                document.getElementById('subtaskSection').style.display = 'block';
+                loadSubtasks();
+            }
         }
 
         function closeTaskModal() {
@@ -252,15 +265,96 @@
             }
         }
 
+        // ============ 子待办 ============
+
+        let _activeTaskId = null;
+
+        async function loadSubtasks() {
+            if (!_activeTaskId) return;
+            const list = document.getElementById('subtaskList');
+            list.innerHTML = '<div style="font-size:12px;color:#888;">加载中...</div>';
+            try {
+                const subs = await api(`/api/tasks/${_activeTaskId}/subtasks`);
+                if (subs.length === 0) {
+                    list.innerHTML = '<div style="font-size:12px;color:#888;">暂无子待办</div>';
+                } else {
+                    list.innerHTML = subs.map((s) => `
+                        <div class="pc-sub-row" data-sid="${s.id}">
+                            <span class="pc-sub-dot ${s.done ? 'done' : ''}" onclick="toggleSubtask(${s.id}, ${s.done ? 0 : 1})"></span>
+                            <span class="pc-sub-title" style="${s.done ? 'text-decoration:line-through;color:#999;' : ''}">${s.title}</span>
+                            <button class="pc-sub-move" onclick="movePcSubtask(${s.id}, -1)" title="上移">▲</button>
+                            <button class="pc-sub-move" onclick="movePcSubtask(${s.id}, 1)" title="下移">▼</button>
+                            <button class="task-del-btn" onclick="deleteSubtask(${s.id})" title="删除" style="background:none;border:none;font-size:14px;cursor:pointer;padding:2px;color:#ccc;">✕</button>
+                        </div>
+                    `).join('');
+                }
+            } catch(e) {
+                list.innerHTML = '<div style="font-size:12px;color:#e74c3c;">加载失败</div>';
+            }
+        }
+
+        async function addSubtask() {
+            if (!_activeTaskId) return;
+            const input = document.getElementById('subtaskInput');
+            const title = input.value.trim();
+            if (!title) return;
+            try {
+                await api(`/api/tasks/${_activeTaskId}/subtasks`, { method: 'POST', body: { title } });
+                input.value = '';
+                await loadSubtasks();
+                await loadTasks();
+            } catch (e) {
+                showToast('添加失败: ' + e.message, 'error');
+            }
+        }
+
+        async function toggleSubtask(id, done) {
+            if (!_activeTaskId) return;
+            try {
+                await api(`/api/tasks/${_activeTaskId}/subtasks/${id}`, { method: 'PUT', body: { done: done ? 1 : 0 } });
+                await loadSubtasks();
+                await loadTasks();
+            } catch (e) {
+                showToast('更新失败', 'error');
+            }
+        }
+
+        async function deleteSubtask(id) {
+            if (!_activeTaskId) return;
+            if (!confirm('删除此子待办？')) return;
+            try {
+                await api(`/api/tasks/${_activeTaskId}/subtasks/${id}`, { method: 'DELETE' });
+                await loadSubtasks();
+                await loadTasks();
+            } catch (e) {
+                showToast('删除失败', 'error');
+            }
+        }
+
+        async function movePcSubtask(id, dir) {
+            if (!_activeTaskId) return;
+            const list = document.getElementById('subtaskList');
+            const rows = Array.from(list.querySelectorAll('.pc-sub-row'));
+            const ids = rows.map(r => parseInt(r.getAttribute('data-sid'), 10));
+            const idx = ids.indexOf(id);
+            if (idx === -1) return;
+            const swap = idx + dir;
+            if (swap < 0 || swap >= ids.length) return;
+            ids[idx] = ids[swap]; ids[swap] = id;
+            try {
+                await api(`/api/tasks/${_activeTaskId}/subtasks/reorder`, { method: 'PUT', body: { order: ids } });
+                await loadSubtasks();
+            } catch (e) {
+                showToast('排序失败', 'error');
+            }
+        }
+
         async function saveTask() {
             const id = document.getElementById('taskId').value;
             const data = {
                 customer_id: parseInt(document.getElementById('customerId').value),
                 title: document.getElementById('taskTitle').value,
                 description: document.getElementById('taskDesc').value,
-                status: document.getElementById('taskStatus').value,
-                priority: document.getElementById('taskPriority').value,
-                progress: parseInt(document.getElementById('taskProgress').value),
                 due_date: document.getElementById('taskDueDate').value || null,
             };
 
@@ -287,6 +381,24 @@
         // 初始化
         loadCustomersForSelect();
         loadTasks();
+
+        // URL 参数：从客户详情跳转过来时自动打开新增事项表单并预填客户
+        (function() {
+            var params = new URLSearchParams(window.location.search);
+            var cid = params.get('cid');
+            var cname = params.get('cname');
+            if (cid && cname) {
+                var timer = setInterval(function() {
+                    var sel = document.getElementById('customerId');
+                    if (sel && sel.options.length > 1) {
+                        clearInterval(timer);
+                        openTaskModal();
+                        sel.value = cid;
+                        document.getElementById('customerSearch').value = cname;
+                    }
+                }, 200);
+            }
+        })();
     </script>
 </body>
 </html>

@@ -7,8 +7,15 @@
 import sqlite3
 import os
 import re
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
+
+# pymysql 为 MySQL 持久化可选依赖（FC requirements.txt 已含；本地 SQLite 模式不依赖）
+try:
+    import pymysql
+    from pymysql.cursors import DictCursor
+except ImportError:  # pragma: no cover
+    pymysql = None
 
 # 统一使用 pbkdf2:sha256：兼容性最好（阿里云 FC 的 Python3.10 运行时
 # 底层 OpenSSL 不支持 werkzeug 默认的 scrypt，会导致 check_password_hash 抛
@@ -25,8 +32,165 @@ DB_PATH = os.environ.get("CUSTOMER_DB_PATH") or os.path.join(os.path.dirname(__f
 os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
 
 
+# ============================================================
+# MySQL 持久化适配层（可选）
+# ------------------------------------------------------------
+# 设置环境变量 MYSQL_HOST 即启用 MySQL；否则回退 SQLite（本地开发）。
+# 应用层(app.py)的 SQL 大量使用 SQLite 语法(? 占位符、datetime('now','localtime')、
+# ON CONFLICT...excluded、INSERT OR REPLACE/IGNORE、PRAGMA)，这里在执行前统一翻译为
+# MySQL 等价写法，保持业务代码零改动。行以 dict 形式返回(row["col"] / dict(row) 兼容)。
+# ============================================================
+USE_MYSQL = bool(os.environ.get("MYSQL_HOST")) and pymysql is not None
+
+
+def _mysql_cfg():
+    return dict(
+        host=os.environ.get("MYSQL_HOST"),
+        port=int(os.environ.get("MYSQL_PORT", 3306)),
+        user=os.environ.get("MYSQL_USER"),
+        password=os.environ.get("MYSQL_PASSWORD"),
+        database=os.environ.get("MYSQL_DB"),
+        charset="utf8mb4",
+        cursorclass=DictCursor,
+        # 统一会话时区为 +08:00，使 NOW() 与下方 _local_now() 字面量一致（中国时区）
+        init_command="SET time_zone='+08:00'",
+    )
+
+
+def _local_now():
+    """对齐原 SQLite datetime('now','localtime') 的"本地时间"语义（UTC+8）。
+
+    应用实际运行于中国时区；用 utcnow+8 保证与 MySQL NOW()(+08:00) 一致，
+    不受容器系统时区(可能为 UTC)影响。
+    """
+    return (datetime.now(timezone.utc) + timedelta(hours=8)).strftime("%Y-%m-%d %H:%M:%S")
+
+
+def _is_pragma(sql):
+    return bool(re.match(r"^\s*PRAGMA\b", sql, re.IGNORECASE))
+
+
+def _translate(sql):
+    """把 SQLite 风格 SQL 翻译为 MySQL 等价写法。"""
+    s = sql
+    # 保留字列名加反引号（year_month / key 是 MySQL 保留字，裸用会报 1064）。
+    # 仅匹配小写 key，避免误伤 ON DUPLICATE KEY UPDATE 中的大写 KEY。
+    # 负向前瞻/后顾保证不会重复包裹已存在的反引号（避免 ``key``）。
+    s = re.sub(r"(?<!`)\b(year_month|key)\b(?!`)", r"`\1`", s)
+    # datetime('now','localtime') -> 当前 +08:00 时间字面量（单引号）
+    s = re.sub(r"datetime\('now',\s*'localtime'\)", "'" + _local_now() + "'", s)
+    # INSERT OR IGNORE / INSERT OR REPLACE
+    s = re.sub(r"^\s*INSERT\s+OR\s+IGNORE\b", "INSERT IGNORE", s, flags=re.IGNORECASE)
+    s = re.sub(r"^\s*INSERT\s+OR\s+REPLACE\b", "REPLACE", s, flags=re.IGNORECASE)
+    # ON CONFLICT(cols) DO UPDATE SET ... -> ON DUPLICATE KEY UPDATE ...
+    s = re.sub(r"ON\s+CONFLICT\s*\([^)]*\)\s+DO\s+UPDATE\s+SET",
+               "ON DUPLICATE KEY UPDATE", s, flags=re.IGNORECASE)
+    # excluded.col -> VALUES(col)
+    s = re.sub(r"excluded\.(\w+)", r"VALUES(\1)", s)
+    # ? 占位符 -> %s
+    s = s.replace("?", "%s")
+    return s
+
+
+class _MySQLCursor:
+    def __init__(self, raw):
+        self._raw = raw
+
+    def execute(self, sql, params=None):
+        return self._raw.execute(_translate(sql), params)
+
+    def executemany(self, sql, seq):
+        return self._raw.executemany(_translate(sql), seq)
+
+    def fetchone(self):
+        return self._raw.fetchone()
+
+    def fetchall(self):
+        return self._raw.fetchall()
+
+    @property
+    def lastrowid(self):
+        return self._raw.lastrowid
+
+    @property
+    def rowcount(self):
+        return self._raw.rowcount
+
+    def close(self):
+        return self._raw.close()
+
+
+class _NullCursor:
+    """PRAGMA 等无操作语句的占位游标。"""
+
+    def execute(self, *a, **k):
+        return self
+
+    def executemany(self, *a, **k):
+        return self
+
+    def fetchone(self):
+        return None
+
+    def fetchall(self):
+        return []
+
+    lastrowid = 0
+    rowcount = 0
+
+
+class _MySQLConnection:
+    def __init__(self, raw):
+        self._raw = raw
+
+    def cursor(self):
+        return _MySQLCursor(self._raw.cursor())
+
+    def execute(self, sql, params=None):
+        if _is_pragma(sql):
+            return _NullCursor()
+        cur = self._raw.cursor()
+        cur.execute(_translate(sql), params)
+        return _MySQLCursor(cur)
+
+    def executemany(self, sql, seq):
+        if _is_pragma(sql):
+            return _NullCursor()
+        cur = self._raw.cursor()
+        cur.executemany(_translate(sql), seq)
+        return _MySQLCursor(cur)
+
+    def commit(self):
+        return self._raw.commit()
+
+    def rollback(self):
+        return self._raw.rollback()
+
+    def close(self):
+        return self._raw.close()
+
+
+# 各表的时间戳列（用于 MySQL BEFORE INSERT/UPDATE 触发器自动填充；
+# SQLite 走列 DEFAULT，MySQL 用触发器等价实现，避免缺失列变 NULL）。
+_TS_TRIGGERS = {
+    "customers": ("created_at", "updated_at"),
+    "businesses": ("created_at", "updated_at"),
+    "tasks": ("created_at", "updated_at"),
+    "subtasks": ("created_at", "updated_at"),
+    "users": ("created_at",),
+    "password_resets": ("created_at",),
+    "checkins": ("updated_at",),
+}
+
+
 def get_db():
-    """获取数据库连接"""
+    """获取数据库连接（MySQL 或 SQLite，取决于 USE_MYSQL）"""
+    if USE_MYSQL:
+        try:
+            raw = pymysql.connect(**_mysql_cfg())
+        except Exception as e:  # noqa: BLE001
+            raise RuntimeError(f"MySQL 连接失败: {e}")
+        return _MySQLConnection(raw)
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     # WAL 模式 + 写忙等待：避免多请求并发（waitress 多线程）下出现
@@ -79,8 +243,81 @@ def company_exists(conn, company, exclude_id=None, user_id=None):
     return False
 
 
+def _ensure_mysql_triggers(cur):
+    """为各表创建 created_at/updated_at 自动填充触发器（幂等：先删后建）。"""
+    for tbl, cols in _TS_TRIGGERS.items():
+        bi, bu = f"trg_{tbl}_bi", f"trg_{tbl}_bu"
+        cur.execute(f"DROP TRIGGER IF EXISTS `{bi}`")
+        cur.execute(f"DROP TRIGGER IF EXISTS `{bu}`")
+        set_bi = "; ".join(
+            f"IF NEW.`{c}` IS NULL OR NEW.`{c}`='' THEN SET NEW.`{c}`=NOW(); END IF"
+            for c in cols
+        )
+        cur.execute(
+            f"CREATE TRIGGER `{bi}` BEFORE INSERT ON `{tbl}` "
+            f"FOR EACH ROW BEGIN {set_bi}; END"
+        )
+        if "updated_at" in cols:
+            cur.execute(
+                f"CREATE TRIGGER `{bu}` BEFORE UPDATE ON `{tbl}` "
+                f"FOR EACH ROW BEGIN "
+                f"IF NEW.`updated_at` IS NULL OR NEW.`updated_at`='' "
+                f"THEN SET NEW.`updated_at`=NOW(); END IF; END"
+            )
+
+
+def _init_db_mysql():
+    """MySQL 模式下的幂等初始化（不跑 SQLite DDL）。
+
+    仅做必要的"数据健康"保障：时间戳触发器、scrypt 密码哈希重写、
+    管理员账号与孤儿行归属。表结构与存量数据由迁移脚本负责。
+    """
+    raw = pymysql.connect(**_mysql_cfg())
+    try:
+        cur = raw.cursor()
+        # 触发器创建失败(如账号无 TRIGGER 权限)不应阻断关键修复
+        try:
+            _ensure_mysql_triggers(cur)
+        except Exception as e:  # noqa: BLE001
+            print(f"[WARN] MySQL 触发器创建失败(仅影响新记录时间戳自动填充): {e}")
+
+        # FC Py3.10 底层 OpenSSL 不支持 scrypt，存量 scrypt 哈希会导致登录 500。
+        # 统一重写为 pbkdf2:sha256（默认密码 123456，与系统现状一致）。
+        ph = make_password_hash("123456")
+        cur.execute(
+            "UPDATE users SET password_hash=%s "
+            "WHERE password_hash LIKE %s OR password_hash IS NULL OR password_hash=''",
+            (ph, "scrypt%"),
+        )
+        # 管理员账号保障（幂等）
+        cur.execute(
+            "UPDATE users SET is_admin=1, status='active', dingtalk_user_id=%s "
+            "WHERE username=%s",
+            ("03683725397487", "18607184641"),
+        )
+        # 孤儿行归属管理员（幂等）
+        cur.execute("SELECT id FROM users WHERE is_admin=1 ORDER BY id LIMIT 1")
+        owner = cur.fetchone()
+        if owner:
+            oid = owner["id"]
+            for t in ("customers", "tasks", "businesses"):
+                cur.execute(
+                    f"UPDATE `{t}` SET user_id=%s WHERE user_id IS NULL OR user_id=0", (oid,)
+                )
+            cur.execute(
+                "UPDATE settings SET user_id=%s WHERE user_id IS NULL OR user_id=0", (oid,)
+            )
+        raw.commit()
+        print("[OK] MySQL 初始化完成")
+    finally:
+        raw.close()
+
+
 def init_db():
-    """初始化数据库表结构"""
+    """初始化数据库表结构（MySQL 或 SQLite）"""
+    if USE_MYSQL:
+        _init_db_mysql()
+        return
     conn = get_db()
     cur = conn.cursor()
 

@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>登录 - 客户管理工作空间</title>
+    <title>登录 - 客户管理平台</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root { color-scheme: light dark; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #007FFF 0%, #0055B3 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -24,121 +25,201 @@
             padding: 40px 36px;
             text-align: center;
         }
-        .logo { font-size: 46px; margin-bottom: 8px; }
+        .logo { width: 60px; height: 60px; margin: 0 auto 12px; background: linear-gradient(135deg, #007FFF, #0055B3); border-radius: 16px; display: flex; align-items: center; justify-content: center; }
+        .logo svg { width: 32px; height: 32px; fill: none; stroke: #fff; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
         h1 { font-size: 22px; color: #333; margin-bottom: 6px; }
-        .subtitle { font-size: 14px; color: #888; margin-bottom: 28px; }
-        #login_container {
-            display: flex;
-            justify-content: center;
-            min-height: 300px;
-            align-items: center;
+        .subtitle { font-size: 14px; color: #888; margin-bottom: 24px; }
+        .field { text-align: left; margin-bottom: 16px; }
+        .field label { display: block; font-size: 13px; color: #555; margin-bottom: 6px; font-weight: 600; }
+        .field input { width: 100%; padding: 12px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; transition: border-color .2s; outline: none; }
+        .field input:focus { border-color: #007FFF; box-shadow: 0 0 0 3px rgba(0,127,255,0.1); }
+        .btn-login { width: 100%; padding: 13px; border: none; border-radius: 8px; background: #007FFF; color: #fff; font-size: 15px; font-weight: 600; cursor: pointer; transition: background .2s; margin-top: 4px; }
+        .btn-login:hover { background: #0075EB; }
+        .btn-login:disabled { opacity: .6; cursor: default; }
+        .error-box { background: #fdecea; color: #c0392b; border: 1px solid #f5c6cb; border-radius: 8px; padding: 10px 14px; font-size: 14px; margin-bottom: 18px; }
+        .switch { margin-top: 18px; font-size: 14px; color: #007FFF; cursor: pointer; user-select: none; }
+        .switch:hover { text-decoration: underline; }
+        .tip { font-size: 13px; color: #999; margin-top: 14px; line-height: 1.6; }
+        .hidden { display: none; }
+        @media (prefers-color-scheme: dark) {
+            :root { color-scheme: dark; }
+            body { background: linear-gradient(135deg, #0b3a66 0%, #012a4d 100%); }
+            .login-card { background: #1c1c1e; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+            h1 { color: #ffffff; }
+            .subtitle { color: #a0a0a5; }
+            .field label { color: #b8b8bd; }
+            .field input { background: #2c2c2e; border-color: #3a3a3c; color: #ffffff; }
+            .field input:focus { border-color: #0a84ff; box-shadow: 0 0 0 3px rgba(10,132,255,0.25); }
+            .error-box { background: #3a1c1a; color: #ff6b5e; border-color: #5c2b27; }
+            .switch { color: #0a84ff; }
+            .tip { color: #8e8e93; }
         }
-        .tip { font-size: 13px; color: #999; margin-top: 20px; line-height: 1.6; }
-        .error-box {
-            background: #fdecea; color: #c0392b;
-            border: 1px solid #f5c6cb; border-radius: 8px;
-            padding: 10px 14px; font-size: 14px; margin-bottom: 20px;
-        }
-        .notice-box {
-            background: #fff8e1; color: #8a6d3b;
-            border: 1px solid #ffe0a3; border-radius: 8px;
-            padding: 16px; font-size: 14px; line-height: 1.7; text-align: left;
-        }
-        .notice-box code {
-            background: #f5f5f5; padding: 2px 6px; border-radius: 4px;
-            font-size: 13px; color: #d6336c;
-        }
-        .btn-enter {
-            display: inline-block; margin-top: 18px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: #fff; text-decoration: none; padding: 11px 30px;
-            border-radius: 8px; font-size: 15px; font-weight: 600;
-            transition: opacity .2s;
-        }
-        .btn-enter:hover { opacity: .9; }
-        .loading { color: #888; font-size: 14px; }
+        html[data-theme="dark"] body { background: linear-gradient(135deg, #0b3a66 0%, #012a4d 100%); }
+        html[data-theme="dark"] .login-card { background: #1c1c1e; }
+        html[data-theme="dark"] h1 { color: #ffffff; }
+        html[data-theme="dark"] .subtitle { color: #a0a0a5; }
+        html[data-theme="dark"] .field label { color: #b8b8bd; }
+        html[data-theme="dark"] .field input { background: #2c2c2e; border-color: #3a3a3c; color: #ffffff; }
+        html[data-theme="dark"] .field input:focus { border-color: #0a84ff; box-shadow: 0 0 0 3px rgba(10,132,255,0.25); }
+        html[data-theme="dark"] .error-box { background: #3a1c1a; color: #ff6b5e; border-color: #5c2b27; }
+        html[data-theme="dark"] .switch { color: #0a84ff; }
+        html[data-theme="dark"] .tip { color: #8e8e93; }
     </style>
 </head>
 <body>
     <div class="login-card">
-        <div class="logo">🏢</div>
-        <h1>客户管理工作空间</h1>
-        <p class="subtitle">请使用钉钉扫码登录</p>
+        <div class="logo"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="16" rx="2"/><path d="M2 9h20"/><path d="M12 9v10"/></svg></div>
+        <h1>客户管理平台</h1>
 
         <div id="errorBox" class="error-box" style="display:none;"></div>
 
-        {% if configured %}
-        <div id="login_container">
-            <span class="loading">二维码加载中…</span>
-        </div>
-        <p class="tip">打开手机钉钉 App，扫描上方二维码完成登录</p>
-        {% else %}
-        <div class="notice-box">
-            <strong>钉钉登录尚未配置</strong><br>
-            当前为本地免登录模式，可直接进入使用。<br><br>
-            如需启用钉钉扫码登录，请在 <code>dingtalk_config.py</code> 中填入
-            <code>AppKey</code> / <code>AppSecret</code>，
-            并在钉钉开放平台配置回调地址：<br>
-            <code>http://localhost:5000/api/dingtalk/oauth/callback</code>
-        </div>
-        <a href="/" class="btn-enter">直接进入系统 →</a>
-        {% endif %}
+        <form id="loginForm" onsubmit="return doLogin(event)">
+            <p class="subtitle" id="formTitle">请使用手机号登录</p>
+            <div class="field">
+                <label for="phone">手机号</label>
+                <input type="tel" id="phone" autocomplete="username" placeholder="请输入手机号" required>
+            </div>
+            <div class="field" id="loginPwdField">
+                <label for="password">密码</label>
+                <input type="password" id="password" autocomplete="current-password" placeholder="请输入密码" required>
+            </div>
+            <button type="submit" class="btn-login" id="submitBtn">登录</button>
+            <div style="display:flex;justify-content:space-between;margin-top:14px;font-size:14px;">
+                <span class="switch" style="margin-top:0;" onclick="showForm('registerForm')">没有账号？去注册</span>
+                <span class="switch" style="margin-top:0;" onclick="showForm('forgotForm')">忘记密码？</span>
+            </div>
+        </form>
+
+        <form id="registerForm" class="hidden" onsubmit="return doRegister(event)">
+            <p class="subtitle">自助注册（默认密码 123456，提交后待管理员审核）</p>
+            <div class="field">
+                <label for="regPhone">手机号</label>
+                <input type="tel" id="regPhone" autocomplete="username" placeholder="请输入 11 位手机号" required>
+            </div>
+            <button type="submit" class="btn-login" id="regBtn">提交注册</button>
+            <div class="switch" onclick="showForm('loginForm')">已有账号？去登录</div>
+        </form>
+
+        <form id="forgotForm" class="hidden" onsubmit="return doForgotPassword(event)">
+            <p class="subtitle">提交后需管理员审核通过，新密码方可生效</p>
+            <div class="field">
+                <label for="fgIdentifier">手机号</label>
+                <input type="tel" id="fgIdentifier" placeholder="请输入手机号" required>
+            </div>
+            <div class="field">
+                <label for="fgPwd">新密码（至少 6 位）</label>
+                <input type="password" id="fgPwd" placeholder="请输入新密码" required>
+            </div>
+            <div class="field">
+                <label for="fgPwd2">确认新密码</label>
+                <input type="password" id="fgPwd2" placeholder="请再次输入新密码" required>
+            </div>
+            <button type="submit" class="btn-login" id="fgBtn">提交申请</button>
+            <div class="switch" onclick="showForm('loginForm')">返回登录</div>
+        </form>
+
     </div>
 
-    {% if configured %}
-    <script src="https://g.alicdn.com/dingding/h5-dingtalk-login/0.21.0/ddlogin.js"></script>
     <script>
         // 显示 URL 上的错误提示
         (function () {
             const params = new URLSearchParams(window.location.search);
             const err = params.get("error");
-            if (err) {
-                const box = document.getElementById("errorBox");
-                box.textContent = "⚠️ " + decodeURIComponent(err);
-                box.style.display = "block";
-            }
+            if (err) showError(decodeURIComponent(err));
         })();
 
-        const APP_KEY = {{ app_key | tojson }};
-        const REDIRECT_URI = {{ redirect_uri | tojson }};
-        const STATE = "cw_" + Math.random().toString(36).slice(2, 10);
-
-        function renderQrCode() {
-            if (typeof window.DTFrameLogin !== "function") {
-                document.getElementById("login_container").innerHTML =
-                    '<span class="loading">二维码组件加载失败，请检查网络后刷新</span>';
-                return;
-            }
-            window.DTFrameLogin(
-                { id: "login_container", width: 300, height: 300 },
-                {
-                    redirect_uri: encodeURIComponent(REDIRECT_URI),
-                    client_id: APP_KEY,
-                    scope: "openid",
-                    response_type: "code",
-                    state: STATE,
-                    prompt: "consent"
-                },
-                function (loginResult) {
-                    // 扫码成功：优先用官方 redirectUrl，回退到自建回调
-                    const { redirectUrl, authCode } = loginResult;
-                    if (redirectUrl) {
-                        window.location.href = redirectUrl;
-                    } else if (authCode) {
-                        window.location.href =
-                            "/api/dingtalk/oauth/callback?authCode=" + encodeURIComponent(authCode);
-                    }
-                },
-                function (errorMsg) {
-                    const box = document.getElementById("errorBox");
-                    box.textContent = "⚠️ 登录失败：" + errorMsg;
-                    box.style.display = "block";
-                }
-            );
+        function showError(msg) {
+            const box = document.getElementById("errorBox");
+            box.textContent = "\u26a0\ufe0f " + msg;
+            box.style.display = "block";
         }
 
-        window.addEventListener("load", renderQrCode);
+        function showForm(id) {
+            ["loginForm", "registerForm", "forgotForm"].forEach(function (f) {
+                document.getElementById(f).classList.toggle("hidden", f !== id);
+            });
+            document.getElementById("errorBox").style.display = "none";
+        }
+
+        function toggleMode() { showForm("loginForm"); }
+
+        async function doLogin(e) {
+            e.preventDefault();
+            const btn = document.getElementById("submitBtn");
+            document.getElementById("errorBox").style.display = "none";
+            const phone = document.getElementById("phone").value.trim();
+            const password = document.getElementById("password").value;
+            if (!phone || !password) return false;
+            btn.disabled = true; btn.textContent = "登录中…";
+            try {
+                const resp = await fetch("/api/login", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ phone, password })
+                });
+                const data = await resp.json();
+                if (resp.ok && data.ok) { window.location.href = "/"; return false; }
+                showError(data.error || "登录失败");
+            } catch (e) { showError("网络错误，请重试"); }
+            btn.disabled = false; btn.textContent = "登录";
+            return false;
+        }
+
+        async function doRegister(e) {
+            e.preventDefault();
+            const btn = document.getElementById("regBtn");
+            document.getElementById("errorBox").style.display = "none";
+            const phone = document.getElementById("regPhone").value.trim();
+            if (!phone) return false;
+            btn.disabled = true; btn.textContent = "提交中…";
+            try {
+                const resp = await fetch("/api/register", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ phone })
+                });
+                const data = await resp.json();
+                if (resp.ok && data.ok) {
+                    showError("✅ " + (data.message || "注册成功，等待管理员审核"));
+                    document.getElementById("regPhone").value = "";
+                    btn.disabled = false; btn.textContent = "提交注册";
+                    return false;
+                }
+                showError(data.error || "注册失败");
+            } catch (e) { showError("网络错误，请重试"); }
+            btn.disabled = false; btn.textContent = "提交注册";
+            return false;
+        }
+
+        async function doForgotPassword(e) {
+            e.preventDefault();
+            const btn = document.getElementById("fgBtn");
+            document.getElementById("errorBox").style.display = "none";
+            const identifier = document.getElementById("fgIdentifier").value.trim();
+            const pwd = document.getElementById("fgPwd").value;
+            const pwd2 = document.getElementById("fgPwd2").value;
+            if (!identifier || !pwd || !pwd2) return false;
+            btn.disabled = true; btn.textContent = "提交中…";
+            try {
+                const resp = await fetch("/api/forgot-password", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ identifier, new_password: pwd, confirm_password: pwd2 })
+                });
+                const data = await resp.json();
+                if (resp.ok && data.ok) {
+                    showError("✅ " + (data.message || "已提交，等待管理员审核"));
+                    document.getElementById("fgIdentifier").value = "";
+                    document.getElementById("fgPwd").value = "";
+                    document.getElementById("fgPwd2").value = "";
+                    btn.disabled = false; btn.textContent = "提交申请";
+                    return false;
+                }
+                showError(data.error || "提交失败");
+            } catch (e) { showError("网络错误，请重试"); }
+            btn.disabled = false; btn.textContent = "提交申请";
+            return false;
+        }
     </script>
-    {% endif %}
 </body>
 </html>

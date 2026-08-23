@@ -4,30 +4,50 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>业务管理</title>
-    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/style.css?v={{ static_ver }}">
 </head>
 <body>
-    <nav class="navbar">
-        <div class="navbar-brand">🏢 客户工作空间</div>
-        <ul class="navbar-nav">
-            <li><a href="/">📊 仪表盘</a></li>
-            <li><a href="/customers">👥 客户管理</a></li>
-            <li><a href="/business">💼 业务</a></li>
-            <li><a href="/map">🗺️ 地图视图</a></li>
-            <li><a href="/tasks">📝 事项看板</a></li>
-            <li><a href="/reports">📊 每日报告</a></li>
-            <li><a href="/settings">⚙️ 设置</a></li>
-            <li><a href="/logout">🚪 退出</a></li>
-        </ul>
-    </nav>
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#007FFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="3" width="20" height="16" rx="2"/><path d="M2 9h20"/><path d="M12 9v10"/>
+            </svg>
+            客户管理平台
+        </div>
+        <nav class="sidebar-nav">
+            <a href="/customers" class="nav-item"><span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18"><ellipse cx="9.5" cy="7.5" rx="3.5" ry="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M1 21v-2a6 6 0 0 1 6-6h5a6 6 0 0 1 6 6v2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M17.5 9.5a3 3 0 1 0 0-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M23 21v-1a4.5 4.5 0 0 0-3.5-4.33" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><span class="nav-label">客户管理</span></a>
+            <a href="/business" class="nav-item active"><span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18"><rect x="2" y="7" width="20" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><span class="nav-label">业务</span></a>
+            <a href="/map" class="nav-item"><span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 2a8 8 0 0 0-8 8c0 5.5 8 12 8 12s8-6.5 8-12a8 8 0 0 0-8-8z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="10" r="3" fill="none" stroke="currentColor" stroke-width="2"/></svg></span><span class="nav-label">地图视图</span></a>
+            <a href="/tasks" class="nav-item"><span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18"><rect x="3" y="3" width="18" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="m9 12 2 2 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="nav-label">事项看板</span></a>
+            <a href="/settings" class="nav-item"><span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" fill="none" stroke="currentColor" stroke-width="2"/></svg></span><span class="nav-label">设置</span></a>
+            <div class="sidebar-spacer"></div>
+            <a href="/logout" class="nav-item nav-logout"><span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><polyline points="16 17 21 12 16 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><line x1="21" y1="12" x2="9" y2="12" fill="none" stroke="currentColor" stroke-width="2"/></svg></span><span class="nav-label">退出登录</span></a>
+        </nav>
+    </aside>
 
     <div class="container">
-        <div class="toolbar">
-            <div class="toolbar-left">
-                <input type="text" class="form-control" id="searchInput" placeholder="🔍 搜索公司名称/合同编码/业务号码/类型..." style="width: 340px;" oninput="loadBusinesses()">
+        <div class="biz-controls">
+            <div class="biz-type" id="bizTypeWrap">
+                <button type="button" class="biz-type-btn" id="bizTypeBtn" onclick="toggleBizTypeMenu()">
+                    <span id="bizTypeLabel">全部业务</span>
+                    <svg class="biz-type-caret" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <div class="biz-type-menu" id="bizTypeMenu" style="display:none;"></div>
             </div>
+            <div class="biz-search">
+                <input type="text" class="biz-search-input" id="searchInput" placeholder="🔍 搜索公司名称/合同编码/业务号码/类型..." oninput="onBizSearch()">
+                <button type="button" class="biz-search-btn" onclick="onBizSearch()" aria-label="搜索">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                </button>
+            </div>
+        </div>
+        <div class="toolbar">
             <div class="toolbar-right">
-                <button class="btn btn-primary" onclick="openBusinessModal()">➕ 新增业务</button>
+                <button class="btn btn-outline" onclick="exportCurrentBiz()">📥 导出</button>
+                <button class="btn btn-outline" id="btnBusinessImport" onclick="openBusinessImportModal()">📤 批量导入</button>
+                <button class="btn btn-primary" id="btnAddBusiness" onclick="openBusinessModal()">➕ 新增业务</button>
+                <button class="btn btn-outline" id="btnLedgerImport" onclick="openLedgerImportModal()" style="display:none;">📤 批量导入</button>
+                <button class="btn btn-primary" id="btnAddLedger" onclick="openLedgerModal()" style="display:none;">➕ 新增台账</button>
             </div>
         </div>
 
@@ -50,9 +70,8 @@
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                     <div class="form-group">
                         <label>关联客户</label>
-                        <select class="form-control" id="customerSelect" onchange="onCustomerSelect()">
-                            <option value="">（不关联，手动填公司名称）</option>
-                        </select>
+                        <div id="customerSelectCmb"></div>
+                        <input type="hidden" id="customerSelect" value="">
                     </div>
                     <div class="form-group">
                         <label>公司名称 *</label>
@@ -60,37 +79,29 @@
                     </div>
                     <div class="form-group">
                         <label>业务类型</label>
-                        <input type="text" class="form-control" id="businessType" placeholder="如：宽带专线 / 云服务 / 设备采购">
+                        <select class="form-control" id="businessType" onchange="onBizTypeChange()">
+                            <option value="">请选择</option>
+                            <option value="互联网专线">互联网专线</option>
+                            <option value="电路">电路</option>
+                            <option value="算网项目">算网项目</option>
+                            <option value="U+产品">U+产品</option>
+                            <option value="数智惠企">数智惠企</option>
+                            <option value="冰激凌">冰激凌</option>
+                            <option value="魔方卡">魔方卡</option>
+                            <option value="副卡">副卡</option>
+                            <option value="宽带">宽带</option>
+                            <option value="固话">固话</option>
+                        </select>
                     </div>
-                    <div class="form-group">
-                        <label>合同编码</label>
-                        <input type="text" class="form-control" id="contractCode">
-                    </div>
-                    <div class="form-group">
-                        <label>业务号码</label>
-                        <input type="text" class="form-control" id="businessNumber">
-                    </div>
-                    <div class="form-group">
-                        <label>合同金额 (¥)</label>
-                        <input type="number" step="any" class="form-control" id="contractAmount">
-                    </div>
-                    <div class="form-group">
-                        <label>开始时间</label>
-                        <input type="date" class="form-control" id="startDate">
-                    </div>
-                    <div class="form-group">
-                        <label>结束时间</label>
-                        <input type="date" class="form-control" id="endDate">
+                    <div class="form-group" id="bizParentWrap" style="display:none;">
+                        <label>关联主卡（可选）</label>
+                        <select class="form-control" id="bizParentId">
+                            <option value="">不关联（独立业务）</option>
+                        </select>
                     </div>
                 </div>
-                <div class="form-group">
-                    <label>业务地址</label>
-                    <input type="text" class="form-control" id="businessAddress">
-                </div>
-                <div class="form-group">
-                    <label>备注</label>
-                    <textarea class="form-control" id="notes" rows="3"></textarea>
-                </div>
+                <!-- 类型相关字段由 BIZ_TYPE_FIELDS 数据驱动动态渲染（与移动端共用同一份配置） -->
+                <div id="bizFields"></div>
             </form>
             <div class="modal-footer">
                 <button class="btn btn-outline" onclick="closeBusinessModal()">取消</button>
@@ -99,27 +110,219 @@
         </div>
     </div>
 
-    <script src="/static/js/app.js"></script>
+    <!-- 业务只读详情面板（对齐移动端 paintBizDetail：主卡 + 嵌套子卡）-->
+    <div class="modal-overlay" id="bizDetailModal">
+        <div class="modal" style="max-width: 720px;">
+            <div class="modal-header">
+                <h3 id="bizDetailTitle">业务详情</h3>
+                <button class="modal-close" onclick="closeBizDetail()">&times;</button>
+            </div>
+            <div id="bizDetailBody" style="max-height:70vh;overflow:auto;"></div>
+        </div>
+    </div>
+
+    <!-- 业务批量导入模态框 -->
+    <div class="modal-overlay" id="businessImportModal">
+        <div class="modal" style="max-width: 880px;">
+            <div class="modal-header">
+                <h3>批量导入业务</h3>
+                <button class="modal-close" onclick="closeBusinessImportModal()">&times;</button>
+            </div>
+            <div class="alert alert-info" style="margin-bottom:12px;">
+                请先<a href="javascript:void(0)" onclick="downloadBusinessTemplate()" style="font-weight:600;">下载模板</a>，按列填写后上传（支持 CSV，UTF-8 或 GBK 编码）。<br>
+                列：公司名称（必填）、业务类型、业务套餐、合同编码、业务号码、合同金额、开始时间、结束时间、业务地址、备注。<br>
+                · 系统按「业务号」去重；按「公司名称」精确 / 模糊匹配已有客户。<br>
+                · 匹配不到时请在下方选择「合并到某客户」或「新增客户」。<br>
+                · 导入完成后自动重新计算相关客户优先级。
+            </div>
+            <div class="form-group">
+                <label>选择 CSV 文件</label>
+                <input type="file" class="form-control" id="businessImportFile" accept=".csv,text/csv">
+            </div>
+            <div style="margin-top:8px;">
+                <button class="btn btn-primary" onclick="doBusinessImportPreview()">解析文件</button>
+            </div>
+            <div id="businessImportResolve" style="margin-top:12px;"></div>
+            <div id="businessImportResult" style="margin-top:12px;"></div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeBusinessImportModal()">取消</button>
+                <button class="btn btn-primary" id="businessImportCommitBtn" style="display:none;" onclick="commitBusinessImport()">确认导入</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 台账批量导入模态框 -->
+    <div class="modal-overlay" id="ledgerImportModal">
+        <div class="modal" style="max-width: 720px;">
+            <div class="modal-header">
+                <h3>📋 批量导入台账</h3>
+                <button class="modal-close" onclick="closeLedgerImportModal()">&times;</button>
+            </div>
+            <div class="alert alert-info" style="margin-bottom:12px;">
+                请先 <a href="javascript:void(0)" onclick="downloadLedgerTemplate()" style="font-weight:600;">下载模板</a>，按列填写后上传（支持 CSV，UTF-8 或 GBK 编码）。<br>
+                列（共 7 列）：日期、号码、公司、使用人、层级、套餐类型、关联主卡。<br>
+                · <b>套餐类型</b> 只能填：数智惠企 / 冰激凌 / 魔方卡 / 副卡 / 宽带 / 固话（其它值会被拒绝）。<br>
+                · <b>关联主卡</b> 仅「副卡 / 宽带 / 固话」可选填，且须是已录入的「数智惠企 / 冰激凌」号码；不填则作为独立子卡；主卡与魔方卡留空。<br>
+                · 按号码去重（号码已存在则跳过）。<br>
+                · 日期格式推荐 YYYY-MM-DD（如 2026-07-13）。
+            </div>
+            <div class="form-group">
+                <label>选择 CSV 文件</label>
+                <input type="file" class="form-control" id="ledgerImportFile" accept=".csv,text/csv">
+            </div>
+            <div style="margin-top:8px;">
+                <button class="btn btn-primary" onclick="doLedgerImportPreview()">解析文件</button>
+            </div>
+            <div id="ledgerImportPreview" style="margin-top:12px;"></div>
+            <div id="ledgerImportResult" style="margin-top:12px;"></div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeLedgerImportModal()">取消</button>
+                <button class="btn btn-primary" id="ledgerImportCommitBtn" style="display:none;" onclick="commitLedgerImport()">确认导入</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 台账新增/编辑模态框 -->
+    <div class="modal-overlay" id="ledgerModal">
+        <div class="modal" style="max-width: 640px;">
+            <div class="modal-header">
+                <h3 id="ledgerModalTitle">新增台账</h3>
+                <button class="modal-close" onclick="closeLedgerModal()">&times;</button>
+            </div>
+            <form id="ledgerForm">
+                <input type="hidden" id="ledgerId">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div class="form-group"><label>日期</label><input type="date" class="form-control" id="ledgerDate"></div>
+                    <div class="form-group"><label>号码</label><input type="text" class="form-control" id="ledgerNumber" placeholder="输入号码"></div>
+                    <div class="form-group"><label>公司</label><input type="text" class="form-control" id="ledgerCompany" placeholder="输入公司名称"></div>
+                    <div class="form-group"><label>使用人</label><input type="text" class="form-control" id="ledgerUser" placeholder="输入使用人"></div>
+                </div>
+                <div class="form-group"><label>层级</label><input type="text" class="form-control" id="ledgerPackage" placeholder="输入层级名称"></div>
+                <div class="form-group"><label>套餐类型</label>
+                    <select class="form-control" id="ledgerPackageType" onchange="syncLedgerTypeUI()">
+                        <option value="">请选择套餐类型</option>
+                        <option value="数智惠企">数智惠企</option>
+                        <option value="冰激凌">冰激凌</option>
+                        <option value="魔方卡">魔方卡</option>
+                        <option value="副卡">副卡</option>
+                        <option value="宽带">宽带</option>
+                        <option value="固话">固话</option>
+                    </select>
+                </div>
+                <div class="form-group" id="ledgerParentWrap" style="display:none;">
+                    <label>关联主卡</label>
+                    <select class="form-control" id="ledgerParent"></select>
+                </div>
+                <div id="ledgerSubWrap">
+                    <div id="ledgerSubEntries" style="margin-top:4px;"></div>
+                    <div style="display:flex;gap:6px;margin-top:8px;">
+                        <button type="button" class="btn btn-outline" style="flex:1;padding:8px;font-size:12px;justify-content:center;" onclick="addLedgerSubEntry('副卡','10')">➕ 新增副卡</button>
+                        <button type="button" class="btn btn-outline" style="flex:1;padding:8px;font-size:12px;justify-content:center;" onclick="addLedgerSubEntry('宽带','0')">➕ 新增宽带</button>
+                        <button type="button" class="btn btn-outline" style="flex:1;padding:8px;font-size:12px;justify-content:center;" onclick="addLedgerSubEntry('固话','0')">➕ 新增固话</button>
+                    </div>
+                </div>
+            </form>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeLedgerModal()">取消</button>
+                <button class="btn btn-primary" onclick="saveLedger()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/biz-fields.js?v={{ static_ver }}"></script>
+    <script src="/static/js/app.js?v={{ static_ver }}"></script>
     <script>
         let allBusinesses = [];
         let customers = [];
+        let activeBizTab = 'all';
+        let allLedgers = [];
+
+        /* ===== 可搜索下拉框（关联客户，仅显示公司名称）===== */
+        function buildSearchSelect(mountEl, opts, selectedValue, onChange, small) {
+            mountEl.classList.add('cmb');
+            if (small) mountEl.classList.add('cmb-sm');
+            mountEl.innerHTML =
+                '<input class="cmb-input" type="text" autocomplete="off" placeholder="搜索公司名称…">' +
+                '<span class="cmb-caret">▾</span>' +
+                '<div class="cmb-list" style="display:none;"></div>';
+            const input = mountEl.querySelector('.cmb-input');
+            const list = mountEl.querySelector('.cmb-list');
+            let current = (selectedValue === undefined || selectedValue === null) ? '' : String(selectedValue);
+
+            function labelOf(v) {
+                const o = opts.find(o => String(o.value) === String(v));
+                return o ? o.label : '';
+            }
+            function render(filter) {
+                const f = (filter || '').trim().toLowerCase();
+                const items = opts.filter(o => !f || o.label.toLowerCase().indexOf(f) !== -1);
+                if (!items.length) {
+                    list.innerHTML = '<div class="cmb-empty">无匹配客户</div>';
+                    return;
+                }
+                list.innerHTML = items.map(o => {
+                    let cls = 'cmb-opt';
+                    if (o.special) cls += ' cmb-opt-special';
+                    if (o.recommended) cls += ' cmb-opt-rec';
+                    if (String(o.value) === current) cls += ' sel';
+                    return '<div class="' + cls + '" data-val="' + o.value + '">' +
+                        o.label.replace(/</g, '&lt;') + '</div>';
+                }).join('');
+            }
+            function open() {
+                render(input.value);
+                list.style.display = 'block';
+            }
+            function close() { list.style.display = 'none'; }
+            function select(v) {
+                current = (v === undefined || v === null) ? '' : String(v);
+                input.value = labelOf(current);
+                close();
+                if (onChange) onChange(current);
+            }
+            input.addEventListener('focus', function () { input.select(); open(); });
+            input.addEventListener('input', open);
+            input.addEventListener('blur', function () { setTimeout(close, 160); });
+            list.addEventListener('mousedown', function (e) {
+                const opt = e.target.closest('.cmb-opt');
+                if (opt) select(opt.getAttribute('data-val'));
+            });
+            // 初始显示
+            input.value = labelOf(current);
+            return {
+                getValue: function () { return current; },
+                setValue: function (v) { current = (v === undefined || v === null) ? '' : String(v); input.value = labelOf(current); },
+                refresh: function (newOpts) { opts = newOpts; input.value = labelOf(current); }
+            };
+        }
+
+        let customerCmb = null;
+
+        // ===== 业务分类定义已从 static/js/biz-fields.js 统一引入（PC 与移动端共用单一来源）=====
 
         async function loadCustomersForSelect() {
             try {
                 customers = await api('/api/customers');
-                const sel = document.getElementById('customerSelect');
-                sel.innerHTML = '<option value="">（不关联，手动填公司名称）</option>' +
-                    customers.map(c => `<option value="${c.id}" data-company="${(c.company || c.name || '').replace(/"/g, '&quot;')}">${c.company || c.name}${c.name && c.company ? ' · ' + c.name : ''}</option>`).join('');
+                const mount = document.getElementById('customerSelectCmb');
+                const opts = [{ value: '', label: '（不关联，手动填公司名称）', special: true }]
+                    .concat(customers.map(c => ({ value: c.id, label: c.company || c.name || '未命名' })));
+                if (customerCmb) {
+                    customerCmb.refresh(opts);
+                } else {
+                    customerCmb = buildSearchSelect(mount, opts, '', function (val) {
+                        document.getElementById('customerSelect').value = val;
+                        onCustomerSelect(val);
+                    });
+                }
             } catch (e) {
                 console.error('客户加载失败', e);
             }
         }
 
-        function onCustomerSelect() {
-            const sel = document.getElementById('customerSelect');
-            const opt = sel.options[sel.selectedIndex];
-            if (sel.value && opt) {
-                document.getElementById('companyName').value = opt.getAttribute('data-company') || '';
+        function onCustomerSelect(val) {
+            if (val) {
+                const c = customers.find(x => String(x.id) === String(val));
+                if (c) document.getElementById('companyName').value = (c.company || c.name || '');
             }
         }
 
@@ -129,10 +332,19 @@
             if (search) params.append('search', search);
             try {
                 allBusinesses = await api('/api/business?' + params.toString());
-                renderBusinesses(allBusinesses);
+                applyBizTypeFilter();
             } catch (e) {
                 showToast('加载失败: ' + e.message, 'error');
             }
+        }
+
+        // 按当前业务分类（全部业务 / 具体类型）客户端筛选，与移动端 renderBizList 一致
+        function applyBizTypeFilter() {
+            let list = allBusinesses;
+            if (activeBizTab && activeBizTab !== 'all' && activeBizTab !== 'ledger') {
+                list = allBusinesses.filter(function (b) { return b.business_type === activeBizTab; });
+            }
+            renderBusinesses(list);
         }
 
         function renderBusinesses(list) {
@@ -141,10 +353,18 @@
                 el.innerHTML = '<div class="empty-state"><div class="icon">📭</div><div class="title">暂无业务</div><div>点击右上角"新增业务"开始添加</div></div>';
                 return;
             }
+            // 仅列主卡（parent_id 为空）；子卡归属到主卡下缩进展示（与移动端一致：列表以主卡为单位）
+            // 树渲染统一交由 biz-fields.js 的 renderBizTreeHtml（业务页 与 客户详情页 共用同一份）
+            const rows = renderBizTreeHtml(list, allBusinesses, { expandState: window._bizExpanded || {} });
+            if (!rows) {
+                el.innerHTML = '<div class="empty-state"><div class="icon">📭</div><div class="title">暂无匹配的主卡业务</div></div>';
+                return;
+            }
             el.innerHTML = `
                 <table>
                     <thead>
                         <tr>
+                            <th style="width:32px;"></th>
                             <th>公司名称</th>
                             <th>业务类型</th>
                             <th>合同编码</th>
@@ -154,49 +374,88 @@
                             <th>操作</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        ${list.map(b => `
-                            <tr>
-                                <td><strong>${b.company_name || '-'}</strong></td>
-                                <td>${b.business_type || '-'}</td>
-                                <td>${b.contract_code || '-'}</td>
-                                <td>${b.contract_amount != null ? '¥' + Number(b.contract_amount).toLocaleString() : '-'}</td>
-                                <td>${b.business_number || '-'}</td>
-                                <td style="white-space:nowrap;">${(b.start_date || '?')} ~ ${(b.end_date || '?')}</td>
-                                <td>
-                                    <button class="btn btn-outline btn-sm" onclick="editBusiness(${b.id})">编辑</button>
-                                    <button class="btn btn-danger btn-sm" onclick="deleteBusiness(${b.id}, '${(b.company_name || '').replace(/'/g, "\\'")}')">删除</button>
-                                </td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            `;
+                    <tbody>${rows}</tbody>
+                </table>`;
+        }
+
+        // bizRootRowHtml / bizChildRowHtml 已移至 biz-fields.js（renderBizTreeHtml 共用），此处不再重复定义
+
+        function toggleBizExpand(id) {
+            if (!window._bizExpanded) window._bizExpanded = {};
+            window._bizExpanded[id] = window._bizExpanded[id] === false;
+            applyBizTypeFilter(); // 保留当前 tab/搜索，仅重渲染
+        }
+
+        // escHtml 已移至 biz-fields.js（共享），业务页 与 客户详情页 共用
+
+        // 业务类型切换：重新渲染类型相关字段 + 父卡联动（与移动端 onBizTypeChange 一致）
+        function onBizTypeChange() {
+            renderBizFields();
+            syncBizParentUI();
+        }
+
+        // 按 BIZ_TYPE_FIELDS[type] 数据驱动渲染类型相关字段到 #bizFields 容器
+        function renderBizFields() {
+            const type = (document.getElementById('businessType').value || '').trim();
+            const wrap = document.getElementById('bizFields');
+            if (!wrap) return;
+            const fields = (BIZ_TYPE_FIELDS[type] || []).filter(function (k) { return k !== 'parent_id'; });
+            wrap.innerHTML = fields.length ? '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;">' : '';
+            fields.forEach(function (k) {
+                const f = BIZ_FIELD_POOL[k];
+                if (!f) return;
+                const id = 'fld_' + k;
+                let control;
+                if (f.type === 'textarea') control = '<textarea class="form-control" id="' + id + '" rows="3"></textarea>';
+                else if (f.type === 'date') control = '<input type="date" class="form-control" id="' + id + '">';
+                else if (f.type === 'number') control = '<input type="number" step="any" class="form-control" id="' + id + '">';
+                else control = '<input type="text" class="form-control" id="' + id + '">';
+                wrap.innerHTML += '<div class="form-group"><label>' + escHtml(f.label) + '</label>' + control + '</div>';
+            });
+            if (fields.length) wrap.innerHTML += '</div>';
         }
 
         async function openBusinessModal(biz = null) {
-            if (customers.length === 0) await loadCustomersForSelect();
             const modal = document.getElementById('businessModal');
             const title = document.getElementById('businessModalTitle');
             document.getElementById('businessForm').reset();
 
+            // 先开模态框（用户立刻看到），客户数据后台加载
+            modal.classList.add('show');
+
+            if (customers.length === 0) {
+                document.getElementById('customerSelectCmb').innerHTML = '<span style="font-size:12px;color:#888;">加载客户列表...</span>';
+                await loadCustomersForSelect();
+            }
+
             if (biz) {
                 title.textContent = '编辑业务';
                 document.getElementById('businessId').value = biz.id;
+                if (customerCmb) customerCmb.setValue(biz.customer_id || '');
                 document.getElementById('customerSelect').value = biz.customer_id || '';
                 document.getElementById('companyName').value = biz.company_name || '';
                 document.getElementById('businessType').value = biz.business_type || '';
-                document.getElementById('contractCode').value = biz.contract_code || '';
-                document.getElementById('businessNumber').value = biz.business_number || '';
-                document.getElementById('contractAmount').value = biz.contract_amount != null ? biz.contract_amount : '';
-                document.getElementById('startDate').value = biz.start_date ? biz.start_date.substring(0, 10) : '';
-                document.getElementById('endDate').value = biz.end_date ? biz.end_date.substring(0, 10) : '';
-                document.getElementById('businessAddress').value = biz.business_address || '';
-                document.getElementById('notes').value = biz.notes || '';
             } else {
                 title.textContent = '新增业务';
                 document.getElementById('businessId').value = '';
             }
+
+            // 先按类型渲染动态字段，再回填值（顺序不能反）
+            renderBizFields();
+            if (biz) {
+                (BIZ_TYPE_FIELDS[biz.business_type] || []).forEach(function (k) {
+                    if (k === 'parent_id') return;
+                    const el = document.getElementById('fld_' + k);
+                    if (!el) return;
+                    const f = BIZ_FIELD_POOL[k];
+                    let v = biz[k];
+                    if (f && f.type === 'date' && v) v = String(v).substring(0, 10);
+                    el.value = (v != null ? v : '');
+                });
+            }
+
+            await syncBizParentUI();
+            if (biz) document.getElementById('bizParentId').value = biz.parent_id || '';
             modal.classList.add('show');
         }
 
@@ -204,9 +463,42 @@
             document.getElementById('businessModal').classList.remove('show');
         }
 
+        // openBizDetail / closeBizDetail / rowHtml(→bizRowHtml) 已移至 biz-fields.js（renderBizTreeHtml 共用），
+        // 业务页 与 客户详情页 调用同一份实现，保证两端业务详情完全一致。
+
         function editBusiness(id) {
             const biz = allBusinesses.find(b => b.id === id);
             if (biz) openBusinessModal(biz);
+        }
+
+        // 关联主卡（仅「副卡/宽带/固话」显示）：可选，未选则作为独立子卡（与移动端一致）
+        async function syncBizParentUI() {
+            const type = (document.getElementById('businessType').value || '').trim();
+            const wrap = document.getElementById('bizParentWrap');
+            if (BIZ_CHILD_TYPES.indexOf(type) !== -1) {
+                wrap.style.display = '';
+                await populateBizParentOptions();
+            } else {
+                wrap.style.display = 'none';
+                const sel = document.getElementById('bizParentId');
+                if (sel) sel.value = '';
+            }
+        }
+
+        async function populateBizParentOptions() {
+            const sel = document.getElementById('bizParentId');
+            if (!sel) return;
+            if (!allBusinesses || !allBusinesses.length) {
+                try { allBusinesses = await api('/api/business'); } catch (e) { allBusinesses = []; }
+            }
+            const editingId = document.getElementById('businessId').value;
+            let html = '<option value="">不关联（独立业务）</option>';
+            (allBusinesses || []).filter(b => BIZ_MAIN_TYPES.indexOf(b.business_type) !== -1).forEach(function (m) {
+                if (String(m.id) === String(editingId)) return;
+                const label = (m.number || '-') + ' · ' + (m.company_name || '');
+                html += '<option value="' + m.id + '">' + label.replace(/</g, '&lt;') + '</option>';
+            });
+            sel.innerHTML = html;
         }
 
         async function saveBusiness() {
@@ -216,19 +508,32 @@
                 showToast('请填写公司名称', 'error');
                 return;
             }
+            const type = (document.getElementById('businessType').value || '').trim();
+            if (!type) {
+                showToast('请选择业务类型', 'error');
+                return;
+            }
             const data = {
-                customer_id: parseInt(document.getElementById('customerSelect').value) || null,
+                customer_id: customerCmb ? (parseInt(customerCmb.getValue()) || null) : (parseInt(document.getElementById('customerSelect').value) || null),
                 company_name: company,
-                business_type: document.getElementById('businessType').value,
-                contract_code: document.getElementById('contractCode').value,
-                business_number: document.getElementById('businessNumber').value,
-                contract_amount: parseFloat(document.getElementById('contractAmount').value),
-                start_date: document.getElementById('startDate').value || '',
-                end_date: document.getElementById('endDate').value || '',
-                business_address: document.getElementById('businessAddress').value,
-                notes: document.getElementById('notes').value,
+                business_type: type,
+                parent_id: BIZ_CHILD_TYPES.indexOf(type) !== -1 ? (parseInt(document.getElementById('bizParentId').value) || null) : null,
             };
-            if (isNaN(data.contract_amount)) data.contract_amount = null;
+            // 按 BIZ_TYPE_FIELDS[type] 循环收集动态字段（单一来源，与移动端一致）
+            (BIZ_TYPE_FIELDS[type] || []).forEach(function (k) {
+                if (k === 'parent_id') return;
+                const f = BIZ_FIELD_POOL[k];
+                if (!f) return;
+                const el = document.getElementById('fld_' + k);
+                let v = el ? el.value : '';
+                if (f.type === 'number') {
+                    v = parseFloat(v);
+                    if (isNaN(v)) v = null;
+                } else {
+                    v = (v || '').trim();
+                }
+                data[k] = v;
+            });
 
             try {
                 if (id) {
@@ -256,9 +561,656 @@
             }
         }
 
+        // ===== 业务批量导入（两阶段：解析 -> 用户确认合并/新增 -> 落库）=====
+        let importPreviewRows = [];
+        let resolveState = {};
+        let rowCombos = {};
+
+        function downloadBusinessTemplate() {
+            window.location.href = '/api/business/template';
+        }
+
+        function openBusinessImportModal() {
+            document.getElementById('businessImportFile').value = '';
+            document.getElementById('businessImportResolve').innerHTML = '';
+            document.getElementById('businessImportResult').innerHTML = '';
+            document.getElementById('businessImportCommitBtn').style.display = 'none';
+            document.getElementById('businessImportModal').classList.add('show');
+        }
+
+        function closeBusinessImportModal() {
+            document.getElementById('businessImportModal').classList.remove('show');
+        }
+
+        function getCompanyName(cid) {
+            const c = customers.find(x => x.id === cid);
+            return c ? (c.company || c.name || '') : '';
+        }
+
+        async function doBusinessImportPreview() {
+            const fileInput = document.getElementById('businessImportFile');
+            if (!fileInput.files.length) {
+                showToast('请先选择 CSV 文件', 'error');
+                return;
+            }
+            if (customers.length === 0) await loadCustomersForSelect();
+            const fd = new FormData();
+            fd.append('file', fileInput.files[0]);
+            const resolveEl = document.getElementById('businessImportResolve');
+            resolveEl.innerHTML = '<div class="alert alert-info">正在解析...</div>';
+            document.getElementById('businessImportCommitBtn').style.display = 'none';
+            try {
+                const resp = await fetch('/api/business/import/preview', { method: 'POST', body: fd });
+                const data = await resp.json();
+                if (!resp.ok) throw new Error(data.error || '解析失败');
+                importPreviewRows = data.rows || [];
+                renderImportResolve(data);
+            } catch (e) {
+                resolveEl.innerHTML = `<div class="alert alert-danger">解析失败：${e.message}</div>`;
+            }
+        }
+
+        function renderImportResolve(data) {
+            const el = document.getElementById('businessImportResolve');
+            const rows = data.rows || [];
+            if (rows.length === 0) {
+                el.innerHTML = '<div class="alert alert-info">文件中没有可导入的数据行。</div>';
+                return;
+            }
+            const s = data.stats || {};
+            const legend = `共 ${s.total || rows.length} 行：精确匹配 ${s.exact || 0} · 模糊候选 ${s.fuzzy || 0} · 需新增 ${s.new || 0} · 重复跳过 ${s.duplicate || 0} · 错误 ${s.error || 0}`;
+
+            const body = rows.map(r => {
+                let ctrl = '';
+                if (r.status === 'duplicate') {
+                    ctrl = '<span class="badge badge-normal">重复 · 跳过</span>';
+                } else if (r.status === 'error') {
+                    ctrl = '<span class="badge badge-danger">错误</span>';
+                } else {
+                    ctrl = `<div class="cmb-mount" data-idx="${r.index}"></div>`;
+                }
+                const bn = (r.record && r.record['业务号码']) || '';
+                const company = (r.record && r.record['公司名称']) || '';
+                return `<tr>
+                    <td>${r.index}</td>
+                    <td><strong>${company.replace(/</g, '&lt;')}</strong></td>
+                    <td>${bn.replace(/</g, '&lt;')}</td>
+                    <td>${ctrl}</td>
+                </tr>`;
+            }).join('');
+
+            el.innerHTML = `
+                <div class="alert alert-info">${legend}</div>
+                <div style="max-height:320px;overflow:auto;">
+                <table>
+                    <thead><tr><th>行</th><th>公司名称</th><th>业务号</th><th>关联方式</th></tr></thead>
+                    <tbody>${body}</tbody>
+                </table>
+                </div>
+                <p style="margin-top:8px;color:var(--text-muted);font-size:13px;">提示：在搜索框输入公司名可快速定位，下拉可把「模糊」或「新增」改为合并到指定客户，或直接新增客户。确认无误后点「确认导入」。</p>
+            `;
+            document.getElementById('businessImportCommitBtn').style.display = 'inline-block';
+            resolveState = {};
+            rowCombos = {};
+
+            // 为每行构建可搜索下拉框
+            rows.forEach(r => {
+                if (r.status === 'duplicate' || r.status === 'error') return;
+                const opts = [];
+                let selected = '';
+                if (r.status === 'fuzzy' && r.candidates && r.candidates.length) {
+                    r.candidates.forEach(c => {
+                        opts.push({ value: c.id, label: (c.company || '未命名') + '（推荐·匹配度 ' + c.score + '）', recommended: true });
+                    });
+                    selected = r.candidates[0].id;
+                }
+                opts.push({ value: '__new__', label: '＋ 新增客户', special: true });
+                customers.forEach(c => opts.push({ value: c.id, label: c.company || c.name || '未命名' }));
+
+                if (r.status === 'exact') selected = r.customer_id;
+                if (r.status === 'new') selected = '__new__';
+
+                const mount = el.querySelector(`.cmb-mount[data-idx="${r.index}"]`);
+                if (!mount) return;
+                const idx = r.index;
+                rowCombos[idx] = buildSearchSelect(mount, opts, selected, function (val) {
+                    if (val === '__new__' || !val) {
+                        resolveState[idx] = { status: 'new', action: 'new', customer_id: null };
+                    } else {
+                        resolveState[idx] = { status: 'merge', action: 'merge', customer_id: parseInt(val) };
+                    }
+                }, true);
+
+                resolveState[idx] = {
+                    status: (selected === '__new__') ? 'new' : 'merge',
+                    action: (selected === '__new__') ? 'new' : 'merge',
+                    customer_id: (selected && selected !== '__new__') ? parseInt(selected) : null
+                };
+            });
+        }
+
+        function onResolveChange() { /* 兼容旧引用，combobox 已在回调中更新 resolveState */ }
+
+        async function commitBusinessImport() {
+            const payloadRows = importPreviewRows
+                .filter(r => r.status !== 'duplicate' && r.status !== 'error')
+                .map(r => {
+                    const st = resolveState[r.index] || { action: r.action, customer_id: r.customer_id };
+                    let action = st.action, customer_id = st.customer_id;
+                    const cmb = rowCombos[r.index];
+                    if (cmb) {
+                        const v = cmb.getValue();
+                        if (v === '__new__' || !v) { action = 'new'; customer_id = null; }
+                        else { action = 'merge'; customer_id = parseInt(v); }
+                    }
+                    return { record: r.record, action, customer_id };
+                });
+            if (payloadRows.length === 0) {
+                showToast('没有可导入的行', 'error');
+                return;
+            }
+            const resultEl = document.getElementById('businessImportResult');
+            resultEl.innerHTML = '<div class="alert alert-info">正在导入...</div>';
+            try {
+                const resp = await api('/api/business/import/commit', { method: 'POST', body: { rows: payloadRows } });
+                let html = `<div class="alert alert-success">${resp.message}</div>`;
+                if (resp.errors && resp.errors.length) {
+                    html += '<div class="alert alert-info" style="max-height:150px;overflow:auto;"><strong>部分行提示：</strong><br>' +
+                        resp.errors.map(e => '· ' + e).join('<br>') + '</div>';
+                }
+                resultEl.innerHTML = html;
+                showToast(resp.message, 'success');
+                document.getElementById('businessImportCommitBtn').style.display = 'none';
+                document.getElementById('businessImportResolve').innerHTML = '';
+                loadBusinesses();
+            } catch (e) {
+                resultEl.innerHTML = `<div class="alert alert-danger">导入失败：${e.message}</div>`;
+                showToast('导入失败: ' + e.message, 'error');
+            }
+        }
+
+        // ===== 台账：标签切换 + 列表 + 新增/编辑/删除（与移动端对齐）=====
+        function onBizSearch() {
+            if (activeBizTab === 'ledger') loadLedgers();
+            else loadBusinesses();
+        }
+
+        // 导出当前筛选/搜索结果：业务 tab 导出 allBusinesses，台账 tab 导出 allLedgers
+        function exportCurrentBiz() {
+            const d = new Date().toISOString().slice(0, 10);
+            if (activeBizTab === 'ledger') {
+                if (!allLedgers || !allLedgers.length) { showToast('当前没有可导出的台账', 'error'); return; }
+                const headers = ['日期', '号码', '公司', '使用人', '层级', '套餐类型', '关联主卡'];
+                const rows = allLedgers.map(function (r) {
+                    return [r.date || '', r.number || '', r.company || '', r.user_name || '',
+                        r.package_name || '', r.package_type || '', r.parent_number || ''];
+                });
+                downloadCsv('台账导出_' + d + '.csv', headers, rows);
+            } else {
+                let rows = allBusinesses;
+                if (activeBizTab && activeBizTab !== 'all' && activeBizTab !== 'ledger') {
+                    rows = allBusinesses.filter(function (b) { return b.business_type === activeBizTab; });
+                }
+                if (!rows || !rows.length) { showToast('当前没有可导出的业务', 'error'); return; }
+                const headers = ['公司名称', '业务类型', '业务套餐', '合同编码', '业务号码', '合同金额', '开始时间', '结束时间', '业务地址', '备注'];
+                const data = rows.map(function (b) {
+                    return [b.company_name || '', b.business_type || '', b.business_package || '',
+                        b.contract_code || '', (b.number || ''),
+                        (b.contract_amount != null ? b.contract_amount : ''),
+                        b.start_date || '', b.end_date || '', b.business_address || '', b.notes || ''];
+                });
+                downloadCsv('业务导出_' + d + '.csv', headers, data);
+            }
+        }
+
+        function bizTabLabel(tab) {
+            if (tab === 'all') return '全部业务';
+            if (tab === 'ledger') return '台账';
+            return tab; // 10 个业务类型之一
+        }
+
+        // 业务分类下拉：与移动端 bizTypeMenuHtml 一致（全部业务 + 10 类型两列 + 台账入口）
+        function renderBizTypeMenu() {
+            const menu = document.getElementById('bizTypeMenu');
+            function item(tab) {
+                const active = (activeBizTab === tab) ? ' is-active' : '';
+                return '<button type="button" class="biz-type-item' + active + '" data-tab="' + tab + '" onclick="selectBizType(\'' + tab + '\')">' + bizTabLabel(tab) + '</button>';
+            }
+            menu.innerHTML =
+                item('all') +
+                '<div class="biz-type-divider"></div>' +
+                '<div class="biz-type-cols">' +
+                    '<div class="biz-type-col">' + BIZ_TYPE_LIST_LEFT.map(item).join('') + '</div>' +
+                    '<div class="biz-type-col">' + BIZ_TYPE_LIST_RIGHT.map(item).join('') + '</div>' +
+                '</div>' +
+                '<div class="biz-type-divider"></div>' +
+                item('ledger');
+        }
+
+        function switchBizTab(tab) {
+            activeBizTab = tab;
+            const isLedger = tab === 'ledger';
+            document.getElementById('bizTypeLabel').textContent = bizTabLabel(tab);
+            renderBizTypeMenu();
+            document.getElementById('btnAddBusiness').style.display = isLedger ? 'none' : '';
+            document.getElementById('btnBusinessImport').style.display = isLedger ? 'none' : '';
+            document.getElementById('btnLedgerImport').style.display = isLedger ? '' : 'none';
+            document.getElementById('btnAddLedger').style.display = isLedger ? '' : 'none';
+            document.getElementById('searchInput').placeholder = isLedger
+                ? '🔍 搜索号码/公司/使用人/日期...'
+                : '🔍 搜索公司名称/合同编码/业务号码/类型...';
+            if (isLedger) loadLedgers();
+            else loadBusinesses();
+        }
+
+        function toggleBizTypeMenu() {
+            const wrap = document.getElementById('bizTypeWrap');
+            const menu = document.getElementById('bizTypeMenu');
+            const open = menu.style.display !== 'none';
+            menu.style.display = open ? 'none' : 'block';
+            wrap.classList.toggle('is-open', !open);
+        }
+
+        function selectBizType(tab) {
+            switchBizTab(tab);
+            document.getElementById('bizTypeMenu').style.display = 'none';
+            document.getElementById('bizTypeWrap').classList.remove('is-open');
+        }
+
+        document.addEventListener('click', function (e) {
+            const wrap = document.getElementById('bizTypeWrap');
+            const menu = document.getElementById('bizTypeMenu');
+            if (menu && menu.style.display !== 'none' && wrap && !wrap.contains(e.target)) {
+                menu.style.display = 'none';
+                wrap.classList.remove('is-open');
+            }
+        });
+
+        async function loadLedgers() {
+            const el = document.getElementById('businessTable');
+            el.innerHTML = '<div class="empty-state"><div class="icon">⏳</div><div>加载中...</div></div>';
+            const search = document.getElementById('searchInput').value;
+            try {
+                let list = await api('/api/ledgers');
+                list.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+                if (search) {
+                    const q = search.trim().toLowerCase();
+                    list = list.filter(r =>
+                        (r.number && r.number.toLowerCase().indexOf(q) !== -1) ||
+                        (r.company && r.company.toLowerCase().indexOf(q) !== -1) ||
+                        (r.user_name && r.user_name.toLowerCase().indexOf(q) !== -1) ||
+                        (r.date && r.date.replace(/-/g, '').indexOf(q) !== -1)
+                    );
+                }
+                allLedgers = list;
+                renderLedgers(list);
+            } catch (e) {
+                showToast('加载失败: ' + e.message, 'error');
+            }
+        }
+
+        function renderLedgers(list) {
+            const el = document.getElementById('businessTable');
+            const data = (list && list.length) ? list : (allLedgers || []);
+            if (!data.length) {
+                el.innerHTML = '<div class="empty-state"><div class="icon">📭</div><div class="title">暂无台账</div><div>点击右上角"新增台账"或"批量导入"开始添加</div></div>';
+                return;
+            }
+            const MAIN = LEDGER_MAIN_TYPES;
+            const esc2 = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+            const mains = data.filter(r => MAIN.includes(r.package_type));
+            const children = data.filter(r => r.parent_number);
+            const orphans = data.filter(r => !MAIN.includes(r.package_type) && !r.parent_number);
+            const childMap = {};
+            children.forEach(c => {
+                const k = (c.parent_number || '').trim();
+                (childMap[k] = childMap[k] || []).push(c);
+            });
+            const fmtDate = d => d ? d.replace(/-/g, '').substring(2, 8) : '-';
+            const rowHtml = (r, isChild) => {
+                const cls = isChild ? ' class="ledger-child-row"' : '';
+                const numCell = isChild ? '↳ ' + esc2(r.number || '-') : esc2(r.number || '-');
+                const relTag = isChild ? '<span class="ledger-rel-tag">关联主卡</span>' : '';
+                return '<tr' + cls + '>' +
+                    '<td>' + fmtDate(r.date) + '</td>' +
+                    '<td>' + numCell + '</td>' +
+                    '<td><strong>' + esc2(r.company || '-') + '</strong></td>' +
+                    '<td>' + esc2(r.user_name || '-') + '</td>' +
+                    '<td>' + esc2(r.package_name || '-') + '</td>' +
+                    '<td>' + esc2(r.package_type || '-') + '</td>' +
+                    '<td>' + relTag + '</td>' +
+                    '<td>' +
+                        '<button class="btn btn-outline btn-sm" onclick="editLedger(' + r.id + ')">编辑</button> ' +
+                        '<button class="btn btn-danger btn-sm" onclick="deleteLedger(' + r.id + ', \'' + (r.company || '').replace(/'/g, "\\'") + '\')">删除</button>' +
+                    '</td>' +
+                '</tr>';
+            };
+            let html = '<table><thead><tr><th>日期</th><th>号码</th><th>公司</th><th>使用人</th><th>层级</th><th>套餐类型</th><th>关联</th><th>操作</th></tr></thead><tbody>';
+            mains.forEach(m => {
+                html += rowHtml(m, false);
+                (childMap[(m.number || '').trim()] || []).forEach(c => { html += rowHtml(c, true); });
+            });
+            orphans.forEach(o => { html += rowHtml(o, false); });
+            html += '</tbody></table>';
+            el.innerHTML = html;
+        }
+
+        function editLedger(id) {
+            const r = allLedgers.find(x => x.id === id);
+            if (r) openLedgerModal(r);
+        }
+
+        async function deleteLedger(id, name) {
+            if (!confirm('确定删除台账「' + (name || '该记录') + '」吗？')) return;
+            try {
+                await api('/api/ledgers/' + id, { method: 'DELETE' });
+                showToast('已删除', 'success');
+                loadLedgers();
+            } catch (e) {
+                showToast('删除失败: ' + e.message, 'error');
+            }
+        }
+
+        let _ledgerSubCount = 0;
+
+        const LEDGER_MAIN_TYPES = ['数智惠企', '冰激凌', '魔方卡'];
+        const LEDGER_CHILD_TYPES = ['副卡', '宽带', '固话'];
+
+        // 根据套餐类型切换 UI：主卡显示副卡/宽带/固话按钮；子卡显示关联主卡；魔方卡等隐藏
+        function syncLedgerTypeUI() {
+            const type = (document.getElementById('ledgerPackageType').value || '').trim();
+            const isMain = LEDGER_MAIN_TYPES.includes(type);
+            const isChild = LEDGER_CHILD_TYPES.includes(type);
+            document.getElementById('ledgerSubWrap').style.display = isMain ? '' : 'none';
+            const parentWrap = document.getElementById('ledgerParentWrap');
+            if (isChild) {
+                parentWrap.style.display = '';
+                populateLedgerParentOptions();
+            } else {
+                parentWrap.style.display = 'none';
+            }
+        }
+
+        // 关联主卡下拉：来源为已录入的主卡（数智惠企/冰激凌），排除正在编辑的自身
+        function populateLedgerParentOptions() {
+            const sel = document.getElementById('ledgerParent');
+            const mains = (allLedgers || []).filter(l => LEDGER_MAIN_TYPES.includes(l.package_type));
+            const editingId = document.getElementById('ledgerId').value;
+            let html = '<option value="">请选择主卡（数智惠企 / 冰激凌）</option>';
+            mains.forEach(m => {
+                if (String(m.id) === String(editingId)) return;
+                const label = (m.number || '-') + (m.company ? '（' + m.company + '）' : '');
+                html += '<option value="' + (m.number || '').replace(/"/g, '&quot;') + '">' + label.replace(/</g, '&lt;') + '</option>';
+            });
+            sel.innerHTML = html;
+        }
+
+        function openLedgerModal(ledger = null) {
+            const modal = document.getElementById('ledgerModal');
+            const title = document.getElementById('ledgerModalTitle');
+            document.getElementById('ledgerForm').reset();
+            _ledgerSubCount = 0;
+            document.getElementById('ledgerSubEntries').innerHTML = '';
+            if (ledger) {
+                title.textContent = '编辑台账';
+                document.getElementById('ledgerId').value = ledger.id;
+                document.getElementById('ledgerDate').value = ledger.date || '';
+                document.getElementById('ledgerNumber').value = ledger.number || '';
+                document.getElementById('ledgerCompany').value = ledger.company || '';
+                document.getElementById('ledgerUser').value = ledger.user_name || '';
+                document.getElementById('ledgerPackage').value = ledger.package_name || '';
+                document.getElementById('ledgerPackageType').value = ledger.package_type || '';
+                // 兼容遗留值（不在下拉选项中的套餐类型）：补一个当前值选项，避免被清空
+                const sel = document.getElementById('ledgerPackageType');
+                if (ledger.package_type && ![...sel.options].some(o => o.value === ledger.package_type)) {
+                    const opt = document.createElement('option');
+                    opt.value = ledger.package_type;
+                    opt.textContent = ledger.package_type + '（原有）';
+                    sel.appendChild(opt);
+                    sel.value = ledger.package_type;
+                }
+            } else {
+                title.textContent = '新增台账';
+                document.getElementById('ledgerId').value = '';
+            }
+            syncLedgerTypeUI();
+            if (ledger && LEDGER_CHILD_TYPES.includes((ledger.package_type || '').trim())) {
+                document.getElementById('ledgerParent').value = ledger.parent_number || '';
+            }
+            modal.classList.add('show');
+        }
+
+        function closeLedgerModal() {
+            document.getElementById('ledgerModal').classList.remove('show');
+        }
+
+        function addLedgerSubEntry(type, defaultPkg) {
+            const max = BIZ_SUB_MAX[type] || 2;
+            const existing = document.querySelectorAll('#ledgerSubEntries > div');
+            let count = 0;
+            existing.forEach(el => {
+                const label = el.querySelector('span');
+                if (label && label.textContent.trim() === type) count++;
+            });
+            if (count >= max) {
+                showToast(type + '已达上限（最多' + max + '条）', 'error');
+                return;
+            }
+            _ledgerSubCount++;
+            const idx = _ledgerSubCount;
+            const div = document.createElement('div');
+            div.id = 'ledSubRow' + idx;
+            div.style.cssText = 'display:flex;gap:6px;align-items:center;margin-top:6px;padding:6px 8px;background:#f5f6fa;border-radius:6px;';
+            div.innerHTML =
+                '<span style="font-size:11px;color:#888;white-space:nowrap;min-width:32px;">' + type + '</span>' +
+                '<input type="text" placeholder="号码" id="ledSubNum' + idx + '" style="flex:1;font-size:12px;padding:5px;border:1px solid #ddd;border-radius:4px;min-width:0;">' +
+                '<input type="text" placeholder="层级" id="ledSubPkg' + idx + '" value="' + defaultPkg + '" style="width:60px;font-size:12px;padding:5px;border:1px solid #ddd;border-radius:4px;">' +
+                '<input type="text" placeholder="套餐类型" id="ledSubType' + idx + '" value="' + type + '" style="width:70px;font-size:12px;padding:5px;border:1px solid #ddd;border-radius:4px;">' +
+                '<button type="button" onclick="removeLedgerSubEntry(' + idx + ')" style="border:none;background:none;color:#e74c3c;font-size:18px;cursor:pointer;padding:0 4px;">×</button>';
+            document.getElementById('ledgerSubEntries').appendChild(div);
+        }
+
+        function removeLedgerSubEntry(idx) {
+            const row = document.getElementById('ledSubRow' + idx);
+            if (row) row.remove();
+        }
+
+        async function saveLedger() {
+            const id = document.getElementById('ledgerId').value;
+            const date = document.getElementById('ledgerDate').value;
+            const number = document.getElementById('ledgerNumber').value.trim();
+            const company = document.getElementById('ledgerCompany').value.trim();
+            const userName = document.getElementById('ledgerUser').value.trim();
+            const pkg = document.getElementById('ledgerPackage').value.trim();
+            const pkgType = document.getElementById('ledgerPackageType').value.trim();
+            if (!company && !number) {
+                showToast('请输入公司或号码', 'error');
+                return;
+            }
+            const isMain = LEDGER_MAIN_TYPES.includes(pkgType);
+            const isChild = LEDGER_CHILD_TYPES.includes(pkgType);
+            if (id) {
+                const parentVal = isChild ? (document.getElementById('ledgerParent').value || '') : '';
+                try {
+                    await api('/api/ledgers/' + id, { method: 'PUT', body: { date, number, company, user_name: userName, package_name: pkg, package_type: pkgType, parent_number: parentVal } });
+                    showToast('保存成功', 'success');
+                    closeLedgerModal();
+                    loadLedgers();
+                } catch (e) {
+                    showToast('保存失败: ' + e.message, 'error');
+                }
+                return;
+            }
+            // 子卡（副卡/宽带/固话）关联主卡为可选（与移动端一致）：未选则作为独立子卡
+            let parentVal = '';
+            if (isChild) {
+                parentVal = (document.getElementById('ledgerParent').value || '').trim();
+            }
+            // 新增：主条目 + 子条目（副卡/宽带/固话）逐条 POST（与移动端一致：子条目即多条台账）
+            // 子条目通过 parent_number 关联主卡号码
+            const entries = [{ number, package_name: pkg, package_type: pkgType, parent_number: isChild ? parentVal : '' }];
+            if (isMain) {
+                if (_ledgerSubCount > 0 && !number) {
+                    showToast('请填写主卡号码以便关联副卡/宽带/固话', 'error');
+                    return;
+                }
+                for (let i = 1; i <= _ledgerSubCount; i++) {
+                    const sn = document.getElementById('ledSubNum' + i);
+                    const sp = document.getElementById('ledSubPkg' + i);
+                    const st = document.getElementById('ledSubType' + i);
+                    if (!sn || !sp) continue;
+                    const n = sn.value.trim();
+                    const p = sp.value.trim();
+                    const pt = st ? st.value.trim() : '';
+                    if (!n && !p && !pt) continue;
+                    entries.push({ number: n, package_name: p || (sp.defaultValue || ''), package_type: pt || (st ? st.defaultValue : ''), parent_number: number });
+                }
+            }
+            try {
+                for (const e of entries) {
+                    await api('/api/ledgers', {
+                        method: 'POST',
+                        body: { date, number: e.number, company, user_name: userName, package_name: e.package_name, package_type: e.package_type, parent_number: e.parent_number || '' }
+                    });
+                }
+                showToast('新增成功，共 ' + entries.length + ' 条', 'success');
+                closeLedgerModal();
+                loadLedgers();
+            } catch (e) {
+                showToast('新增失败: ' + e.message, 'error');
+            }
+        }
+
         // 初始化
+        renderBizTypeMenu();
         loadCustomersForSelect();
         loadBusinesses();
+
+        // ===== 台账批量导入 =====
+        let ledgerImportRows = [];
+
+        function downloadLedgerTemplate() {
+            window.location.href = '/api/ledgers/template';
+        }
+
+        function openLedgerImportModal() {
+            document.getElementById('ledgerImportFile').value = '';
+            document.getElementById('ledgerImportPreview').innerHTML = '';
+            document.getElementById('ledgerImportResult').innerHTML = '';
+            document.getElementById('ledgerImportCommitBtn').style.display = 'none';
+            document.getElementById('ledgerImportModal').classList.add('show');
+        }
+
+        function closeLedgerImportModal() {
+            document.getElementById('ledgerImportModal').classList.remove('show');
+        }
+
+        async function doLedgerImportPreview() {
+            const fileInput = document.getElementById('ledgerImportFile');
+            if (!fileInput.files.length) {
+                showToast('请先选择 CSV 文件', 'error');
+                return;
+            }
+            const fd = new FormData();
+            fd.append('file', fileInput.files[0]);
+            const previewEl = document.getElementById('ledgerImportPreview');
+            previewEl.innerHTML = '<div class="alert alert-info">正在解析...</div>';
+            document.getElementById('ledgerImportCommitBtn').style.display = 'none';
+            try {
+                const resp = await fetch('/api/ledgers/import/preview', { method: 'POST', body: fd });
+                const data = await resp.json();
+                if (!resp.ok) throw new Error(data.error || '解析失败');
+                ledgerImportRows = data.rows || [];
+                renderLedgerImportPreview(data);
+            } catch (e) {
+                previewEl.innerHTML = '<div class="alert alert-danger">解析失败：' + e.message + '</div>';
+            }
+        }
+
+        function renderLedgerImportPreview(data) {
+            const el = document.getElementById('ledgerImportPreview');
+            const rows = data.rows || [];
+            if (rows.length === 0) {
+                el.innerHTML = '<div class="alert alert-info">文件中没有可导入的数据行。</div>';
+                return;
+            }
+            const ok = rows.filter(r => r.status === 'ok').length;
+            const dup = rows.filter(r => r.status === 'duplicate').length;
+            const err = rows.filter(r => r.status === 'error').length;
+            const legend = '共 ' + rows.length + ' 行：可导入 ' + ok + ' · 重复跳过 ' + dup + ' · 错误 ' + err;
+
+            const body = rows.map(function(r) {
+                const rec = r.record || {};
+                let statusLabel = '';
+                if (r.status === 'ok') statusLabel = '<span class="badge badge-success">✓ 可导入</span>';
+                else if (r.status === 'duplicate') statusLabel = '<span class="badge badge-normal">重复 · 跳过</span>';
+                else statusLabel = '<span class="badge badge-danger">' + (r.message || '错误') + '</span>';
+                return '<tr>' +
+                    '<td>' + r.index + '</td>' +
+                    '<td>' + (rec['日期'] || '-') + '</td>' +
+                    '<td>' + (rec['号码'] || '-') + '</td>' +
+                    '<td><strong>' + (rec['公司'] || '-') + '</strong></td>' +
+                    '<td>' + (rec['使用人'] || '-') + '</td>' +
+                    '<td>' + (rec['层级'] || rec['套餐'] || '-') + '</td>' +
+                    '<td>' + (rec['套餐类型'] || '-') + '</td>' +
+                    '<td>' + statusLabel + '</td>' +
+                    '</tr>';
+            }).join('');
+
+            el.innerHTML =
+                '<div class="alert alert-info">' + legend + '</div>' +
+                '<div style="max-height:280px;overflow:auto;">' +
+                '<table><thead><tr>' +
+                '<th>行</th><th>日期</th><th>号码</th><th>公司</th><th>使用人</th><th>层级</th><th>套餐类型</th><th>状态</th>' +
+                '</tr></thead><tbody>' + body + '</tbody></table></div>';
+
+            if (ok > 0) {
+                document.getElementById('ledgerImportCommitBtn').style.display = 'inline-block';
+            }
+        }
+
+        async function commitLedgerImport() {
+            const okRows = ledgerImportRows.filter(function(r) { return r.status === 'ok'; });
+            if (okRows.length === 0) {
+                showToast('没有可导入的行', 'error');
+                return;
+            }
+            const resultEl = document.getElementById('ledgerImportResult');
+            resultEl.innerHTML = '<div class="alert alert-info">正在导入...</div>';
+            try {
+                const resp = await api('/api/ledgers/import/commit', { method: 'POST', body: { rows: okRows } });
+                let html = '<div class="alert alert-success">' + resp.message + '</div>';
+                if (resp.errors && resp.errors.length) {
+                    html += '<div class="alert alert-info" style="max-height:150px;overflow:auto;"><strong>错误：</strong><br>' +
+                        resp.errors.map(function(e) { return '· ' + e; }).join('<br>') + '</div>';
+                }
+                resultEl.innerHTML = html;
+                showToast(resp.message, 'success');
+                document.getElementById('ledgerImportCommitBtn').style.display = 'none';
+                document.getElementById('ledgerImportPreview').innerHTML = '';
+            } catch (e) {
+                resultEl.innerHTML = '<div class="alert alert-danger">导入失败：' + e.message + '</div>';
+                showToast('导入失败: ' + e.message, 'error');
+            }
+        }
+
+        // URL 参数：从客户详情跳转过来时自动打开新增业务表单并预填客户
+        (function() {
+            var params = new URLSearchParams(window.location.search);
+            var cid = params.get('cid');
+            var cname = params.get('cname');
+            if (cid && cname) {
+                // 等客户列表加载完再打开
+                var timer = setInterval(function() {
+                    if (customers.length > 0 && customerCmb) {
+                        clearInterval(timer);
+                        openBusinessModal();
+                        customerCmb.setValue(cid);
+                        document.getElementById('customerSelect').value = cid;
+                    }
+                }, 200);
+            }
+        })();
     </script>
 </body>
 </html>
