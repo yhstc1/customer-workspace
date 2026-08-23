@@ -351,6 +351,10 @@ def init_db():
     if not _column_exists(cur, "users", "status"):
         cur.execute("ALTER TABLE users ADD COLUMN status TEXT DEFAULT 'active'")
 
+    # 迁移：补充钉钉 userId 绑定列（免登用；幂等）
+    if not _column_exists(cur, "users", "dingtalk_user_id"):
+        cur.execute("ALTER TABLE users ADD COLUMN dingtalk_user_id TEXT")
+
     # 种子用户 + 默认设置（首次建库时）
     _seed_users(cur)
 
@@ -389,6 +393,12 @@ def init_db():
     cur.execute(
         "UPDATE users SET password_hash=? WHERE password_hash IS NULL OR password_hash='' OR password_hash LIKE 'scrypt%'",
         (make_password_hash("123456"),),
+    )
+
+    # 钉钉免登：把管理员账号绑定钉钉 userId（用户本人 03683725397487）
+    cur.execute(
+        "UPDATE users SET dingtalk_user_id=? WHERE username='18607184641' AND (dingtalk_user_id IS NULL OR dingtalk_user_id='')",
+        ("03683725397487",),
     )
 
     conn.commit()

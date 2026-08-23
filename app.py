@@ -233,6 +233,7 @@ _PUBLIC_PREFIXES = (
     "/api/login",
     "/api/logout",
     "/api/me",
+    "/api/auth/login",       # 钉钉 H5 免登
     "/api/register",         # 手机号自助注册
     "/api/forgot-password",  # 忘记密码：未登录也可提交（待管理员审核）
     "/static/",
@@ -313,6 +314,59 @@ def _require_admin():
     if not row or not row["is_admin"]:
         return jsonify({"error": "无权限，仅管理员可操作"}), 403
     return None
+
+
+# ==================== 钉钉 H5 免登辅助 ====================
+import urllib.request as _urllib
+import urllib.error as _urllib_err
+
+_DING_APP_KEY = os.environ.get("DING_APP_KEY", "")
+_DING_APP_SECRET = os.environ.get("DING_APP_SECRET", "")
+_ding_token_cache = {"token": None, "exp": 0}
+
+
+def _ding_get_app_token():
+    """获取企业内部应用 access_token（带缓存）。"""
+    now = time.time()
+    if _ding_token_cache["token"] and _ding_token_cache["exp"] > now + 60:
+        return _ding_token_cache["token"]
+    url = "https://oapi.dingtalk.com/gettoken?appkey=%s&appsecret=%s" % (
+        urllib.parse.quote(_DING_APP_KEY), urllib.parse.quote(_DING_APP_SECRET))
+    req = _urllib.Request(url, headers={"Content-Type": "application/json"})
+    with _urllib.urlopen(req, timeout=10) as resp:
+        d = json.loads(resp.read().decode("utf-8"))
+    if d.get("errcode") != 0:
+        raise RuntimeError("dingtalk gettoken failed: %s" % d)
+    _ding_token_cache["token"] = d["access_token"]
+    _ding_token_cache["exp"] = now + int(d.get("expires_in", 7200))
+    return d["access_token"]
+
+
+def _ding_userid_by_code(auth_code):
+    """用免登 authCode 换钉钉 userId（优先新版 topapi/v2/user/getuserinfo，兼容老接口）。"""
+    token = _ding_get_app_token()
+    # 新版
+    req = _urllib.Request(
+        "https://oapi.dingtalk.com/topapi/v2/user/getuserinfo?access_token=%s" % urllib.parse.quote(token),
+        data=json.dumps({"code": auth_code}).encode("utf-8"),
+        headers={"Content-Type": "application/json"},
+        method="POST")
+    try:
+        with _urllib.urlopen(req, timeout=10) as resp:
+            d = json.loads(resp.read().decode("utf-8"))
+    except _urllib_err.URLError:
+        d = {}
+    if d.get("errcode") == 0 and d.get("result", {}).get("userid"):
+        return d["result"]["userid"]
+    # 兼容老接口
+    url2 = "https://oapi.dingtalk.com/user/getuserinfo?access_token=%s&code=%s" % (
+        urllib.parse.quote(token), urllib.parse.quote(auth_code))
+    req2 = _urllib.Request(url2, headers={"Content-Type": "application/json"})
+    with _urllib.urlopen(req2, timeout=10) as resp2:
+        d2 = json.loads(resp2.read().decode("utf-8"))
+    if d2.get("errcode") != 0:
+        raise RuntimeError("dingtalk getuserinfo failed: %s / %s" % (d, d2))
+    return d2.get("userid")
 
 
 # ==================== 页面路由 ====================
@@ -1948,6 +2002,45 @@ def api_me():
             "display_name": session.get("display_name"),
             "is_admin": bool(session.get("is_admin")),
         }
+    })
+
+
+@app.route("/api/auth/login", methods=["POST"])
+def api_dingtalk_auth_login():
+    """钉钉 H5 免登：用前端传来的免登 authCode 换钉钉 userId，匹配本地账号后种 session。"""
+    data = request.json or {}
+    auth_code = (data.get("authCode") or data.get("code") or "").strip()
+    if not auth_code:
+        return jsonify({"error": "缺少 authCode"}), 400
+    if not _DING_APP_KEY or not _DING_APP_SECRET:
+        return jsonify({"error": "服务端未配置钉钉应用密钥"}), 500
+    try:
+        ding_uid = _ding_userid_by_code(auth_code)
+    except Exception as e:
+        return jsonify({"error": "钉钉免登失败：%s" % str(e)}), 502
+    if not ding_uid:
+        return jsonify({"error": "无法获取钉钉用户身份"}), 502
+    conn = get_db()
+    row = conn.execute(
+        "SELECT * FROM users WHERE dingtalk_user_id=?", (ding_uid,)).fetchone()
+    # 兜底：若钉钉 userId 未绑定任何账号，但 URL 带了 ?phone= 且匹配管理员，则自动绑定（首次免登一键打通）
+    if not row:
+        bind_phone = (data.get("phone") or "").strip()
+        if bind_phone:
+            row = conn.execute(
+                "SELECT * FROM users WHERE phone=? OR username=?", (bind_phone, bind_phone)).fetchone()
+            if row:
+                conn.execute("UPDATE users SET dingtalk_user_id=? WHERE id=?", (ding_uid, row["id"]))
+                conn.commit()
+    conn.close()
+    if not row:
+        return jsonify({"error": "该钉钉账号未绑定系统用户，请先用手机号密码登录一次", "code": "unbound"}), 401
+    if row["status"] == "pending":
+        return jsonify({"error": "账号待管理员审核，暂无法登录", "code": "pending"}), 403
+    _login_as(dict(row))
+    return jsonify({
+        "ok": True,
+        "user": {"id": row["id"], "username": row["username"], "display_name": row["display_name"]},
     })
 
 
