@@ -3609,8 +3609,7 @@ async function loadMapMobile() {
     // 网络返回后仅更新弹窗内数字。marker 点击与 focusMobileCustomer 共用，消除重复逻辑。
     function openCustomerPopupWithCheckin(c, clat, clng, dist) {
         openCustomerMapPopup(c, clat, clng, dist, c.checkin_month || 0);
-        fetch('/api/customers/' + c.id + '/checkin')
-            .then(function(r) { return r.json(); })
+        api('/api/customers/' + c.id + '/checkin')
             .then(function(d) { var el = document.getElementById('ci_' + c.id); if (el) el.textContent = d.count; })
             .catch(function() {});
     }
@@ -4739,8 +4738,7 @@ async function generateReportMobile() {
 
 async function doCheckinMobile(cid) {
     try {
-        var resp = await fetch('/api/customers/' + cid + '/checkin', { method: 'POST' });
-        var d = await resp.json();
+        var d = await api('/api/customers/' + cid + '/checkin', { method: 'POST' });
         var el = document.getElementById('ci_' + cid);
         if (el) el.textContent = d.count;
         // 实时同步到附近列表：更新内存中该客户的打卡数并重绘附近列表，无需等手动刷新
@@ -4778,16 +4776,15 @@ function showCheckinConfirmMobile(cid) {
 function editCheckinMobile(cid) {
     var el = document.getElementById('ci_' + cid);
     var current = parseInt(el ? el.textContent : '0');
+    if (isNaN(current)) current = 0;
     var newVal = prompt('编辑当月打卡次数', current);
     if (newVal === null || newVal === '') return;
     var count = parseInt(newVal);
     if (isNaN(count) || count < 0) { showToast('请输入有效数字', 'error'); return; }
-    fetch('/api/customers/' + cid + '/checkin', {
+    api('/api/customers/' + cid + '/checkin', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ count: count })
     })
-    .then(function(r) { return r.json(); })
     .then(function(d) {
         if (el) el.textContent = d.count;
         // 实时同步到附近列表
