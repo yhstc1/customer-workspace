@@ -25,6 +25,9 @@ def _load_env():
     告警静默失效。这里自读 .env，不依赖启动脚本注入，也不引入第三方依赖。
     """
     try:
+        # FC 环境：密钥已在函数环境变量中，禁用本地 .env 读取
+        if os.environ.get("MYSQL_HOST"):
+            return
         here = os.path.dirname(os.path.abspath(__file__))
         env_path = os.path.join(here, ".env")
         if not os.path.exists(env_path):

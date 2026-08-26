@@ -32,8 +32,14 @@ from datetime import datetime, timedelta
 
 
 def _load_dotenv():
-    """轻量 .env 加载器（无第三方依赖）。仅在环境变量未设置时注入，
-    保证 waitress 无论以 User 还是 SYSTEM 身份启动都能读到 .env 里的凭证。"""
+    """轻量 .env 加载器（无第三方依赖）。
+
+    仅用于**本地开发**：当进程已处于 FC 环境（注入了 MYSQL_HOST）时，
+    完全跳过文件读取——线上密钥统一来自 FC 函数环境变量，不依赖文件系统 .env，
+    避免容器内残留 .env 被误读或打包。
+    """
+    if os.environ.get("MYSQL_HOST"):
+        return  # FC 环境：密钥已在函数环境变量中，禁用本地 .env 加载
     env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
     if not os.path.exists(env_path):
         return

@@ -27,6 +27,9 @@ def load_tencent_key():
     key = os.environ.get("TENCENT_MAP_KEY")
     if key:
         return key
+    # FC 环境：密钥已在函数环境变量中，不读本地 .env 文件
+    if os.environ.get("MYSQL_HOST"):
+        return None
     if os.path.exists(ENV_FILE):
         for line in open(ENV_FILE, encoding="utf-8"):
             line = line.strip()

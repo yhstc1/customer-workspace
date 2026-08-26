@@ -7,21 +7,40 @@ from alibabacloud_fc20230330 import models as fc_models
 from alibabacloud_tea_openapi import models as openapi_models
 from alibabacloud_tea_util import models as util_models
 
-# 阿里云 AccessKey 从环境变量读取，禁止硬编码到仓库（会被 GitHub 推送保护拦截）
-AK_ID = os.environ.get("ALIYUN_AK_ID", "")
-AK_SECRET = os.environ.get("ALIYUN_AK_SECRET", "")
-REGION = os.environ.get("ALIYUN_REGION", "cn-hangzhou")
-ACCOUNT_ID = os.environ.get("ALIYUN_ACCOUNT_ID", "")
-FUNCTION_NAME = os.environ.get("ALIYUN_FC_FUNCTION", "crm-api-fc")
+# 凭证来源优先级：环境变量 > 本地加密存储(fc_creds.py)
+# 禁止硬编码到仓库（会被 GitHub 推送保护拦截）。
+try:
+    from fc_creds import load_creds
+    _CREDS = load_creds() or {}
+except Exception:
+    _CREDS = {}
+
+
+def _get(key, default=""):
+    # 环境变量优先（便于临时覆盖），其次本地加密存储
+    return os.environ.get(key) or _CREDS.get(key, default)
+
+
+AK_ID = _get("ALIYUN_AK_ID", "")
+AK_SECRET = _get("ALIYUN_AK_SECRET", "")
+REGION = _get("ALIYUN_REGION", "cn-hangzhou")
+ACCOUNT_ID = _get("ALIYUN_ACCOUNT_ID", "")
+FUNCTION_NAME = _get("ALIYUN_FC_FUNCTION", "crm-api-fc")
 ZIP_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "crm-api-custom-runtime-v2.zip")
 
 
 def make_client():
+    # 优先用通配 endpoint（fc.<region>.aliyuncs.com），无需 ALIYUN_ACCOUNT_ID。
+    # 若设了 ALIYUN_ACCOUNT_ID 则用 account-scoped endpoint（与控制台/CLI 默认一致）。
+    endpoint = (
+        f"{ACCOUNT_ID}.{REGION}.fc.aliyuncs.com"
+        if ACCOUNT_ID else f"fc.{REGION}.aliyuncs.com"
+    )
     cfg = openapi_models.Config(
         access_key_id=AK_ID,
         access_key_secret=AK_SECRET,
         region_id=REGION,
-        endpoint=f"{ACCOUNT_ID}.{REGION}.fc.aliyuncs.com",
+        endpoint=endpoint,
     )
     return FCClient(cfg)
 
