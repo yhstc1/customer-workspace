@@ -1485,9 +1485,11 @@ def do_checkin(cid):
             updated_at = datetime('now', 'localtime')
     """, (cid, ym))
     conn.commit()
-    row = conn.execute("SELECT count FROM checkins WHERE customer_id=? AND year_month=?", (cid, ym)).fetchone()
+    cur.execute("SELECT count FROM checkins WHERE customer_id=? AND year_month=?", (cid, ym))
+    row = cur.fetchone()
+    cur.close()
     conn.close()
-    return jsonify({"count": row[0], "year_month": ym})
+    return jsonify({"count": row[0] if row else 1, "year_month": ym})
 
 @app.route("/api/customers/<int:cid>/checkin", methods=["PUT"])
 def update_checkin(cid):
@@ -1498,7 +1500,8 @@ def update_checkin(cid):
         return jsonify({"error": "次数不能为负"}), 400
     ym = _current_ym()
     conn = get_db()
-    conn.execute("""
+    cur = conn.cursor()
+    cur.execute("""
         INSERT INTO checkins (customer_id, year_month, count, updated_at)
         VALUES (?, ?, ?, datetime('now', 'localtime'))
         ON CONFLICT(customer_id, year_month) DO UPDATE SET
@@ -1506,7 +1509,9 @@ def update_checkin(cid):
             updated_at = datetime('now', 'localtime')
     """, (cid, ym, new_count))
     conn.commit()
-    row = conn.execute("SELECT count FROM checkins WHERE customer_id=? AND year_month=?", (cid, ym)).fetchone()
+    cur.execute("SELECT count FROM checkins WHERE customer_id=? AND year_month=?", (cid, ym))
+    row = cur.fetchone()
+    cur.close()
     conn.close()
     return jsonify({"count": row[0] if row else new_count, "year_month": ym})
 
