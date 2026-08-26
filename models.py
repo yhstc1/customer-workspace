@@ -73,9 +73,20 @@ def _is_pragma(sql):
 def _translate(sql):
     """把 SQLite 风格 SQL 翻译为 MySQL 等价写法。"""
     s = sql
+    # excluded.col -> VALUES(col)。
+    # 必须放在保留字反引号之前：若先给 count 加反引号，excluded.count 会变成 excluded.`count`，
+    # 导致本正则无法识别；先把 excluded.count 转为 VALUES(count)，再对左侧字段加反引号即可。
+    # 若 col 本身是保留字，生成的 VALUES(`col`) 在 MySQL 中合法。
+    def _excluded_repl(m):
+        col = m.group(1)
+        if col in ("year_month", "key", "count"):
+            return "VALUES(`" + col + "`)"
+        return "VALUES(" + col + ")"
+    s = re.sub(r"excluded\.(\w+)", _excluded_repl, s)
     # 保留字列名加反引号（year_month / key / count 是 MySQL 保留字，裸用会报 1064）。
-    # 仅匹配小写 key/COUNT，避免误伤 ON DUPLICATE KEY UPDATE 中的大写 KEY 与 COUNT() 聚合。
-    # 负向前瞻 (?!\s*\() 排除 count( 这类函数调用，避免把 COUNT(*) 也加上反引号。
+    # 仅匹配小写 key/count，避免误伤 ON DUPLICATE KEY UPDATE 中的大写 KEY 与 COUNT() 聚合。
+    # 负向前瞻 (?!\s*\() 排除 count( 这类函数调用，避免把 COUNT(*) 也加上反引号；
+    # VALUES(count) 中的 count 后面紧跟 '('，因此也不会被误伤。
     # 负向前瞻/后顾保证不会重复包裹已存在的反引号（避免 ``key``）。
     s = re.sub(r"(?<!`)\b(year_month|key|count)\b(?!`)(?!\s*\()", r"`\1`", s)
     # datetime('now','localtime') -> 当前 +08:00 时间字面量（单引号）
@@ -86,11 +97,53 @@ def _translate(sql):
     # ON CONFLICT(cols) DO UPDATE SET ... -> ON DUPLICATE KEY UPDATE ...
     s = re.sub(r"ON\s+CONFLICT\s*\([^)]*\)\s+DO\s+UPDATE\s+SET",
                "ON DUPLICATE KEY UPDATE", s, flags=re.IGNORECASE)
-    # excluded.col -> VALUES(col)
-    s = re.sub(r"excluded\.(\w+)", r"VALUES(\1)", s)
     # ? 占位符 -> %s
     s = s.replace("?", "%s")
     return s
+
+
+class _Row:
+    """同时支持索引(row[0])和列名(row['col'])访问的行包装器。
+
+    原 SQLite 使用 sqlite3.Row，同时支持 row[0] 与 row['col']；
+    pymysql DictCursor 只返回 dict，导致业务代码里大量 row[0] 取 KeyError。
+    这里包一层，让 MySQL 行也能用 row[0]、row['col']、dict(row)。
+    """
+
+    def __init__(self, data):
+        self._data = data
+
+    def __getitem__(self, key):
+        if isinstance(key, int):
+            return list(self._data.values())[key]
+        return self._data[key]
+
+    def __setitem__(self, key, value):
+        self._data[key] = value
+
+    def __contains__(self, key):
+        return key in self._data
+
+    def __iter__(self):
+        return iter(self._data)
+
+    def __len__(self):
+        return len(self._data)
+
+    def keys(self):
+        return self._data.keys()
+
+    def values(self):
+        return self._data.values()
+
+    def items(self):
+        return self._data.items()
+
+    def get(self, key, default=None):
+        return self._data.get(key, default)
+
+    def __repr__(self):
+        return repr(self._data)
 
 
 class _MySQLCursor:
@@ -104,10 +157,11 @@ class _MySQLCursor:
         return self._raw.executemany(_translate(sql), seq)
 
     def fetchone(self):
-        return self._raw.fetchone()
+        r = self._raw.fetchone()
+        return _Row(r) if r is not None else None
 
     def fetchall(self):
-        return self._raw.fetchall()
+        return [_Row(r) for r in self._raw.fetchall()]
 
     @property
     def lastrowid(self):
