@@ -58,13 +58,11 @@ def main():
             z.write(m_html, "m.html")
             print("added m.html")
 
-        # 本地真实数据库（含 157 条客户），让 FC 默认 SQLite 路径直接读到
-        db_src = os.path.join(PROJECT_ROOT, "data", "customers.db")
-        if os.path.exists(db_src):
-            z.write(db_src, "data/customers.db")
-            print("added data/customers.db (local real data)")
-        else:
-            print("WARN: data/customers.db 不存在，FC 将使用空库")
+        # 不再打包本地 data/customers.db：FC 生产环境走 MySQL（MYSQL_HOST 已设），
+        # server.py 在 MySQL 模式下直接跳过 /tmp 拷贝、不读取包内 SQLite，
+        # 把本地真实客户数据打进部署包既无用、又会在 MYSQL_HOST 漏配时误导排查。
+        # 仅未设 MYSQL_HOST 的 SQLite 冷启动模式才需要包内 db，而生产永不走该分支。
+        print("skip data/customers.db (FC 走 MySQL，本地数据不入包)")
 
         # 静态资源（剔除 apk 等大文件）
         static_dir = os.path.join(PROJECT_ROOT, "static")
