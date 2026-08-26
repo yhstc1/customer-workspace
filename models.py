@@ -73,10 +73,11 @@ def _is_pragma(sql):
 def _translate(sql):
     """把 SQLite 风格 SQL 翻译为 MySQL 等价写法。"""
     s = sql
-    # 保留字列名加反引号（year_month / key 是 MySQL 保留字，裸用会报 1064）。
-    # 仅匹配小写 key，避免误伤 ON DUPLICATE KEY UPDATE 中的大写 KEY。
+    # 保留字列名加反引号（year_month / key / count 是 MySQL 保留字，裸用会报 1064）。
+    # 仅匹配小写 key/COUNT，避免误伤 ON DUPLICATE KEY UPDATE 中的大写 KEY 与 COUNT() 聚合。
+    # 负向前瞻 (?!\s*\() 排除 count( 这类函数调用，避免把 COUNT(*) 也加上反引号。
     # 负向前瞻/后顾保证不会重复包裹已存在的反引号（避免 ``key``）。
-    s = re.sub(r"(?<!`)\b(year_month|key)\b(?!`)", r"`\1`", s)
+    s = re.sub(r"(?<!`)\b(year_month|key|count)\b(?!`)(?!\s*\()", r"`\1`", s)
     # datetime('now','localtime') -> 当前 +08:00 时间字面量（单引号）
     s = re.sub(r"datetime\('now',\s*'localtime'\)", "'" + _local_now() + "'", s)
     # INSERT OR IGNORE / INSERT OR REPLACE
