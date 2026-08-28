@@ -48,6 +48,8 @@ def make_client():
 def get_function(client):
     runtime = util_models.RuntimeOptions()
     runtime.qualifier = "LATEST"
+    runtime.read_timeout = 60
+    runtime.connect_timeout = 30
     try:
         resp = client.get_function(FUNCTION_NAME, runtime)
         return resp.body
@@ -65,6 +67,11 @@ def update_code(client):
     req = fc_models.UpdateFunctionRequest(body=body)
     runtime = util_models.RuntimeOptions()
     runtime.qualifier = "LATEST"
+    # 上传代码包可能较慢（尤其手机热点），拉长超时并自动重试，避免 The write operation timed out
+    runtime.read_timeout = 300
+    runtime.connect_timeout = 60
+    runtime.autoretry = True
+    runtime.max_attempts = 3
     try:
         resp = client.update_function(FUNCTION_NAME, req)
         return resp.body

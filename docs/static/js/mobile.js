@@ -6,7 +6,7 @@
 
 // 当前版本号（用于「关于」页展示）。
 // 版本号规则（仅适用于 APK/移动端；PC 端模板改动不触发）：① 第一位=重大版本（用户判定，当前=4），大版本升级时二三位归零；② 有需 APK 的原生改动→中间位+1、末位保持（例 4.12.15→4.13.15）；③ H5/纯页面改动只发服务器热更、不 bump 中间位（用户无感）。
-const APP_VERSION = '4.14.18';
+const APP_VERSION = '4.14.19';
 
 // ==================== H5 密码登录浮层 ====================
 // 纯账号密码登录：后端基于 session cookie 认证，登录成功后由 /api/me 校验。
@@ -1346,10 +1346,10 @@ let activeBizTabMobile = 'all';
 // 业务页直接以【具体业务类型】作为筛选维度：业务(全部) + 各具体类型（10 个）。
 // 每条记录按自身 business_type 归类；字段按「业务类型 → 字段清单(BIZ_TYPE_FIELDS)」模块化选配。
 // 移网 已彻底移除；融合 → 宽带；字段「层级」→「业务层级」；关联主卡由串号 parent_number 改为 FK parent_id（指向 businesses.id）。
-var BIZ_TYPE_LIST = ['互联网专线', '电路', '算网项目', 'U+产品', '数智惠企', '冰激凌', '魔方卡', '副卡', '宽带', '固话'];
+var BIZ_TYPE_LIST = ['互联网专线', '电路', '算网项目', 'U+产品', '数智惠企', '冰激凌', '魔方卡', '物联卡（格物）', '副卡', '宽带', '固话'];
 // 业务类型下拉分两竖排（2.6.9）：左竖排 / 右竖排。两者并集 = BIZ_TYPE_LIST，确保全部类型仍可选。
 var BIZ_TYPE_LIST_LEFT = ['互联网专线', '电路', '算网项目', 'U+产品', '数智惠企'];
-var BIZ_TYPE_LIST_RIGHT = ['冰激凌', '魔方卡', '副卡', '宽带', '固话'];
+var BIZ_TYPE_LIST_RIGHT = ['冰激凌', '魔方卡', '物联卡（格物）', '副卡', '宽带', '固话'];
 function bizTabLabel(tab) { return tab === 'all' ? '全部业务' : tab; }
 function bizTypeMenuHtml() {
     function colHtml(list) {
@@ -1406,10 +1406,23 @@ var BIZ_TYPE_FIELDS = {
     '数智惠企':   ['date', 'number', 'business_level', 'user_name', 'notes', 'is_dismantled'],
     '冰激凌':     ['date', 'number', 'business_level', 'user_name', 'notes', 'is_dismantled'],
     '魔方卡':     ['date', 'number', 'user_name', 'notes', 'is_dismantled'],
+    '物联卡（格物）': ['date', 'number', 'user_name', 'notes', 'is_dismantled'],
     '副卡':       ['date', 'number', 'user_name', 'notes', 'parent_id', 'is_dismantled'],
     '宽带':       ['date', 'number', 'user_name', 'business_address', 'notes', 'parent_id', 'is_dismantled'],
     '固话':       ['date', 'number', 'user_name', 'business_address', 'notes', 'parent_id', 'is_dismantled']
 };
+// 业务类型专属字段标签覆盖：仅改「录入/展示 label」，不改变物理列与取值逻辑。
+// 例如 U+产品 的 start_date/end_date 在业务语义上即「计收时间/回款时间」。
+var BIZ_FIELD_LABEL_OVERRIDE = {
+    'U+产品': { start_date: '计收时间', end_date: '回款时间' }
+};
+// 取某业务类型下某字段的展示标签（有覆盖用覆盖，否则用字段池默认 label）
+function bizFieldLabel(bizType, key) {
+    var f = BIZ_FIELD_POOL[key];
+    var ov = BIZ_FIELD_LABEL_OVERRIDE[bizType];
+    if (ov && ov[key] != null) return ov[key];
+    return f ? f.label : key;
+}
 // 主卡 / 子卡类型：子卡（副卡/宽带/固话）的 关联主卡 下拉列出主卡（数智惠企/冰激凌）
 var BIZ_MAIN_TYPES = ['数智惠企', '冰激凌'];
 var BIZ_CHILD_TYPES = ['副卡', '宽带', '固话'];
@@ -1881,21 +1894,22 @@ function onBizEntrySubtypeChange() {
 }
 
 // 合同业务录入表单（落 businesses）。2.4.1 起每个具体类型独立渲染，不再共用一张分支表单，方便后续单独调整。
-function bizFormFieldHtml(f, prefix, defaultValue) {
+function bizFormFieldHtml(f, prefix, defaultValue, bizType) {
     var id = prefix + f.key;
     var dv = (defaultValue != null && defaultValue !== '') ? defaultValue : '';
+    var label = bizFieldLabel(bizType, f.key);
     if (f.type === 'toggle') {
         var checked = (defaultValue == 1 || defaultValue === true || defaultValue === '1') ? ' checked' : '';
         return '<div class="form-group m-switch-row">' +
-            '<label class="m-switch-label">' + f.label + '</label>' +
+            '<label class="m-switch-label">' + label + '</label>' +
             '<label class="m-switch"><input type="checkbox" id="' + id + '"' + checked + '><span class="m-switch-slider"></span></label>' +
             '</div>';
     }
     if (f.type === 'textarea') {
-        return '<div class="form-group"><label>' + f.label + '</label><textarea class="form-control" id="' + id + '" rows="3">' + esc(dv) + '</textarea></div>';
+        return '<div class="form-group"><label>' + label + '</label><textarea class="form-control" id="' + id + '" rows="3">' + esc(dv) + '</textarea></div>';
     }
     var ctrl = '<input type="' + (f.type === 'number' ? 'number' : (f.type === 'date' ? 'date' : 'text')) + '" class="form-control" id="' + id + '"' + (f.type === 'number' ? ' step="any"' : '') + (dv ? ' value="' + esc(dv) + '"' : '') + '>';
-    return '<div class="form-group"><label>' + f.label + '</label>' + ctrl + '</div>';
+    return '<div class="form-group"><label>' + label + '</label>' + ctrl + '</div>';
 }
 
 // 统一读取业务字段录入值：开关→0/1，数字→float/null，其余→trim 字符串
@@ -1959,7 +1973,7 @@ function renderBizSubEntries() {
             var f = BIZ_FIELD_POOL[key];
             if (!f) return;
             var dv = (s.values && s.values[key] != null) ? s.values[key] : '';
-            html += bizFormFieldHtml(f, 'sub_' + s.idx + '_', dv);
+            html += bizFormFieldHtml(f, 'sub_' + s.idx + '_', dv, s.childType);
         });
         html += '</div>';
     });
@@ -2098,14 +2112,14 @@ async function renderBizForm(type) {
         (BIZ_SUB_INLINE_FIELDS[type] || ['number']).forEach(function(key) {
             var f = BIZ_FIELD_POOL[key];
             if (!f) return;
-            html += bizFormFieldHtml(f, 'mf_', '');
+            html += bizFormFieldHtml(f, 'mf_', '', type);
         });
     } else {
         fields.forEach(function(key) {
             var f = BIZ_FIELD_POOL[key];
             if (!f) return;
             var dv = (key === 'company_name' && _bizEntryCustomer) ? _bizEntryCustomer.name : '';
-            html += bizFormFieldHtml(f, 'mf_', dv);
+            html += bizFormFieldHtml(f, 'mf_', dv, type);
         });
     }
     html += '</div>';
@@ -2680,12 +2694,12 @@ function paintBizDetail(id) {
     // 统一标签列宽：取详情页所有字段标签中最长「标题」的显示宽度，内容左对齐到同一位置
     function _cjkW(s){ var w = 0; for (var i = 0; i < s.length; i++){ w += (s.charCodeAt(i) > 0x2E80) ? 1 : 0.5; } return w; }
     var _lbls = ['关联客户', '业务类型'];
-    (BIZ_TYPE_FIELDS[root.business_type] || []).forEach(function(k){ var f = BIZ_FIELD_POOL[k]; if (f && k !== 'parent_id') _lbls.push(f.label); });
+    (BIZ_TYPE_FIELDS[root.business_type] || []).forEach(function(k){ var f = BIZ_FIELD_POOL[k]; if (f && k !== 'parent_id') _lbls.push(bizFieldLabel(root.business_type, k)); });
     if (root.customer_id) _lbls.push('关联客户详情');
     children.forEach(function(ch){
         var cs = ['date', 'number', 'user_name', 'notes'];
         if (BIZ_SUB_INLINE_FIELDS[ch.business_type] && BIZ_SUB_INLINE_FIELDS[ch.business_type].indexOf('business_address') !== -1) cs.push('business_address');
-        cs.forEach(function(k){ var f = BIZ_FIELD_POOL[k]; if (f) _lbls.push(f.label); });
+        cs.forEach(function(k){ var f = BIZ_FIELD_POOL[k]; if (f) _lbls.push(bizFieldLabel(ch.business_type, k)); });
     });
     var _maxW = _lbls.reduce(function(m, s){ return Math.max(m, _cjkW(s)); }, 0);
     var _labelW = (_maxW * 13 + 4) + 'px';
@@ -2698,7 +2712,7 @@ function paintBizDetail(id) {
     (BIZ_TYPE_FIELDS[root.business_type] || []).forEach(function(key) {
         var f = BIZ_FIELD_POOL[key];
         if (!f || key === 'parent_id') return; // 主卡无上级，不展示关联主卡
-        html += '<div class="form-group biz-row"><label>' + f.label + '</label><div style="font-size:14px;">' + esc(bizFieldDisplay(f, root[key])) + '</div></div>';
+        html += '<div class="form-group biz-row"><label>' + bizFieldLabel(root.business_type, key) + '</label><div style="font-size:14px;">' + esc(bizFieldDisplay(f, root[key])) + '</div></div>';
     });
     if (root.customer_id) {
         html += '<div class="form-group biz-row"><label>关联客户详情</label><div style="font-size:14px;color:#007AFF;cursor:pointer;" onclick="event.stopPropagation();navPush(\'bizcust:' + root.customer_id + '\',function(){viewBusinessMobile(' + root.id + ')});viewCustomerMobile(' + root.customer_id + ')"><i class="m-icon" data-icon="user"></i> 查看客户详情</div></div>';
@@ -2718,7 +2732,7 @@ function paintBizDetail(id) {
                 if (!f) return;
                 var disp = bizFieldDisplay(f, ch[key]);
                 if (!disp || disp === '-') return;  // 仅显示有值项（空/占位「-」不渲染）
-                html += '<div class="form-group biz-row" style="margin-bottom:2px;"><label>' + f.label + '</label><div style="font-size:13px;">' + esc(disp) + '</div></div>';
+                html += '<div class="form-group biz-row" style="margin-bottom:2px;"><label>' + bizFieldLabel(ch.business_type, key) + '</label><div style="font-size:13px;">' + esc(disp) + '</div></div>';
             });
             html += '<div style="display:flex;gap:8px;margin-top:6px;">' +
                 '<button class="btn btn-outline" style="flex:1;padding:6px;font-size:12px;justify-content:center;" onclick="event.stopPropagation();editBusinessMobile(' + ch.id + ')">编辑</button>' +
@@ -2836,7 +2850,7 @@ function syncBizEditTypeUI() {
                 : esc('不关联（独立副卡）');
             html += bizParentFieldHtml('mbiz_', curPid, boxHtml);
         } else {
-            html += bizFormFieldHtml(f, 'mbiz_', dv);
+            html += bizFormFieldHtml(f, 'mbiz_', dv, type);
         }
     });
     // 主卡（数智惠企/冰激凌）编辑页与新增页一致：底部挂子卡（副卡/宽带/固话）管理
