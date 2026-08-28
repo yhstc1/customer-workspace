@@ -752,10 +752,10 @@
                     rows = allBusinesses.filter(function (b) { return b.business_type === activeBizTab; });
                 }
                 if (!rows || !rows.length) { showToast('当前没有可导出的业务', 'error'); return; }
-                const headers = ['公司名称', '业务类型', '业务套餐', '合同编码', '业务号码', '合同金额', '开始时间', '结束时间', '业务地址', '备注'];
+                const headers = ['公司名称', '业务类型', '业务套餐', '合同编码', '业务号码', '使用人', '合同金额', '开始时间', '结束时间', '业务地址', '备注'];
                 const data = rows.map(function (b) {
                     return [b.company_name || '', b.business_type || '', b.business_package || '',
-                        b.contract_code || '', (b.number || ''),
+                        b.contract_code || '', (b.number || ''), (b.user_name || ''),
                         (b.contract_amount != null ? b.contract_amount : ''),
                         b.start_date || '', b.end_date || '', b.business_address || '', b.notes || ''];
                 });

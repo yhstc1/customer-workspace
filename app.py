@@ -383,43 +383,43 @@ def index():
     ua = request.headers.get("User-Agent", "").lower()
     if any(x in ua for x in ["mobile", "android", "iphone", "harmony", "phone"]):
         return redirect("/m")
-    return redirect("/tasks")
+    return redirect("/m")
 
 
 @app.route("/customers")
 def customers_page():
     """客户管理页"""
-    return render_template("customers.html")
+    return redirect("/m")
 
 
 @app.route("/map")
 def map_page():
     """地图视图页"""
-    return render_template("map.html")
+    return redirect("/m")
 
 
 @app.route("/tasks")
 def tasks_page():
     """事项看板页"""
-    return render_template("tasks.html")
+    return redirect("/m")
 
 
 @app.route("/business")
 def business_page():
     """业务管理页"""
-    return render_template("business.html")
+    return redirect("/m")
 
 
 @app.route("/reports")
 def reports_page():
     """报告页"""
-    return render_template("reports.html")
+    return redirect("/m")
 
 
 @app.route("/settings")
 def settings_page():
     """设置页"""
-    return render_template("settings.html")
+    return redirect("/m")
 
 
 # ==================== 客户 API ====================

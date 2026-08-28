@@ -6,7 +6,7 @@
 
 // 当前版本号（用于「关于」页展示）。
 // 版本号规则（仅适用于 APK/移动端；PC 端模板改动不触发）：① 第一位=重大版本（用户判定，当前=4），大版本升级时二三位归零；② 有需 APK 的原生改动→中间位+1、末位保持（例 4.12.15→4.13.15）；③ H5/纯页面改动只发服务器热更、不 bump 中间位（用户无感）。
-const APP_VERSION = '4.14.16';
+const APP_VERSION = '4.14.17';
 
 // ==================== H5 密码登录浮层 ====================
 // 纯账号密码登录：后端基于 session cookie 认证，登录成功后由 /api/me 校验。
@@ -989,7 +989,7 @@ function renderDataManageMobile() {
             '<div style="margin-top:16px;font-size:12px;color:#999;line-height:1.7;">' +
                 '导出为 UTF-8 CSV（Excel 可直接打开）。导入列名需与导出一致：' +
                 '客户含「公司名称/法人/联系人/联系方式/邮箱/地址/分类/优先级/备注」；' +
-                '业务含「公司名称/业务类型/业务套餐/合同编码/业务号码/合同金额/开始时间/结束时间/业务地址/备注」。' +
+                '业务含「公司名称/业务类型/业务套餐/合同编码/业务号码/使用人/合同金额/开始时间/结束时间/业务地址/备注」。' +
             '</div>' +
         '</div>';
 }
@@ -1011,10 +1011,10 @@ function exportCustomersMobile() {
 function exportBusinessMobile() {
     var all = allBusinessesMobile || [];
     if (!all.length) { showToast('当前没有可导出的业务', 'error'); return; }
-    var headers = ['公司名称', '业务类型', '业务套餐', '合同编码', '业务号码', '合同金额', '开始时间', '结束时间', '业务地址', '备注'];
+    var headers = ['公司名称', '业务类型', '业务套餐', '合同编码', '业务号码', '使用人', '合同金额', '开始时间', '结束时间', '业务地址', '备注'];
     var rows = all.map(function (b) {
         return [b.company_name || '', b.business_type || '', b.business_package || '',
-            b.contract_code || '', (b.number || ''),
+            b.contract_code || '', (b.number || ''), (b.user_name || ''),
             (b.contract_amount != null ? b.contract_amount : ''),
             b.start_date || '', b.end_date || '', b.business_address || '', b.notes || ''];
     });
