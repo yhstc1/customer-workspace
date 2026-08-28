@@ -1047,8 +1047,8 @@ def add_business():
     cur = conn.execute("""
         INSERT INTO businesses (customer_id, company_name, business_address, number,
             contract_code, business_type, contract_amount, start_date, end_date, notes,
-            business_package, user_id, business_level, date, user_name, parent_id)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            business_package, user_id, business_level, date, user_name, parent_id, is_dismantled)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
         data.get("customer_id") or None, data.get("company_name", ""),
         data.get("business_address", ""), (data.get("number") or data.get("business_number") or ""),
@@ -1057,7 +1057,8 @@ def add_business():
         data.get("end_date", ""), data.get("notes", ""),
         data.get("business_package", ""), uid,
         data.get("business_level", ""), data.get("date", ""),
-        data.get("user_name", ""), parent_id
+        data.get("user_name", ""), parent_id,
+        int(data.get("is_dismantled", 0) or 0)
             ))
     conn.commit()
     bid = cur.lastrowid
@@ -1091,7 +1092,7 @@ def update_business(bid):
         return jsonify({"error": "业务不存在"}), 404
     cols = ("customer_id", "company_name", "business_address", "number",
             "contract_code", "business_type", "business_package", "contract_amount", "start_date",
-            "end_date", "notes", "business_level", "date", "user_name", "parent_id")
+            "end_date", "notes", "business_level", "date", "user_name", "parent_id", "is_dismantled")
     merged = {k: data.get(k, existing[k]) for k in cols}
     merged["parent_id"] = _int_or_none(data.get("parent_id", existing["parent_id"]))
     old_cid = existing["customer_id"]
@@ -1100,14 +1101,14 @@ def update_business(bid):
         UPDATE businesses SET
             customer_id=?, company_name=?, business_address=?, number=?,
             contract_code=?, business_type=?, business_package=?, contract_amount=?, start_date=?, end_date=?,
-            notes=?, business_level=?, date=?, user_name=?, parent_id=?, updated_at=datetime('now','localtime')
+            notes=?, business_level=?, date=?, user_name=?, parent_id=?, is_dismantled=?, updated_at=datetime('now','localtime')
         WHERE id=?
     """, (
         merged["customer_id"], merged["company_name"], merged["business_address"], merged["number"],
         merged["contract_code"], merged["business_type"], merged["business_package"],
         merged["contract_amount"], merged["start_date"],
         merged["end_date"], merged["notes"], merged["business_level"], merged["date"], merged["user_name"],
-        merged["parent_id"], bid
+        merged["parent_id"], int(merged["is_dismantled"] or 0), bid
     ))
     conn.commit()
     row = conn.execute("SELECT * FROM businesses WHERE id = ?", (bid,)).fetchone()

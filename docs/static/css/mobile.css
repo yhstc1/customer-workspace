@@ -573,6 +573,16 @@ body.m-map-frost  #mHeaderVeil { display: block; height: calc(56px + var(--m-ins
 .m-task-dot { width:20px; height:20px; border-radius:50%; background:transparent; border:2px solid var(--m-text-tertiary); display:flex; align-items:center; justify-content:center; cursor:pointer; box-sizing:border-box; flex:0 0 auto; margin-top:6px; }
 .m-task-dot.done { background: var(--m-accent); border-color: var(--m-accent); }
 .m-pin-tag { font-size:11px; line-height:1; padding:2px 6px; border-radius:10px; background: var(--m-accent-light); color: var(--m-accent); flex:0 0 auto; margin:8px 0 0 auto; }
+.m-dis-tag { font-size:11px; line-height:1; padding:2px 6px; border-radius:10px; background: rgba(142,142,147,0.18); color:#8e8e93; flex:0 0 auto; margin-left:6px; }
+/* 业务表单开关（已拆机） */
+.m-switch-row { display:flex; align-items:center; justify-content:space-between; }
+.m-switch-label { margin-bottom:0; }
+.m-switch { position:relative; display:inline-block; width:44px; height:26px; flex:0 0 auto; }
+.m-switch input { opacity:0; width:0; height:0; }
+.m-switch-slider { position:absolute; cursor:pointer; inset:0; background:#e5e5ea; border-radius:13px; transition:.2s; }
+.m-switch-slider:before { content:""; position:absolute; height:22px; width:22px; left:2px; top:2px; background:#fff; border-radius:50%; transition:.2s; box-shadow:0 1px 3px rgba(0,0,0,.2); }
+.m-switch input:checked + .m-switch-slider { background: var(--m-accent); }
+.m-switch input:checked + .m-switch-slider:before { transform:translateX(18px); }
 .m-task-subs { margin-top:8px; padding-left:30px; }
 .m-task-sub { display:flex; align-items:center; gap:8px; padding:5px 0; }
 .m-task-sub .m-sub-title { flex:1; font-size:12px; color: var(--m-text-secondary); }

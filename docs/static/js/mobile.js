@@ -6,7 +6,7 @@
 
 // 当前版本号（用于「关于」页展示）。
 // 版本号规则（仅适用于 APK/移动端；PC 端模板改动不触发）：① 第一位=重大版本（用户判定，当前=4），大版本升级时二三位归零；② 有需 APK 的原生改动→中间位+1、末位保持（例 4.12.15→4.13.15）；③ H5/纯页面改动只发服务器热更、不 bump 中间位（用户无感）。
-const APP_VERSION = '4.14.17';
+const APP_VERSION = '4.14.18';
 
 // ==================== H5 密码登录浮层 ====================
 // 纯账号密码登录：后端基于 session cookie 认证，登录成功后由 /api/me 校验。
@@ -1368,10 +1368,11 @@ function bizTypeMenuHtml() {
 function bizGroupItemHtml(b, navigateExpr) {
     var sub = [esc(b.sub_type || '-'), esc(b.business_level || ''), esc(b.business_number || ''), (b.date || '')].filter(Boolean).join(' · ');
     var pendingTag = b._pending ? ' <span style="color:#ff9f0a;font-size:11px;margin-left:4px;">同步中…</span>' : '';
+    var disTag = b.is_dismantled ? ' <span class="m-dis-tag">已拆机</span>' : '';
     var click = b._pending ? 'void(0)' : navigateExpr;
     return '<div class="m-group-item" data-id="' + b.id + '" onclick="' + click + '">' +
         '<div class="m-group-info">' +
-            '<div class="m-group-title">' + esc(b.company_name || '-') + pendingTag + '</div>' +
+            '<div class="m-group-title">' + esc(b.company_name || '-') + pendingTag + disTag + '</div>' +
             '<div class="m-group-subtitle">' + sub + '</div>' +
         '</div>' +
         '<div class="m-group-chevron"><i class="m-icon" data-icon="chevronRight"></i></div>' +
@@ -1393,20 +1394,21 @@ var BIZ_FIELD_POOL = {
     date:            { key: 'date', label: '办理日期', type: 'date' },
     user_name:       { key: 'user_name', label: '使用人', type: 'text' },
     parent_id:       { key: 'parent_id', label: '关联主卡', type: 'parent' },
-    notes:           { key: 'notes', label: '备注', type: 'textarea' }
+    notes:           { key: 'notes', label: '备注', type: 'textarea' },
+    is_dismantled:   { key: 'is_dismantled', label: '已拆机', type: 'toggle' }
 };
 // 10 个业务类型 → 选配字段 key 列表（顺序即表单顺序）
 var BIZ_TYPE_FIELDS = {
-    '互联网专线': ['business_level', 'contract_amount', 'number', 'start_date', 'end_date', 'business_address', 'contract_code', 'notes'],
-    '电路':       ['business_level', 'contract_amount', 'number', 'start_date', 'end_date', 'business_address', 'contract_code', 'notes'],
-    '算网项目':   ['business_level', 'contract_amount', 'number', 'start_date', 'end_date', 'contract_code', 'notes'],
-    'U+产品':     ['business_level', 'contract_amount', 'number', 'start_date', 'end_date', 'contract_code', 'notes'],
-    '数智惠企':   ['date', 'number', 'business_level', 'user_name', 'notes'],
-    '冰激凌':     ['date', 'number', 'business_level', 'user_name', 'notes'],
-    '魔方卡':     ['date', 'number', 'user_name', 'notes'],
-    '副卡':       ['date', 'number', 'user_name', 'notes', 'parent_id'],
-    '宽带':       ['date', 'number', 'user_name', 'business_address', 'notes', 'parent_id'],
-    '固话':       ['date', 'number', 'user_name', 'business_address', 'notes', 'parent_id']
+    '互联网专线': ['business_level', 'contract_amount', 'number', 'start_date', 'end_date', 'business_address', 'contract_code', 'notes', 'is_dismantled'],
+    '电路':       ['business_level', 'contract_amount', 'number', 'start_date', 'end_date', 'business_address', 'contract_code', 'notes', 'is_dismantled'],
+    '算网项目':   ['business_level', 'contract_amount', 'number', 'start_date', 'end_date', 'contract_code', 'notes', 'is_dismantled'],
+    'U+产品':     ['business_level', 'contract_amount', 'number', 'start_date', 'end_date', 'contract_code', 'notes', 'is_dismantled'],
+    '数智惠企':   ['date', 'number', 'business_level', 'user_name', 'notes', 'is_dismantled'],
+    '冰激凌':     ['date', 'number', 'business_level', 'user_name', 'notes', 'is_dismantled'],
+    '魔方卡':     ['date', 'number', 'user_name', 'notes', 'is_dismantled'],
+    '副卡':       ['date', 'number', 'user_name', 'notes', 'parent_id', 'is_dismantled'],
+    '宽带':       ['date', 'number', 'user_name', 'business_address', 'notes', 'parent_id', 'is_dismantled'],
+    '固话':       ['date', 'number', 'user_name', 'business_address', 'notes', 'parent_id', 'is_dismantled']
 };
 // 主卡 / 子卡类型：子卡（副卡/宽带/固话）的 关联主卡 下拉列出主卡（数智惠企/冰激凌）
 var BIZ_MAIN_TYPES = ['数智惠企', '冰激凌'];
@@ -1498,7 +1500,8 @@ function renderBizListSync(tab, search) {
             contract_code: b.contract_code || '',
             business_number: b.number || '',
             date: b.date || '',
-            parent_id: b.parent_id
+            parent_id: b.parent_id,
+            is_dismantled: b.is_dismantled ? 1 : 0
         });
     });
     // 拼接乐观更新的临时记录（提交成功后由 onSuccess 移除，失败由 rollback 移除）
@@ -1881,6 +1884,13 @@ function onBizEntrySubtypeChange() {
 function bizFormFieldHtml(f, prefix, defaultValue) {
     var id = prefix + f.key;
     var dv = (defaultValue != null && defaultValue !== '') ? defaultValue : '';
+    if (f.type === 'toggle') {
+        var checked = (defaultValue == 1 || defaultValue === true || defaultValue === '1') ? ' checked' : '';
+        return '<div class="form-group m-switch-row">' +
+            '<label class="m-switch-label">' + f.label + '</label>' +
+            '<label class="m-switch"><input type="checkbox" id="' + id + '"' + checked + '><span class="m-switch-slider"></span></label>' +
+            '</div>';
+    }
     if (f.type === 'textarea') {
         return '<div class="form-group"><label>' + f.label + '</label><textarea class="form-control" id="' + id + '" rows="3">' + esc(dv) + '</textarea></div>';
     }
@@ -1888,8 +1898,17 @@ function bizFormFieldHtml(f, prefix, defaultValue) {
     return '<div class="form-group"><label>' + f.label + '</label>' + ctrl + '</div>';
 }
 
+// 统一读取业务字段录入值：开关→0/1，数字→float/null，其余→trim 字符串
+function bizFieldVal(f, el) {
+    if (!f) return el ? el.value.trim() : '';
+    if (f.type === 'toggle') return (el && el.checked) ? 1 : 0;
+    if (f.type === 'number') { var v = el ? el.value.trim() : ''; return v ? parseFloat(v) : null; }
+    return el ? el.value.trim() : '';
+}
+
 // 业务字段展示值（详情页复用）：金额带 ¥、日期取 YYYYMM、空值显示 -
 function bizFieldDisplay(f, raw) {
+    if (f.type === 'toggle') return (raw == 1 || raw === true || raw === '1') ? '已拆机' : '在用';
     if (f.type === 'number') return (raw != null && raw !== '' && !isNaN(Number(raw))) ? '¥' + Number(raw).toLocaleString() : '-';
     if (f.type === 'date') return raw ? String(raw).replace(/-/g, '').substring(0, 6) : '-';
     return (raw != null && raw !== '') ? raw : '-';
@@ -1979,7 +1998,7 @@ function collectBizSubCards(mainData) {
             var f = BIZ_FIELD_POOL[key];
             var el = document.getElementById('sub_' + s.idx + '_' + key);
             var val = el ? el.value.trim() : '';
-            d[key] = (f && f.type === 'number') ? (val ? parseFloat(val) : null) : val;
+            d[key] = bizFieldVal(f, el);
         });
         subs.push(d);
     });
@@ -2139,7 +2158,7 @@ async function saveBizEntry(type) {
             var f = BIZ_FIELD_POOL[key];
             var el = document.getElementById('mf_' + key);
             var val = el ? el.value.trim() : '';
-            data[key] = (f && f.type === 'number') ? (val ? parseFloat(val) : null) : val;
+            data[key] = bizFieldVal(f, el);
         });
     } else {
         data = { business_type: type, company_name: custName, customer_id: parseInt(custId) };
@@ -2152,7 +2171,7 @@ async function saveBizEntry(type) {
             } else {
                 var el = document.getElementById('mf_' + key);
                 var val = el ? el.value.trim() : '';
-                data[key] = (f.type === 'number') ? (val ? parseFloat(val) : null) : val;
+                data[key] = bizFieldVal(f, el);
             }
         });
     }
@@ -2926,7 +2945,7 @@ async function saveBusinessMobile(id) {
         } else {
             var el = document.getElementById('mbiz_' + key);
             var val = el ? el.value.trim() : '';
-            data[key] = (f.type === 'number') ? (val ? parseFloat(val) : null) : val;
+            data[key] = bizFieldVal(f, el);
         }
     });
     // 主卡（数智惠企/冰激凌）编辑/新增时一并挂的内联子卡（副卡/宽带/固话）：收集后随主卡落库

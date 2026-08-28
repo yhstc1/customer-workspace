@@ -529,6 +529,12 @@ def init_db():
     except sqlite3.OperationalError:
         pass  # 列已存在
 
+    # 迁移：businesses 加 is_dismantled 列（拆机标记，幂等；try/except Exception 兼容 MySQL/SQLite）
+    try:
+        cur.execute("ALTER TABLE businesses ADD COLUMN is_dismantled INTEGER DEFAULT 0")
+    except Exception:
+        pass  # 列已存在（MySQL Duplicate column / SQLite 重复 均会被吞掉）
+
     # 迁移：事项状态枚举重构（待处理+进行中→进行中；已完成→已完结；已搁置→已归档）
     cur.execute("UPDATE tasks SET status='进行中' WHERE status='待处理'")
     cur.execute("UPDATE tasks SET status='已完结' WHERE status='已完成'")
