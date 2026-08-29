@@ -7,8 +7,11 @@
 import sqlite3
 import os
 import re
+import logging
 from datetime import datetime, timezone, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
+
+logger = logging.getLogger(__name__)
 
 # pymysql 为 MySQL 持久化可选依赖（FC requirements.txt 已含；本地 SQLite 模式不依赖）
 try:
@@ -409,8 +412,6 @@ def init_db():
             title TEXT NOT NULL,                 -- 事项标题
             description TEXT,                    -- 详细描述
             status TEXT DEFAULT '进行中',         -- 进行中/已完结/已归档
-            priority TEXT DEFAULT '重要不紧急',   -- 优先级：重要且紧急/重要不紧急/紧急不重要/不重要不紧急（前端已不再使用，保留列仅兼容旧数据）
-            progress INTEGER DEFAULT 0,          -- 进度 0-100（前端已不再使用，保留列仅兼容旧数据）
             pinned INTEGER DEFAULT 0,            -- 置顶：1=置顶 0=普通
             due_date TEXT,                       -- 截止日期
             created_at TEXT DEFAULT (datetime('now', 'localtime')),
@@ -463,8 +464,8 @@ def init_db():
     # 回填：历史数据中 username 即手机号，迁移到 phone；新注册 username/phone 各自独立
     try:
         cur.execute("UPDATE users SET phone = username WHERE phone IS NULL OR phone = ''")
-    except Exception:
-        pass
+    except Exception as e:  # noqa: BLE001
+        logger.warning("迁移失败(可忽略): users.phone 回填异常: %s", e)
 
     # 密码重置申请表（忘记密码 → 待管理员审核）
     cur.execute("""
@@ -513,8 +514,8 @@ def init_db():
     # 迁移：添加 business_package 列
     try:
         cur.execute("ALTER TABLE businesses ADD COLUMN business_package TEXT")
-    except Exception:
-        pass  # 列已存在
+    except Exception as e:  # noqa: BLE001
+        logger.warning("迁移失败(可忽略): businesses.business_package 已存在: %s", e)
 
     # 迁移：为隔离加 user_id 列（幂等）
     for tbl in ("customers", "tasks", "businesses"):
@@ -532,8 +533,10 @@ def init_db():
     # 迁移：businesses 加 is_dismantled 列（拆机标记，幂等；try/except Exception 兼容 MySQL/SQLite）
     try:
         cur.execute("ALTER TABLE businesses ADD COLUMN is_dismantled INTEGER DEFAULT 0")
-    except Exception:
-        pass  # 列已存在（MySQL Duplicate column / SQLite 重复 均会被吞掉）
+    except Exception as e:  # noqa: BLE001
+        # 注意：此前这里静默吞掉异常，曾导致 is_dismantled 列未加上却无报错（保存 500）。
+        # 现在显式记录，便于在 FC 日志中定位真实的迁移失败。
+        logger.warning("迁移异常(请关注): businesses.is_dismantled 加列失败: %s", e)
 
     # 迁移：事项状态枚举重构（待处理+进行中→进行中；已完成→已完结；已搁置→已归档）
     cur.execute("UPDATE tasks SET status='进行中' WHERE status='待处理'")
@@ -541,6 +544,13 @@ def init_db():
     cur.execute("UPDATE tasks SET status='已归档' WHERE status='已搁置'")
     # 迁移：已挂起 → 已归档（状态重命名）
     cur.execute("UPDATE tasks SET status='已归档' WHERE status='已挂起'")
+
+    # 迁移：tasks 移除 priority / progress 冗余列（前端早已不使用；生产 RDS 由 migration/drop_task_dead_columns.py 处理）
+    for _col in ("priority", "progress"):
+        try:
+            cur.execute(f"ALTER TABLE tasks DROP COLUMN {_col}")
+        except sqlite3.OperationalError:
+            pass  # 列不存在则忽略（幂等）
 
     # 迁移：subtasks 加 order_index 列（幂等，用于子待办排序）
     try:
@@ -821,13 +831,13 @@ def seed_sample_data():
         customer_id = cur.lastrowid
 
         # 为每个客户添加示例事项
-        sample_tasks = generate_sample_tasks(c["name"], c["priority"])
+        sample_tasks = generate_sample_tasks(c["name"])
         for t in sample_tasks:
             t["customer_id"] = customer_id
             t["user_id"] = owner_id
             cur.execute("""
-                INSERT INTO tasks (customer_id, title, description, status, priority, progress, due_date, user_id)
-                VALUES (:customer_id, :title, :description, :status, :priority, :progress, :due_date, :user_id)
+                INSERT INTO tasks (customer_id, title, description, status, due_date, user_id)
+                VALUES (:customer_id, :title, :description, :status, :due_date, :user_id)
             """, t)
 
     conn.commit()
@@ -835,7 +845,7 @@ def seed_sample_data():
     print(f"[OK] 已填充 {len(sample_customers)} 个示例客户及其事项")
 
 
-def generate_sample_tasks(customer_name, priority):
+def generate_sample_tasks(customer_name):
     """为示例客户生成事项"""
     today = datetime.now().strftime("%Y-%m-%d")
     from datetime import timedelta
@@ -848,24 +858,18 @@ def generate_sample_tasks(customer_name, priority):
             "title": f"与{customer_name}的合同续签谈判",
             "description": "准备续签方案，确认价格条款",
             "status": "进行中",
-            "priority": priority,
-            "progress": 60,
             "due_date": soon
         },
         {
             "title": f"{customer_name}项目需求确认",
             "description": "收集客户需求文档，整理需求清单",
             "status": "进行中",
-            "priority": "中",
-            "progress": 0,
             "due_date": later
         },
         {
             "title": f"{customer_name}季度回访",
             "description": "电话回访，了解使用情况",
             "status": "已完结",
-            "priority": "低",
-            "progress": 100,
             "due_date": overdue
         },
     ]

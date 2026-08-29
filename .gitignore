@@ -11,6 +11,7 @@ venv/
 *.db-wal
 *.db-shm
 data/*.db*
+backup_crm_*.sql
 
 # 项目内部笔记 / 代理记忆（不进仓库）
 .workbuddy/
