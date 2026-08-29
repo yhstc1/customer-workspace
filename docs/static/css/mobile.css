@@ -7,8 +7,10 @@
     --m-card-elevated: #2c2c2e;
     --m-border: #2c2c2e;
     --m-text: #ffffff;
-    --m-text-secondary: #8e8e93;
-    --m-text-tertiary: #636366;
+    /* 暗色下二级/三级文字在原灰(#8e8e93/#636366)上偏淡，小字号尤甚（如业务详情卡片字段标签）。
+       提亮至 #aeaeb2 / #8a8a8e：对 --m-card(#1c1c1e) 对比度分别约 7.7:1 / 4.9:1，满足 WCAG AA。 */
+    --m-text-secondary: #aeaeb2;
+    --m-text-tertiary: #8a8a8e;
     --m-accent: #0a84ff;
     --m-accent-light: rgba(10,132,255,0.15);
     --m-danger: #ff453a;
@@ -402,11 +404,21 @@ body.m-map-frost  #mHeaderVeil { display: block; height: calc(56px + var(--m-ins
     flex: 0 0 var(--biz-label-w, 5em);
     width: var(--biz-label-w, 5em);
     margin-bottom: 0;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--m-text-secondary);
+    line-height: 1.45;
 }
+/* 字段值：暗色下用主文本色（纯白）+ 稍大字号，避免与标签灰混淆导致看不清 */
 .biz-detail .form-group.biz-row > div {
     text-align: left;
     word-break: break-word;
+    color: var(--m-text);
+    font-size: 15px;
+    line-height: 1.45;
 }
+/* 子卡区块：值略小一档，但仍保持高对比 */
+.biz-row-val--sm { font-size: 14px; }
 
 /* 分组列表项（我的/客户/业务风格） */
 .m-group-list {
@@ -573,7 +585,7 @@ body.m-map-frost  #mHeaderVeil { display: block; height: calc(56px + var(--m-ins
 .m-task-dot { width:20px; height:20px; border-radius:50%; background:transparent; border:2px solid var(--m-text-tertiary); display:flex; align-items:center; justify-content:center; cursor:pointer; box-sizing:border-box; flex:0 0 auto; margin-top:6px; }
 .m-task-dot.done { background: var(--m-accent); border-color: var(--m-accent); }
 .m-pin-tag { font-size:11px; line-height:1; padding:2px 6px; border-radius:10px; background: var(--m-accent-light); color: var(--m-accent); flex:0 0 auto; margin:8px 0 0 auto; }
-.m-dis-tag { font-size:11px; line-height:1; padding:2px 6px; border-radius:10px; background: rgba(142,142,147,0.18); color:#8e8e93; flex:0 0 auto; margin-left:6px; }
+.m-dis-tag { font-size:11px; line-height:1; padding:2px 6px; border-radius:10px; background: rgba(142,142,147,0.22); color: var(--m-text-secondary); flex:0 0 auto; margin-left:6px; }
 /* 业务表单开关（已拆机） */
 .m-switch-row { display:flex; align-items:center; justify-content:space-between; }
 .m-switch-label { margin-bottom:0; }

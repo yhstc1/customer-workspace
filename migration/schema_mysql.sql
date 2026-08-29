@@ -94,6 +94,7 @@ CREATE TABLE IF NOT EXISTS businesses (
     contract_amount DOUBLE,
     start_date TEXT,
     end_date TEXT,
+    is_dismantled INT DEFAULT 0,
     business_address TEXT,
     date TEXT,
     user_name TEXT,

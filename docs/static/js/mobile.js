@@ -6,7 +6,7 @@
 
 // 当前版本号（用于「关于」页展示）。
 // 版本号规则（仅适用于 APK/移动端；PC 端模板改动不触发）：① 第一位=重大版本（用户判定，当前=4），大版本升级时二三位归零；② 有需 APK 的原生改动→中间位+1、末位保持（例 4.12.15→4.13.15）；③ H5/纯页面改动只发服务器热更、不 bump 中间位（用户无感）。
-const APP_VERSION = '4.14.24';
+const APP_VERSION = '4.14.25';
 
 // ==================== H5 密码登录浮层 ====================
 // 纯账号密码登录：后端基于 session cookie 认证，登录成功后由 /api/me 校验。
@@ -994,7 +994,7 @@ function renderDataManageMobile() {
                 '<button class="m-btn btn-ghost" onclick="downloadTemplate(\'customers\')">⬇️ 下载客户导入模板</button>' +
                 '<button class="m-btn btn-ghost" onclick="downloadTemplate(\'business\')">⬇️ 下载业务导入模板</button>' +
             '</div>' +
-            '<div style="margin-top:16px;font-size:12px;color:#999;line-height:1.7;">' +
+            '<div style="margin-top:16px;font-size:12px;color:var(--m-text-secondary);line-height:1.7;">' +
                 '导出为 UTF-8 CSV（Excel 可直接打开）。导入列名需与导出一致：' +
                 '客户含「公司名称/法人/联系人/联系方式/邮箱/地址/分类/优先级/备注」；' +
                 '业务含「公司名称/业务类型/业务套餐/合同编码/业务号码/使用人/合同金额/开始时间/结束时间/业务地址/备注」。' +
@@ -1420,12 +1420,9 @@ var BIZ_TYPE_FIELDS = {
     '固话':       ['date', 'number', 'user_name', 'business_address', 'notes', 'parent_id', 'is_dismantled']
 };
 // 业务类型专属字段标签覆盖：仅改「录入/展示 label」，不改变物理列与取值逻辑。
-// 例如 U+产品 的 start_date/end_date 在业务语义上即「计收时间/回款时间」。
-var BIZ_FIELD_LABEL_OVERRIDE = {
-    // 仅有合同期的业务，止期统一沿用字段池默认的「结束时间」；
-    // 仅 U+产品 因业务语义特殊，覆盖为「计收时间 / 回款时间」。
-    'U+产品': { start_date: '计收时间', end_date: '回款时间' }
-};
+// 现状（2026-08-30 用户定案）：所有业务类型统一使用字段池默认标签「开始时间 / 结束时间」，
+// 与 businesses 表列名 start_date / end_date 语义一致，故本表保留为空（供日后特殊类型扩展用）。
+var BIZ_FIELD_LABEL_OVERRIDE = {};
 // 取某业务类型下某字段的展示标签（有覆盖用覆盖，否则用字段池默认 label）
 function bizFieldLabel(bizType, key) {
     var f = BIZ_FIELD_POOL[key];
@@ -1779,7 +1776,7 @@ function filterBizEntryCustomers(kw) {
             ' onmouseover="this.style.background=\'#f0f4ff\'" onmouseout="this.style.background=\'\'"' +
             ' onclick="selectBizEntryCustomer(' + c.id + ',\'' + (c.company || c.name || '').replace(/'/g, '') + '\')">' +
             '<strong>' + (c.company || c.name || '-') + '</strong>' +
-            '<span style="float:right;color:#888;font-size:12px;">' + (c.category || '') + '</span>' +
+            '<span style="float:right;color:var(--m-text-secondary);font-size:12px;">' + (c.category || '') + '</span>' +
             '</div>';
     }).join('');
     list.style.display = 'block';
@@ -1862,7 +1859,7 @@ function addBusinessEntryMobile(returnFn, presetCustomer, presetType) {
                 '<input type="text" class="form-control" id="mBizEntryCustSearch" placeholder="搜索" style="font-size:13px;" oninput="filterBizEntryCustomers(this.value)" autocomplete="off" value="' + custName.replace(/"/g, '&quot;') + '">' +
                 '<input type="hidden" id="mBizEntryCustomerId" value="' + custId + '">' +
                 '<div id="mBizEntryCustList" class="m-popup-card" style="max-height:240px;overflow-y:auto;border:1px solid var(--m-border);box-shadow:0 12px 40px rgba(0,0,0,0.15);background:var(--m-card);margin-top:6px;display:none;"></div></div>' +
-            '<div style="font-size:12px;color:#888;margin-bottom:8px;" id="mBizEntryCustLabel">' + (custName ? '<i class="m-icon" data-icon="done"></i> 已选择: <strong>' + custName + '</strong>' : '请搜索并选择客户') + '</div>' +
+            '<div style="font-size:12px;color:var(--m-text-secondary);margin-bottom:8px;" id="mBizEntryCustLabel">' + (custName ? '<i class="m-icon" data-icon="done"></i> 已选择: <strong>' + custName + '</strong>' : '请搜索并选择客户') + '</div>' +
             '<div class="form-group"><label>业务类型 *</label>' +
                 '<input type="hidden" id="mBizEntrySubtype" value="' + esc(presetTypeVal) + '">' +
                 '<button type="button" class="form-control" id="mBizEntryTypeBtn" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;text-align:left;" onclick="openBizTypePicker({hiddenId:\'mBizEntrySubtype\',labelId:\'mBizEntryTypeLabel\',onChange:onBizEntrySubtypeChange})">' +
@@ -1946,7 +1943,7 @@ function bizParentFieldHtml(prefix, curPid, curLabelHtml) {
         '<input type="text" class="form-control" id="' + prefix + 'parent_search" placeholder="搜索主卡号码/公司/使用人" style="font-size:13px;" oninput="filterBizParent(this.value, \'' + prefix + '\')" autocomplete="off">' +
         '<input type="hidden" id="' + prefix + 'parent_id" value="' + (curPid != null && curPid !== '' ? curPid : '') + '">' +
         '<div id="' + prefix + 'parent_list" class="m-popup-card" style="max-height:240px;overflow-y:auto;border:1px solid var(--m-border);box-shadow:0 12px 40px rgba(0,0,0,0.15);background:var(--m-card);margin-top:6px;display:none;"></div></div>' +
-        '<div style="font-size:12px;color:#888;margin-bottom:8px;" id="' + prefix + 'parent_box">' + curLabelHtml + '</div>';
+        '<div style="font-size:12px;color:var(--m-text-secondary);margin-bottom:8px;" id="' + prefix + 'parent_box">' + curLabelHtml + '</div>';
 }
 
 // 主卡底部「子卡新增」按钮组（副卡/宽带/固话）通用模板：新增与编辑共用。
@@ -1971,7 +1968,7 @@ function renderBizSubEntries() {
         });
     });
     var subs = window._bizSubEntries || [];
-    if (!subs.length) { wrap.innerHTML = '<div style="font-size:12px;color:#999;padding:4px 0;">尚未添加子卡</div>'; return; }
+    if (!subs.length) { wrap.innerHTML = '<div style="font-size:12px;color:var(--m-text-secondary);padding:4px 0;">尚未添加子卡</div>'; return; }
     var html = '';
     subs.forEach(function(s) {
         var childFields = BIZ_SUB_INLINE_FIELDS[s.childType] || ['number'];
@@ -2069,7 +2066,7 @@ function bizParentRowsHtml(mains, prefix) {
     parts.push('<div class="m-cust-option" data-pid="" style="padding:10px 12px;cursor:pointer;font-size:14px;color:var(--m-accent,#007AFF);" onclick="selectBizParent(\'\',\'' + prefix + '\')">不关联（独立副卡）</div>');
     mains.forEach(function(m) {
         var label = (m.number || '-') + (m.company_name ? '（' + m.company_name + '）' : '');
-        var usr = m.user_name ? '<span style="float:right;color:#888;font-size:12px;">' + esc(m.user_name) + '</span>' : '';
+        var usr = m.user_name ? '<span style="float:right;color:var(--m-text-secondary);font-size:12px;">' + esc(m.user_name) + '</span>' : '';
         parts.push('<div class="m-cust-option" data-pid="' + m.id + '" style="padding:10px 12px;cursor:pointer;border-top:1px solid var(--m-border);font-size:14px;"' +
             ' onmouseover="this.style.background=\'#f0f4ff\'" onmouseout="this.style.background=\'\'"' +
             ' onclick="selectBizParent(' + m.id + ',\'' + prefix + '\')">' +
@@ -2259,7 +2256,7 @@ async function loadLedgerMobile() {
     _ledgerLoaded = true;
     var container = document.getElementById('mLedgerResultContainer');
     if (!container) return;
-    container.innerHTML = '<div style="text-align:center;color:#999;font-size:13px;padding:20px;"><i class="m-icon" data-icon="loading"></i> 加载中...</div>';
+    container.innerHTML = '<div style="text-align:center;color:var(--m-text-secondary);font-size:13px;padding:20px;"><i class="m-icon" data-icon="loading"></i> 加载中...</div>';
     try {
         _ledgerData = await api('/api/ledgers');
         // 按日期降序排序（最近在上面）
@@ -2717,15 +2714,15 @@ function paintBizDetail(id) {
     // 主卡信息卡（点击编辑主卡）
     var html = '<div class="biz-detail" style="--biz-label-w:' + _labelW + ';">';
     html += '<div class="m-card" id="mBizInfoCard" style="cursor:pointer;" onclick="editBusinessMobile(' + root.id + ')">';
-    html += '<div class="form-group biz-row"><label>关联客户</label><div style="font-size:14px;">' + esc(root.company_name || '-') + '</div></div>';
-    html += '<div class="form-group biz-row"><label>业务类型</label><div style="font-size:14px;">' + esc(root.business_type || '-') + '</div></div>';
+    html += '<div class="form-group biz-row"><label>关联客户</label><div class="biz-row-val">' + esc(root.company_name || '-') + '</div></div>';
+    html += '<div class="form-group biz-row"><label>业务类型</label><div class="biz-row-val">' + esc(root.business_type || '-') + '</div></div>';
     (BIZ_TYPE_FIELDS[root.business_type] || []).forEach(function(key) {
         var f = BIZ_FIELD_POOL[key];
         if (!f || key === 'parent_id') return; // 主卡无上级，不展示关联主卡
-        html += '<div class="form-group biz-row"><label>' + bizFieldLabel(root.business_type, key) + '</label><div style="font-size:14px;">' + esc(bizFieldDisplay(f, root[key])) + '</div></div>';
+        html += '<div class="form-group biz-row"><label>' + bizFieldLabel(root.business_type, key) + '</label><div class="biz-row-val">' + esc(bizFieldDisplay(f, root[key])) + '</div></div>';
     });
     if (root.customer_id) {
-        html += '<div class="form-group biz-row"><label>关联客户详情</label><div style="font-size:14px;color:#007AFF;cursor:pointer;" onclick="event.stopPropagation();navPush(\'bizcust:' + root.customer_id + '\',function(){viewBusinessMobile(' + root.id + ')});viewCustomerMobile(' + root.customer_id + ')"><i class="m-icon" data-icon="user"></i> 查看客户详情</div></div>';
+        html += '<div class="form-group biz-row"><label>关联客户详情</label><div class="biz-row-val" style="color:var(--m-accent);cursor:pointer;" onclick="event.stopPropagation();navPush(\'bizcust:' + root.customer_id + '\',function(){viewBusinessMobile(' + root.id + ')});viewCustomerMobile(' + root.customer_id + ')"><i class="m-icon" data-icon="user"></i> 查看客户详情</div></div>';
     }
 
     // 子卡区：点击整卡进入编辑；仅展示 号码 / 使用人 / 备注（宽带/固话 额外显示 业务地址）
@@ -2742,7 +2739,7 @@ function paintBizDetail(id) {
                 if (!f) return;
                 var disp = bizFieldDisplay(f, ch[key]);
                 if (!disp || disp === '-') return;  // 仅显示有值项（空/占位「-」不渲染）
-                html += '<div class="form-group biz-row" style="margin-bottom:2px;"><label>' + bizFieldLabel(ch.business_type, key) + '</label><div style="font-size:13px;">' + esc(disp) + '</div></div>';
+                html += '<div class="form-group biz-row" style="margin-bottom:2px;"><label>' + bizFieldLabel(ch.business_type, key) + '</label><div class="biz-row-val biz-row-val--sm">' + esc(disp) + '</div></div>';
             });
             html += '<div style="display:flex;gap:8px;margin-top:6px;">' +
                 '<button class="btn btn-outline" style="flex:1;padding:6px;font-size:12px;justify-content:center;" onclick="event.stopPropagation();editBusinessMobile(' + ch.id + ')">编辑</button>' +
@@ -2820,7 +2817,7 @@ async function editBusinessMobile(id) {
         '<input type="text" class="form-control" id="mbizCustSearch" placeholder="搜索" style="font-size:13px;" oninput="filterBizCustomers(this.value)" value="' + existingCompany.replace(/"/g,'&quot;') + '" autocomplete="off">' +
         '<input type="hidden" id="mbizCustomerId" value="' + existingCustomerId + '">' +
         '<div id="mbizCustList" class="m-popup-card" style="max-height:240px;overflow-y:auto;border:1px solid var(--m-border);box-shadow:0 12px 40px rgba(0,0,0,0.15);background:var(--m-card);margin-top:6px;display:none;"></div></div>' +
-        '<div style="font-size:12px;color:#888;margin-bottom:8px;" id="mbizCustLabel">' + (existingCompany ? '当前: ' + existingCompany : '请搜索并选择客户') + '</div>';
+        '<div style="font-size:12px;color:var(--m-text-secondary);margin-bottom:8px;" id="mbizCustLabel">' + (existingCompany ? '当前: ' + existingCompany : '请搜索并选择客户') + '</div>';
     html += '<div class="form-group"><label>业务类型 *</label>' +
         '<input type="hidden" id="mbizType" value="' + esc(currentType) + '">' +
         '<button type="button" class="form-control" id="mbizTypeBtn" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;text-align:left;" onclick="openBizTypePicker({hiddenId:\'mbizType\',labelId:\'mbizTypeLabel\',onChange:syncBizEditTypeUI})">' +
@@ -2879,7 +2876,7 @@ function buildBizEditSubSectionHtml(biz) {
     // 已有子卡（落库，可单独编辑/删除）
     var existing = (allBusinessesMobile || []).filter(function(b) { return biz && b.parent_id === biz.id; });
     if (existing.length) {
-        html += '<div style="font-size:12px;color:#888;margin:6px 0 4px;">已有子卡（' + existing.length + '）</div>';
+        html += '<div style="font-size:12px;color:var(--m-text-secondary);margin:6px 0 4px;">已有子卡（' + existing.length + '）</div>';
         existing.forEach(function(ch) {
             html += '<div class="m-subcard" style="border:1px solid var(--m-border);border-radius:10px;padding:8px;margin-bottom:6px;background:var(--m-card);">' +
                 '<div style="font-size:13px;font-weight:600;margin-bottom:4px;">' + esc(ch.business_type) + ' · ' + esc(ch.number || '-') + '</div>' +
@@ -2933,7 +2930,7 @@ function filterBizCustomers(keyword) {
             ' onmouseover="this.style.background=\'#f0f4ff\'" onmouseout="this.style.background=\'\'"' +
             ' onclick="selectBizCustomer(' + c.id + ',\'' + (c.company || c.name || '').replace(/'/g,'') + '\')">' +
             '<strong>' + (c.company || c.name || '-') + '</strong>' +
-            '<span style="float:right;color:#888;font-size:12px;">' + (c.category || '') + '</span>' +
+            '<span style="float:right;color:var(--m-text-secondary);font-size:12px;">' + (c.category || '') + '</span>' +
             '</div>';
     }).join('');
     listEl.style.display = 'block';
@@ -3301,7 +3298,7 @@ async function editCustomerMobile(id) {
                 <input type="text" class="form-control" id="mEditName" value="${(c.name || '').replace(/"/g,'&quot;')}">
             </div>
             <div class="form-group" style="grid-column:1/3;">
-                <label>联系人组 <span style="font-size:12px;color:#888;">（最多4组，空联系人自动显示法人）</span></label>
+                <label>联系人组 <span style="font-size:12px;color:var(--m-text-secondary);">（最多4组，空联系人自动显示法人）</span></label>
                 <div id="mContactGroupContainer"></div>
                 <button type="button" class="btn btn-outline btn-sm" onclick="addMContactGroup()" id="mAddContactBtn" style="margin-top:4px;font-size:12px;">+ 添加联系人</button>
             </div>
@@ -3438,7 +3435,7 @@ async function addCustomerMobile() {
                 <input type="text" class="form-control" id="mNewName" placeholder="法定代表人">
             </div>
             <div class="form-group" style="grid-column:1/3;">
-                <label>联系人组 <span style="font-size:12px;color:#888;">（最多4组）</span></label>
+                <label>联系人组 <span style="font-size:12px;color:var(--m-text-secondary);">（最多4组）</span></label>
                 <div id="mNewContactGroupContainer"></div>
                 <button type="button" class="btn btn-outline btn-sm" onclick="addNewMGroup()" id="mNewAddBtn" style="margin-top:4px;font-size:12px;">+ 添加联系人</button>
             </div>
@@ -4717,7 +4714,7 @@ async function editTaskMobile(taskId, customerId) {
     // 单卡片内：事项字段 + 子待办区 + 底部取消/保存（与其他编辑页一致，按钮在控件内）
     content.innerHTML =
         '<div class="m-card">' +
-            '<div style="font-size:13px;color:#888;margin-bottom:12px;"><i class="m-icon" data-icon="building"></i> ' + (task.customer_company || task.customer_name || '未知公司') + '</div>' +
+            '<div style="font-size:13px;color:var(--m-text-secondary);margin-bottom:12px;"><i class="m-icon" data-icon="building"></i> ' + (task.customer_company || task.customer_name || '未知公司') + '</div>' +
             '<div class="form-group"><label>事项标题</label><input type="text" class="form-control" id="mEditTaskTitle" value="' + (task.title || '').replace(/"/g,'&quot;') + '"></div>' +
             '<div class="form-group"><label>详细描述</label><textarea class="form-control" id="mEditTaskDesc" rows="3">' + (task.description || '').replace(/"/g,'&quot;') + '</textarea></div>' +
             '<div class="form-group"><label>截止日期</label><input type="date" class="form-control" id="mEditTaskDueDate" value="' + (task.due_date ? task.due_date.substring(0,10) : '') + '"></div>' +
@@ -4863,7 +4860,7 @@ function addTaskMobile(customerId, customerName) {
                 '<input type="text" class="form-control" id="mTaskCustSearch" placeholder="搜索" style="font-size:13px;" oninput="filterTaskCustomers(this.value)" autocomplete="off">' +
                 '<input type="hidden" id="mTaskCustomerId" value="">' +
                 '<div id="mTaskCustList" class="m-popup-card" style="max-height:240px;overflow-y:auto;border:1px solid var(--m-border);box-shadow:0 12px 40px rgba(0,0,0,0.15);background:var(--m-card);margin-top:6px;display:none;"></div></div>' +
-            '<div style="font-size:12px;color:#888;margin-bottom:8px;" id="mTaskCustLabel">请搜索并选择客户</div>' +
+            '<div style="font-size:12px;color:var(--m-text-secondary);margin-bottom:8px;" id="mTaskCustLabel">请搜索并选择客户</div>' +
             '<div class="form-group"><label>事项标题 *</label><input type="text" class="form-control" id="mTaskTitle" placeholder="请输入事项标题"></div>' +
             '<div class="form-group"><label>详细描述</label><textarea class="form-control" id="mTaskDesc" rows="3"></textarea></div>' +
             '<div class="form-group"><label>截止日期</label><input type="date" class="form-control" id="mTaskDueDate"></div>' +
@@ -4923,7 +4920,7 @@ function filterTaskCustomers(keyword) {
             ' onmouseover="this.style.background=\'#f0f4ff\'" onmouseout="this.style.background=\'\'"' +
             ' onclick="selectTaskCustomer(' + c.id + ',\'' + (c.company || c.name || '').replace(/'/g,'') + '\')">' +
             '<strong>' + (c.company || c.name || '-') + '</strong>' +
-            '<span style="float:right;color:#888;font-size:12px;">' + (c.category || '') + '</span>' +
+            '<span style="float:right;color:var(--m-text-secondary);font-size:12px;">' + (c.category || '') + '</span>' +
             '</div>';
     }).join('');
     listEl.style.display = 'block';
@@ -5260,9 +5257,9 @@ async function loadSettingsMobile() {
     content.innerHTML = `
         <div class="m-card">
             <div class="m-card-title">账号设置</div>
-            <p style="color:#999;font-size:12px;margin-bottom:10px;">仅你本人可见，客户资料彼此隔离</p>
+            <p style="color:var(--m-text-secondary);font-size:12px;margin-bottom:10px;">仅你本人可见，客户资料彼此隔离</p>
             <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;">
-                <span style="color:#888;font-size:13px;">手机号</span>
+                <span style="color:var(--m-text-secondary);font-size:13px;">手机号</span>
                 <span style="display:flex;align-items:center;gap:12px;">
                     <span style="font-weight:600;font-size:15px;">${phone}</span>
                     <span onclick="openChangePhone()" style="color:var(--m-accent,#0a84ff);font-size:14px;cursor:pointer;-webkit-tap-highlight-color:transparent;">更改</span>
@@ -5293,12 +5290,12 @@ async function loadSettingsMobile() {
         ${isAdmin ? `
         <div class="m-card" id="mAdminPanel">
             <div class="m-card-title">注册审核 <span id="mPendingCount" style="background:#007FFF;color:#fff;border-radius:10px;padding:2px 8px;font-size:12px;">0</span></div>
-            <div id="mPendingList"><div style="text-align:center;color:#999;font-size:13px;padding:8px;">加载中...</div></div>
+            <div id="mPendingList"><div style="text-align:center;color:var(--m-text-secondary);font-size:13px;padding:8px;">加载中...</div></div>
             <div id="mAdminMsg" style="font-size:13px;margin-top:6px;min-height:20px;"></div>
         </div>
         <div class="m-card">
             <div class="m-card-title">密码重置审核 <span id="mResetCount" style="background:#007FFF;color:#fff;border-radius:10px;padding:2px 8px;font-size:12px;">0</span></div>
-            <div id="mResetList"><div style="text-align:center;color:#999;font-size:13px;padding:8px;">加载中...</div></div>
+            <div id="mResetList"><div style="text-align:center;color:var(--m-text-secondary);font-size:13px;padding:8px;">加载中...</div></div>
             <div id="mResetMsg" style="font-size:13px;margin-top:6px;min-height:20px;"></div>
         </div>
         ` : ''}
@@ -5421,13 +5418,13 @@ async function loadPendingMobile() {
         document.getElementById('mPendingCount').textContent = arr.length;
         const listEl = document.getElementById('mPendingList');
         if (arr.length === 0) {
-            listEl.innerHTML = '<div style="text-align:center;color:#999;font-size:13px;padding:12px;">暂无待审核申请</div>';
+            listEl.innerHTML = '<div style="text-align:center;color:var(--m-text-secondary);font-size:13px;padding:12px;">暂无待审核申请</div>';
             return;
         }
         listEl.innerHTML = arr.map(function(u) {
             return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #eee;">' +
                 '<div><div style="font-weight:600;font-size:14px;">' + (u.phone || u.username || '') + '</div>' +
-                '<div style="font-size:11px;color:#999;">' + (u.created_at || '') + '</div></div>' +
+                '<div style="font-size:11px;color:var(--m-text-secondary);">' + (u.created_at || '') + '</div></div>' +
                 '<div style="display:flex;gap:6px;">' +
                     '<button class="btn btn-success btn-sm" style="font-size:11px;padding:3px 10px;" onclick="approveMobile(' + u.id + ')">通过</button>' +
                     '<button class="btn btn-outline btn-sm" style="font-size:11px;padding:3px 10px;" onclick="rejectMobile(' + u.id + ')">拒绝</button>' +
@@ -5467,14 +5464,14 @@ async function loadResetsMobile() {
         document.getElementById('mResetCount').textContent = arr.length;
         const listEl = document.getElementById('mResetList');
         if (arr.length === 0) {
-            listEl.innerHTML = '<div style="text-align:center;color:#999;font-size:13px;padding:12px;">暂无待审核申请</div>';
+            listEl.innerHTML = '<div style="text-align:center;color:var(--m-text-secondary);font-size:13px;padding:12px;">暂无待审核申请</div>';
             return;
         }
         listEl.innerHTML = arr.map(function(r) {
             var who = r.phone || r.username || '';
             return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #eee;">' +
                 '<div><div style="font-weight:600;font-size:14px;">' + esc(who) + '</div>' +
-                '<div style="font-size:11px;color:#999;">' + (r.created_at || '') + '</div></div>' +
+                '<div style="font-size:11px;color:var(--m-text-secondary);">' + (r.created_at || '') + '</div></div>' +
                 '<div style="display:flex;gap:6px;">' +
                     '<button class="btn btn-success btn-sm" style="font-size:11px;padding:3px 10px;" onclick="approveResetMobile(' + r.user_id + ')">通过</button>' +
                     '<button class="btn btn-outline btn-sm" style="font-size:11px;padding:3px 10px;" onclick="rejectResetMobile(' + r.user_id + ')">拒绝</button>' +

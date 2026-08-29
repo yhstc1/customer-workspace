@@ -16,6 +16,25 @@ import sys
 import pymysql
 from datetime import datetime, date
 
+# 未手动设置环境变量时，自动从 aliyun-backend/.env 加载（沙箱/本机一键执行，免手填密钥）
+def _load_dotenv(path):
+    if not os.path.isfile(path):
+        return
+    try:
+        with open(path, "r", encoding="utf-8") as fh:
+            for line in fh:
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                k, v = line.split("=", 1)
+                k, v = k.strip(), v.strip().strip('"').strip("'")
+                if k and not os.environ.get(k):
+                    os.environ[k] = v
+    except Exception as e:
+        print("[WARN] 读取 .env 失败：%s" % e)
+
+_load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "aliyun-backend", ".env"))
+
 REQUIRED = ["MYSQL_HOST", "MYSQL_PORT", "MYSQL_USER", "MYSQL_DB", "MYSQL_PASSWORD"]
 missing = [k for k in REQUIRED if not os.environ.get(k)]
 if missing:
