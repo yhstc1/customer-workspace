@@ -6,7 +6,7 @@
 
 // 当前版本号（用于「关于」页展示）。
 // 版本号规则（仅适用于 APK/移动端；PC 端模板改动不触发）：① 第一位=重大版本（用户判定，当前=4），大版本升级时二三位归零；② 有需 APK 的原生改动→中间位+1、末位保持（例 4.12.15→4.13.15）；③ H5/纯页面改动只发服务器热更、不 bump 中间位（用户无感）。
-const APP_VERSION = '4.14.23';
+const APP_VERSION = '4.14.24';
 
 // ==================== H5 密码登录浮层 ====================
 // 纯账号密码登录：后端基于 session cookie 认证，登录成功后由 /api/me 校验。
@@ -49,7 +49,7 @@ function showH5Login(defaultMsg) {
         mask.remove();
         // 登录成功后刷新当前页数据
         if (typeof window.__mobileMarkDirty === 'function') window.__mobileMarkDirty();
-        const cp = window.currentPage || 'tasks';
+        const cp = window.currentPage || 'kanban';
         if (typeof switchPage === 'function') switchPage(cp);
         if (typeof window.preloadAllData === 'function') window.preloadAllData();
       } else {
@@ -67,7 +67,7 @@ function showH5Login(defaultMsg) {
 }
 window.showH5Login = showH5Login;
 
-let currentPage = 'tasks';
+let currentPage = 'kanban'; // 启动默认页：看板（待办清单 + 业务到期提醒）
 
 // 运行环境标记：装在 App（APK）内时 window.CustomerApp 桥存在，给根节点加 m-apk 类，
 // 供 CSS 区分两端（如底栏离底距离：APK 8px / 浏览器 15px）。浏览器端无该桥则不添加。
@@ -107,7 +107,8 @@ window.__mobileMarkDirty = markAllPagesDirty;
 // 复用与 loadCustomersMobile / loadBusinessesMobile / loadMapMobile 同一批内存缓存变量
 // （_allCustomersMobile / allBusinessesMobile / _mapData），不另建第二份存储，避免
 // 内存冗余与数据不一致；切到对应 Tab 时这些变量已就位 → switchPage 跳过「加载中」直接本地渲染。
-// 说明：事项页是启动默认页（boot 时 switchPage('tasks') 已拉取），无需在此重复预取。
+// 说明：看板是启动默认页（boot 时 switchPage('kanban') 会自行拉取事项 + 业务），
+// 故这里不预取事项/业务，只补客户与设置，避免与看板并发重复请求。
 // 地图的「地理定位」需用户授权、无法后台完成，但 settings+客户数据先备好，切到地图只差定位一环。
 var _preloadStarted = false;
 function preloadAllData() {
@@ -4172,14 +4173,19 @@ function kbRenderTodo(tasks) {
     if (cnt) cnt.textContent = '共 ' + open.length;
 }
 
-// 板块2：有止期且未拆机的业务，按到期日升序；已拆机一律排除。
+// 板块2：按到期日升序；已拆机一律排除。
+// 过滤口径 = 类型白名单（KB_EXP_TYPES）：只有「本就有合同期概念」的五类进提醒。
+// 物联卡/魔方卡/副卡这类只有办理日期的业务，即便库里因历史录入带了 end_date，也不纳入
+// （典型场景：与专线/电路同签一份合同、日期被一并复制过来，会造成同合同重复提醒）。
 // 底部提示「还有 X 笔未设止期，其中专线x，电路y…」，笔数为 0 则不展示。
 function kbRenderExp(businesses) {
     var box = document.getElementById('kbExpList');
     var cnt = document.getElementById('kbExpCount');
     if (!box) return;
     var all = (businesses || []).filter(function (b) { return !b.is_dismantled; });
-    var list = all.filter(function (b) { return b.end_date; });
+    var list = all.filter(function (b) {
+        return b.end_date && KB_EXP_TYPES[b.business_type];
+    });
     list.sort(function (a, b) { return String(a.end_date).localeCompare(String(b.end_date)); });
 
     var soon = 0;
