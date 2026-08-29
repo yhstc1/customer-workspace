@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang='zh-CN'>
+<head>
+<meta charset='UTF-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'>
+<title>看板 · 工作台</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    margin: 0; background: #f5f6f8; color: #1f2329;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+    font-size: 14px; line-height: 1.5;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 12px 12px 40px; }
+  .topbar {
+    position: sticky; top: 0; z-index: 20; background: #f5f6f8;
+    padding: 10px 4px 8px; border-bottom: 1px solid #eef0f3;
+  }
+  .topbar h1 { font-size: 18px; margin: 0; font-weight: 700; letter-spacing: .5px; }
+  .topbar .sub { font-size: 12px; color: #8a9099; margin-top: 2px; }
+  .banner {
+    margin: 10px 0 4px; padding: 8px 12px; border-radius: 10px;
+    background: #fff7e6; color: #ad6800; font-size: 12px; border: 1px solid #ffe7ba;
+  }
+  .banner.live { background: #e8f7ee; color: #1a7f43; border-color: #b7ebc8; }
+  .section { margin-top: 18px; }
+  .section-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 4px 6px 8px;
+  }
+  .section-head .t { font-size: 15px; font-weight: 700; }
+  .section-head .t small { font-weight: 400; color: #8a9099; font-size: 12px; margin-left: 6px; }
+  .pill { background: #eef2ff; color: #3b5bff; border-radius: 20px; padding: 2px 10px; font-size: 12px; font-weight: 600; }
+  .pill.warn { background: #fff1f0; color: #d4380d; }
+  .card {
+    background: #fff; border-radius: 12px; padding: 12px 14px; margin-bottom: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.04); border: 1px solid #f0f1f3;
+  }
+  .due { font-size: 12px; margin-left: auto; white-space: nowrap; }
+  .due.over { color: #d4380d; font-weight: 600; }
+  .due.soon { color: #d4380d; }
+  .due.mid { color: #d46b08; }
+  .due.far { color: #5a6573; }
+  /* 板块1：紧凑待办行（一行：圆点 + 标题 + 客户小字；事项通常无时间，不显示剩余天数） */
+  .todo-row {
+    display: flex; align-items: center; gap: 10px; padding: 11px 12px; margin-bottom: 8px;
+    background: #fff; border-radius: 10px; box-shadow: 0 1px 2px rgba(0,0,0,.04); border: 1px solid #f0f1f3;
+  }
+  .todo-dot { flex: 0 0 8px; width: 8px; height: 8px; border-radius: 50%; background: #c9ced6; }
+  .todo-dot.pin { background: #fa8c16; }
+  .todo-title { flex: 1; min-width: 0; font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .todo-title .pin { background: #fff7e6; color: #ad6800; font-size: 11px; padding: 1px 6px; border-radius: 6px; margin-left: 6px; }
+  .todo-co { flex: 0 0 auto; font-size: 12px; color: #8a9099; white-space: nowrap; max-width: 42%; overflow: hidden; text-overflow: ellipsis; }
+  .biz-row { display: flex; align-items: stretch; gap: 10px; }
+  .biz-left { flex: 0 0 4px; border-radius: 4px; background: #5a6573; }
+  .biz-left.over { background: #d4380d; }
+  .biz-left.soon { background: #d4380d; }
+  .biz-left.mid { background: #d46b08; }
+  .biz-left.far { background: #52c41a; }
+  .biz-main { flex: 1; min-width: 0; }
+  .biz-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .btag { font-size: 11px; padding: 1px 8px; border-radius: 6px; background: #eef2ff; color: #3b5bff; font-weight: 600; }
+  .biz-co { font-size: 14px; font-weight: 600; }
+  .biz-meta { font-size: 12px; color: #6b7280; margin-top: 3px; }
+  .biz-dates { font-size: 12px; color: #4b5563; margin-top: 2px; }
+  .biz-remain { margin-left: auto; text-align: right; white-space: nowrap; font-size: 13px; font-weight: 700; }
+  .biz-remain.over { color: #d4380d; }
+  .biz-remain.soon { color: #d4380d; }
+  .biz-remain.mid { color: #d46b08; }
+  .biz-remain.far { color: #52c41a; }
+  .biz-remain small { display: block; font-weight: 400; font-size: 11px; color: #8a9099; }
+  .tip { font-size: 12px; color: #8a9099; text-align: center; padding: 12px 4px 2px; }
+  .empty { text-align: center; color: #b3b9c2; font-size: 13px; padding: 22px 0; }
+  .foot { text-align: center; color: #b3b9c2; font-size: 11px; margin-top: 24px; }
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: 11px; color: #8a9099; margin: 6px 4px 0; }
+  .legend i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 4px; vertical-align: middle; }
+</style>
+</head>
+<body>
+<div class='wrap'>
+  <div class='topbar'>
+    <h1>看板 · 工作台</h1>
+    <div class='sub'>待办提醒 + 业务到期提醒，一屏掌握</div>
+  </div>
+  <div id='banner' class='banner'>正在加载…</div>
+
+  <!-- 板块 1：待办清单（时间视角，与事项列表区分） -->
+  <div class='section'>
+    <div class='section-head'>
+      <div class='t'>待办清单 <small>仅未完成</small></div>
+      <div id='todoCount' class='pill'>0</div>
+    </div>
+    <div id='todoList'></div>
+  </div>
+
+  <!-- 板块 2：业务到期提醒 -->
+  <div class='section'>
+    <div class='section-head'>
+      <div class='t'>业务到期提醒 <small>由近至远</small></div>
+      <div id='expCount' class='pill warn'>0</div>
+    </div>
+    <div class='legend'>
+      <span><i style='background:#d4380d'></i>已过期/30天内</span>
+      <span><i style='background:#d46b08'></i>90天内</span>
+      <span><i style='background:#52c41a'></i>更久</span>
+    </div>
+    <div id='expList'></div>
+  </div>
+
+  <div class='foot'>DEMO 预览 · 接入 m.html 后自动拉取真实数据</div>
+</div>
+
+<script>
+window.API_BASE = 'https://crm-api-fc-nrfocbaaxv.cn-hangzhou.fcapp.run';
+
+// ---------- 演示数据（贴合真实场景：双线=互联网专线/电路，含合同编号与起止时间） ----------
+var DEMO = {
+  tasks: [
+    {id:1, title:'双线业务合同续签谈判', customer_company:'武汉江夏智造有限公司', status:'进行中', pinned:1},
+    {id:2, title:'互联网专线扩容方案确认', customer_company:'武汉江夏智造有限公司', status:'进行中'},
+    {id:3, title:'电路故障修复跟进', customer_company:'光谷软件园科技大厦', status:'进行中'},
+    {id:4, title:'U+产品回款催收', customer_company:'江夏区某连锁酒店', status:'进行中'},
+    {id:5, title:'（已完结示例，应被过滤）', customer_company:'某客户', status:'已完结'}
+  ],
+  subtasks: [
+    {id:101, task_id:1, title:'核对专线起止时间与带宽', done:0},
+    {id:102, task_id:1, title:'确认电路合同编号 WH-DL-2023-088', done:0},
+    {id:103, task_id:1, title:'初稿拟定', done:1},
+    {id:104, task_id:2, title:'现场勘查排期', done:0},
+    {id:105, task_id:3, title:'联系代维上门', done:0},
+    {id:106, task_id:4, title:'发送对账单', done:0},
+    {id:107, task_id:4, title:'电话催收', done:0}
+  ],
+  businesses: [
+    {company_name:'已过期示例客户', business_type:'互联网专线', contract_code:'WH-ZX-2023-077', start_date:'2023-09-01', end_date:'2026-08-20', number:'', is_dismantled:0},
+    {company_name:'光谷软件园科技大厦', business_type:'电路', contract_code:'WH-DL-2023-088', start_date:'2023-06-01', end_date:'2026-09-02', number:'027-8888xxxx', is_dismantled:0},
+    {company_name:'武汉江夏智造有限公司', business_type:'互联网专线', contract_code:'WH-ZX-2024-001', start_date:'2024-01-01', end_date:'2026-09-15', number:'', is_dismantled:0},
+    {company_name:'江夏区某连锁酒店', business_type:'U+产品', contract_code:'WH-U-2025-003', start_date:'2025-03-01', end_date:'2026-10-20', number:'', is_dismantled:0},
+    {company_name:'武汉某制造企业', business_type:'互联网专线', contract_code:'WH-ZX-2025-012', start_date:'2025-05-01', end_date:'2026-12-31', number:'', is_dismantled:0},
+    {company_name:'东湖高新区某单位', business_type:'电路', contract_code:'WH-DL-2024-031', start_date:'2024-02-01', end_date:'2027-03-10', number:'', is_dismantled:0},
+    {company_name:'某科技公司', business_type:'互联网专线', contract_code:'WH-ZX-2025-020', start_date:'2025-06-01', end_date:'', number:'', is_dismantled:0},
+    {company_name:'某园区物业', business_type:'电路', contract_code:'WH-DL-2025-011', start_date:'2025-02-01', end_date:'', number:'', is_dismantled:0},
+    {company_name:'某商贸公司', business_type:'数智惠企', contract_code:'', date:'2025-08-01', end_date:'2026-09-25', number:'', is_dismantled:0},
+    {company_name:'某物流公司', business_type:'数智惠企', contract_code:'', date:'2025-09-01', end_date:'', number:'', is_dismantled:0},
+    {company_name:'已拆机客户', business_type:'电路', contract_code:'WH-DL-2022-005', start_date:'2022-01-01', end_date:'2026-09-30', number:'', is_dismantled:1}
+  ]
+};
+
+function esc(s){ return (s==null?'':String(s)).replace(/[&<>']/g, function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;'}[c];}); }
+function todayStr(){ var d=new Date(); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
+function daysBetween(a,b){ var da=new Date(a), db=new Date(b); return Math.round((db-da)/86400000); }
+function fmtDate(s){ return s? String(s).substring(0,10) : '-'; }
+function dueClass(due){
+  if(!due) return 'far';
+  var d = daysBetween(todayStr(), due);
+  if(d < 0) return 'over';
+  if(d <= 30) return 'soon';
+  if(d <= 90) return 'mid';
+  return 'far';
+}
+function dueText(due){
+  if(!due) return '';
+  var d = daysBetween(todayStr(), due);
+  if(d < 0) return '已逾期 '+(-d)+' 天';
+  if(d === 0) return '今天到期';
+  return '剩 '+d+' 天';
+}
+
+// ---------- 渲染：板块1 待办清单（一行：标题 + 客户小字；事项通常无时间，不显示剩余天数） ----------
+function renderTodo(tasks, subtasks){
+  var open = tasks.filter(function(t){ return t.status === '进行中'; });
+  if(open.length === 0){
+    document.getElementById('todoList').innerHTML = '<div class="empty">暂无未完成事项 🎉</div>';
+    document.getElementById('todoCount').textContent = '0';
+    return;
+  }
+  // 排序：置顶(pinned)在前，其余保持原顺序（事项通常无截止日，不再按时间排序）
+  open.sort(function(a,b){ return (b.pinned?1:0) - (a.pinned?1:0); });
+  var html = open.map(function(t){
+    var co = t.customer_company || t.customer_name || '未归类';
+    var pin = t.pinned ? '<span class="pin">置顶</span>' : '';
+    var dotCls = t.pinned ? 'todo-dot pin' : 'todo-dot';
+    return '<div class="todo-row">' +
+      '<span class="' + dotCls + '"></span>' +
+      '<div class="todo-title">' + esc(t.title) + pin + '</div>' +
+      '<div class="todo-co">' + esc(co) + '</div>' +
+    '</div>';
+  }).join('');
+  document.getElementById('todoList').innerHTML = html;
+  document.getElementById('todoCount').textContent = '共 ' + open.length;
+}
+
+// ---------- 渲染：板块2 到期 ----------
+// 需要填止期的类型（含 end_date 字段）→ 提示里的简称；未填止期的按此归类统计
+var EXP_TYPES = {
+  '互联网专线':'专线', '电路':'电路', '算网项目':'算网项目', 'U+产品':'U+产品', '数智惠企':'数智惠企'
+};
+
+function renderExp(businesses){
+  var all = businesses.filter(function(b){ return !b.is_dismantled; });
+  var list = all.filter(function(b){ return b.end_date; });
+  list.sort(function(a,b){ return new Date(a.end_date) - new Date(b.end_date); });
+  var soon90 = list.filter(function(b){ var d=daysBetween(todayStr(), b.end_date); return d>=0 && d<=90; }).length;
+  var html = '';
+  if(list.length === 0){
+    html = '<div class="empty">暂无带到期时间的业务</div>';
+  } else {
+    html = list.map(function(b){
+      var dc = dueClass(b.end_date);
+      var remain = dueText(b.end_date);
+      return '<div class="card"><div class="biz-row">'+
+        '<div class="biz-left ' + dc + '"></div>'+
+        '<div class="biz-main">'+
+          '<div class="biz-top"><span class="btag">'+esc(b.business_type)+'</span><span class="biz-co">'+esc(b.company_name)+'</span></div>'+
+          '<div class="biz-meta">合同编号：'+(esc(b.contract_code)||'-')+(b.number?(' · 号码 '+esc(b.number)):'')+'</div>'+
+          '<div class="biz-dates">起 '+fmtDate(b.start_date)+' → 止 '+fmtDate(b.end_date)+'</div>'+
+        '</div>'+
+        '<div class="biz-remain ' + dc + '">'+remain+'<small>'+fmtDate(b.end_date)+'</small></div>'+
+      '</div></div>';
+    }).join('');
+  }
+  // 未设止期提示：仅统计「应该填止期却没填」的类型；为 0 则不展示
+  var byType = {};
+  all.forEach(function(b){
+    if(!b.end_date && EXP_TYPES[b.business_type]){
+      var k = EXP_TYPES[b.business_type]; byType[k] = (byType[k] || 0) + 1;
+    }
+  });
+  var missing = 0;
+  var seg = Object.keys(EXP_TYPES).map(function(t){
+    var k = EXP_TYPES[t], n = byType[k] || 0;
+    missing += n;
+    return n ? (k + n) : '';
+  }).filter(Boolean).join('，');
+  if(missing > 0){
+    html += '<div class="tip">还有 ' + missing + ' 笔未设止期，其中' + seg + '，不计入提醒</div>';
+  }
+  document.getElementById('expList').innerHTML = html;
+  var pc = document.getElementById('expCount');
+  pc.textContent = soon90 + ' / ' + list.length;
+}
+
+// ---------- 加载：优先真实接口，失败回退演示 ----------
+function showBanner(live){
+  var el = document.getElementById('banner');
+  if(live){ el.className = 'banner live'; el.textContent = '已连接后端，展示真实数据（'+todayStr()+'）'; }
+  else { el.className = 'banner'; el.textContent = '演示数据（未连接后端登录态）· 接入 m.html 后展示你的真实数据'; }
+}
+
+function loadLive(){
+  var base = window.API_BASE;
+  return Promise.all([
+    fetch(base + '/api/tasks', {credentials:'include'}).then(function(r){ if(!r.ok) throw 0; return r.json(); }),
+    fetch(base + '/api/tasks/subtasks', {credentials:'include'}).then(function(r){ if(!r.ok) throw 0; return r.json(); }),
+    fetch(base + '/api/business', {credentials:'include'}).then(function(r){ if(!r.ok) throw 0; return r.json(); })
+  ]).then(function(res){
+    return { tasks: res[0], subtasks: res[1], businesses: res[2] };
+  });
+}
+
+function start(){
+  loadLive().then(function(data){
+    showBanner(true);
+    renderTodo(data.tasks, data.subtasks);
+    renderExp(data.businesses);
+  }).catch(function(){
+    showBanner(false);
+    renderTodo(DEMO.tasks, DEMO.subtasks);
+    renderExp(DEMO.businesses);
+  });
+}
+start();
+</script>
+</body>
+</html>

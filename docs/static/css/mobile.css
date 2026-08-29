@@ -1297,3 +1297,53 @@ textarea { resize: none; }
     }
     .mobile-content > .m-card { margin-bottom: 0; }
 }
+
+/* ==================== 看板页（待办清单 + 业务到期提醒） ====================
+   全部走主题变量，深浅色自动适配；不写死底色，避免深色模式下出现白块。 */
+.m-kb { display: block; }
+/* 超宽屏（≥1280px）列表页会被切成双列网格，看板需独占整行，否则两个板块被拆到左右两列 */
+@media (min-width: 1280px) {
+    .mobile-content > .m-kb { grid-column: 1 / -1; }
+}
+.m-kb-sec { margin-top: 16px; }
+.m-kb-head { display: flex; align-items: center; justify-content: space-between; padding: 2px 14px 8px; }
+.m-kb-head .t { font-size: 15px; font-weight: 700; color: var(--m-text); }
+.m-kb-head .t small { font-weight: 400; color: var(--m-text-secondary); font-size: 12px; margin-left: 6px; }
+.m-kb-pill { background: var(--m-accent-light); color: var(--m-accent); border-radius: 20px; padding: 2px 10px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.m-kb-pill.warn { background: rgba(255, 69, 58, .14); color: var(--m-danger); }
+/* 板块1 待办行：一行 = 圆点 + 标题 + 客户小字（事项多数无截止日，不显示剩余天数） */
+.m-kb-row {
+    display: flex; align-items: center; gap: 10px; padding: 11px 14px; margin: 0 12px 8px;
+    background: var(--m-card); border-radius: var(--m-radius-md); border: 1px solid var(--m-border);
+}
+.m-kb-row:active { opacity: .7; }
+.m-kb-dot { flex: 0 0 8px; width: 8px; height: 8px; border-radius: 50%; background: var(--m-text-tertiary); }
+.m-kb-dot.pin { background: var(--m-warning); }
+.m-kb-title { flex: 1; min-width: 0; font-size: 14px; font-weight: 600; color: var(--m-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.m-kb-title .pin { background: rgba(255, 159, 10, .16); color: var(--m-warning); font-size: 11px; padding: 1px 6px; border-radius: 6px; margin-left: 6px; font-weight: 400; }
+.m-kb-co { flex: 0 0 auto; font-size: 12px; color: var(--m-text-secondary); white-space: nowrap; max-width: 42%; overflow: hidden; text-overflow: ellipsis; }
+/* 板块2 到期卡片：左侧色条 + 主体信息 + 右侧剩余天数 */
+.m-kb-card {
+    background: var(--m-card); border-radius: var(--m-radius-md);
+    padding: 12px 14px; margin: 0 12px 10px; border: 1px solid var(--m-border);
+}
+.m-kb-card:active { opacity: .7; }
+.m-kb-biz { display: flex; align-items: stretch; gap: 10px; }
+.m-kb-bar { flex: 0 0 4px; border-radius: 4px; background: var(--m-text-tertiary); }
+.m-kb-bar.over, .m-kb-bar.soon { background: var(--m-danger); }
+.m-kb-bar.mid { background: var(--m-warning); }
+.m-kb-bar.far { background: var(--m-success); }
+.m-kb-bizmain { flex: 1; min-width: 0; }
+.m-kb-biztop { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.m-kb-tag { font-size: 11px; padding: 1px 8px; border-radius: 6px; background: var(--m-accent-light); color: var(--m-accent); font-weight: 600; }
+.m-kb-bizco { font-size: 14px; font-weight: 600; color: var(--m-text); }
+.m-kb-meta, .m-kb-dates { font-size: 12px; color: var(--m-text-secondary); margin-top: 3px; }
+.m-kb-dates { margin-top: 2px; }
+.m-kb-remain { margin-left: auto; text-align: right; white-space: nowrap; font-size: 13px; font-weight: 700; }
+.m-kb-remain.over, .m-kb-remain.soon { color: var(--m-danger); }
+.m-kb-remain.mid { color: var(--m-warning); }
+.m-kb-remain.far { color: var(--m-success); }
+.m-kb-remain small { display: block; font-weight: 400; font-size: 11px; color: var(--m-text-secondary); }
+.m-kb-tip { font-size: 12px; color: var(--m-text-secondary); text-align: center; padding: 12px 16px 2px; line-height: 1.6; }
+.m-kb-legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: 11px; color: var(--m-text-secondary); margin: 0 14px 8px; }
+.m-kb-legend i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 4px; vertical-align: middle; }

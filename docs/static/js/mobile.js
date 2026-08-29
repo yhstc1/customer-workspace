@@ -6,7 +6,7 @@
 
 // 当前版本号（用于「关于」页展示）。
 // 版本号规则（仅适用于 APK/移动端；PC 端模板改动不触发）：① 第一位=重大版本（用户判定，当前=4），大版本升级时二三位归零；② 有需 APK 的原生改动→中间位+1、末位保持（例 4.12.15→4.13.15）；③ H5/纯页面改动只发服务器热更、不 bump 中间位（用户无感）。
-const APP_VERSION = '4.14.19';
+const APP_VERSION = '4.14.23';
 
 // ==================== H5 密码登录浮层 ====================
 // 纯账号密码登录：后端基于 session cookie 认证，登录成功后由 /api/me 校验。
@@ -322,7 +322,7 @@ function catAccent(cat) {
 // ==================== 页面切换 ====================
 
 // 一级页面列表（显示设置按钮 + 底栏）
-var TOP_LEVEL_PAGES = ['customers', 'business', 'map', 'tasks', 'settings'];
+var TOP_LEVEL_PAGES = ['kanban', 'customers', 'business', 'map', 'tasks', 'settings'];
 
 // 记录最近访问的一级页面，用于二级页面返回
 var _prevTopPage = 'tasks';
@@ -460,6 +460,7 @@ async function switchPage(page) {
 
     // 更新标题
     var titles = {
+        kanban: '看板',
         customers: '客户管理',
         business: '业务管理',
         map: '地图视图',
@@ -515,6 +516,11 @@ async function switchPage(page) {
         allBusinessesMobile = []; // 强制重新拉取全部业务
         _ledgerLoaded = false;    // 台账(ledgers) 一并重新拉取
         _ledgerData = [];
+    }
+    // 看板页：数据是「事项 + 业务」跨模块聚合，任一模块改动后都应即时反映 → 每次进入强制重拉，不复用快照
+    if (page === 'kanban') {
+        _pageCache['kanban'] = null;
+        _pageDirty['kanban'] = true;
     }
     if (page !== 'map' && _pageCache[page] && !_pageDirty[page]) {
         restorePageFromCache(page);
@@ -586,6 +592,7 @@ async function switchPage(page) {
     var loaded = false;
     try {
         switch (page) {
+            case 'kanban': await loadKanbanMobile(); break;
             case 'customers': await loadCustomersMobile(); break;
             case 'business': await loadBusinessesMobile(); break;
             case 'map': await loadMapMobile(); break;
@@ -1403,7 +1410,7 @@ var BIZ_TYPE_FIELDS = {
     '电路':       ['business_level', 'contract_amount', 'number', 'start_date', 'end_date', 'business_address', 'contract_code', 'notes', 'is_dismantled'],
     '算网项目':   ['business_level', 'contract_amount', 'number', 'start_date', 'end_date', 'contract_code', 'notes', 'is_dismantled'],
     'U+产品':     ['business_level', 'contract_amount', 'number', 'start_date', 'end_date', 'contract_code', 'notes', 'is_dismantled'],
-    '数智惠企':   ['date', 'number', 'business_level', 'user_name', 'notes', 'is_dismantled'],
+    '数智惠企':   ['date', 'end_date', 'number', 'business_level', 'user_name', 'notes', 'is_dismantled'],
     '冰激凌':     ['date', 'number', 'business_level', 'user_name', 'notes', 'is_dismantled'],
     '魔方卡':     ['date', 'number', 'user_name', 'notes', 'is_dismantled'],
     '物联卡（格物）': ['date', 'number', 'user_name', 'notes', 'is_dismantled'],
@@ -1414,6 +1421,8 @@ var BIZ_TYPE_FIELDS = {
 // 业务类型专属字段标签覆盖：仅改「录入/展示 label」，不改变物理列与取值逻辑。
 // 例如 U+产品 的 start_date/end_date 在业务语义上即「计收时间/回款时间」。
 var BIZ_FIELD_LABEL_OVERRIDE = {
+    // 仅有合同期的业务，止期统一沿用字段池默认的「结束时间」；
+    // 仅 U+产品 因业务语义特殊，覆盖为「计收时间 / 回款时间」。
     'U+产品': { start_date: '计收时间', end_date: '回款时间' }
 };
 // 取某业务类型下某字段的展示标签（有覆盖用覆盖，否则用字段池默认 label）
@@ -4052,6 +4061,173 @@ function fallbackCopyText(text) {
 }
 
 // ==================== 事项看板 ====================
+
+// ==================== 看板页（待办清单 + 业务到期提醒） ====================
+// 定位区分：
+//   事项看板(renderTaskList) = 客户视角的完整工作台（按公司分组、展开子待办、可勾选可编辑）
+//   看板·板块1            = 概览提醒（每行仅「标题 + 客户小字」，不展开子待办、不分组）
+//   看板·板块2            = 事项模块没有的独特信息：按合同到期日由近至远提醒
+//
+// 需要填写止期(end_date)的业务类型 → 底部「未设止期」提示中的简称。
+// 只有办理日期(date)、无止期概念的类型（魔方卡/物联卡/冰激凌/副卡/宽带/固话）不在此列，也不计入提醒。
+var KB_EXP_TYPES = {
+    '互联网专线': '专线',
+    '电路': '电路',
+    '算网项目': '算网项目',
+    'U+产品': 'U+产品',
+    '数智惠企': '数智惠企'
+};
+
+// 距离目标日期还剩几天（按本地日历天算，忽略时分秒）；负数表示已过去
+function kbDaysLeft(dateStr) {
+    if (!dateStr) return NaN;
+    var s = String(dateStr).substring(0, 10).split('-');
+    if (s.length < 3) return NaN;
+    var target = new Date(parseInt(s[0], 10), parseInt(s[1], 10) - 1, parseInt(s[2], 10));
+    var now = new Date();
+    var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    return Math.round((target - today) / 86400000);
+}
+// 分档：over=已过期 / soon=30天内 / mid=90天内 / far=更久或无日期
+function kbDueClass(dateStr) {
+    var d = kbDaysLeft(dateStr);
+    if (isNaN(d)) return 'far';
+    if (d < 0) return 'over';
+    if (d <= 30) return 'soon';
+    if (d <= 90) return 'mid';
+    return 'far';
+}
+function kbDueText(dateStr) {
+    var d = kbDaysLeft(dateStr);
+    if (isNaN(d)) return '';
+    if (d < 0) return '已逾期 ' + (-d) + ' 天';
+    if (d === 0) return '今天到期';
+    return '剩 ' + d + ' 天';
+}
+function kbFmtDate(s) { return s ? String(s).substring(0, 10) : '-'; }
+
+async function loadKanbanMobile() {
+    const content = document.getElementById('pageContent');
+    // 骨架先渲染，两个板块各自填充，任一块拉取出错不影响另一块
+    content.innerHTML =
+        '<div class="m-kb">' +
+            '<div class="m-kb-sec">' +
+                '<div class="m-kb-head">' +
+                    '<div class="t">待办清单 <small>仅未完成</small></div>' +
+                    '<div class="m-kb-pill" id="kbTodoCount">…</div>' +
+                '</div>' +
+                '<div id="kbTodoList"><div class="m-empty"><div>加载中...</div></div></div>' +
+            '</div>' +
+            '<div class="m-kb-sec">' +
+                '<div class="m-kb-head">' +
+                    '<div class="t">业务到期提醒 <small>由近至远</small></div>' +
+                    '<div class="m-kb-pill warn" id="kbExpCount">…</div>' +
+                '</div>' +
+                '<div class="m-kb-legend">' +
+                    '<span><i style="background:var(--m-danger)"></i>已过期 / 30天内</span>' +
+                    '<span><i style="background:var(--m-warning)"></i>90天内</span>' +
+                    '<span><i style="background:var(--m-success)"></i>更久</span>' +
+                '</div>' +
+                '<div id="kbExpList"><div class="m-empty"><div>加载中...</div></div></div>' +
+            '</div>' +
+        '</div>';
+
+    // 不拉子待办：板块1 只呈现「标题 + 客户小字」，子待办明细属事项看板职责，避免两者重合
+    var results = await Promise.all([
+        api('/api/tasks').catch(function () { return []; }),
+        api('/api/business').catch(function () { return []; })
+    ]);
+    var tasks = results[0] || [];
+    var businesses = results[1] || [];
+    // 业务数据回写全局缓存：看完板后再进业务页可直接命中，省一次请求
+    if (businesses.length) allBusinessesMobile = businesses;
+
+    kbRenderTodo(tasks);
+    kbRenderExp(businesses);
+}
+
+// 板块1：一行 = 圆点 + 标题 + 客户小字。事项多数无截止日，故不显示剩余天数/逾期红条。
+function kbRenderTodo(tasks) {
+    var box = document.getElementById('kbTodoList');
+    var cnt = document.getElementById('kbTodoCount');
+    if (!box) return;
+    var open = (tasks || []).filter(function (t) {
+        return t.status === '进行中' && !isPendingDelete('task:' + t.id);
+    });
+    if (open.length === 0) {
+        box.innerHTML = '<div class="m-empty"><div>暂无未完成事项</div></div>';
+        if (cnt) cnt.textContent = '共 0';
+        return;
+    }
+    // 置顶在前，其余保持原顺序
+    open.sort(function (a, b) { return (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0); });
+    box.innerHTML = open.map(function (t) {
+        var co = t.customer_company || t.customer_name || '未归类';
+        return '<div class="m-kb-row" onclick="editTaskMobile(' + t.id + ')">' +
+            '<span class="m-kb-dot' + (t.pinned ? ' pin' : '') + '"></span>' +
+            '<div class="m-kb-title">' + esc(t.title) + (t.pinned ? '<span class="pin">置顶</span>' : '') + '</div>' +
+            '<div class="m-kb-co">' + esc(co) + '</div>' +
+        '</div>';
+    }).join('');
+    if (cnt) cnt.textContent = '共 ' + open.length;
+}
+
+// 板块2：有止期且未拆机的业务，按到期日升序；已拆机一律排除。
+// 底部提示「还有 X 笔未设止期，其中专线x，电路y…」，笔数为 0 则不展示。
+function kbRenderExp(businesses) {
+    var box = document.getElementById('kbExpList');
+    var cnt = document.getElementById('kbExpCount');
+    if (!box) return;
+    var all = (businesses || []).filter(function (b) { return !b.is_dismantled; });
+    var list = all.filter(function (b) { return b.end_date; });
+    list.sort(function (a, b) { return String(a.end_date).localeCompare(String(b.end_date)); });
+
+    var soon = 0;
+    list.forEach(function (b) { var d = kbDaysLeft(b.end_date); if (d >= 0 && d <= 90) soon++; });
+
+    var html = '';
+    if (list.length === 0) {
+        html = '<div class="m-empty"><div>暂无带到期时间的业务</div></div>';
+    } else {
+        html = list.map(function (b) {
+            var dc = kbDueClass(b.end_date);
+            var start = b.start_date || b.date || '';
+            return '<div class="m-kb-card" onclick="viewBusinessMobile(' + b.id + ')"><div class="m-kb-biz">' +
+                '<div class="m-kb-bar ' + dc + '"></div>' +
+                '<div class="m-kb-bizmain">' +
+                    '<div class="m-kb-biztop">' +
+                        '<span class="m-kb-tag">' + esc(b.business_type) + '</span>' +
+                        '<span class="m-kb-bizco">' + esc(b.company_name) + '</span>' +
+                    '</div>' +
+                    '<div class="m-kb-meta">合同编号：' + (esc(b.contract_code) || '-') + (b.number ? ' · 号码 ' + esc(b.number) : '') + '</div>' +
+                    '<div class="m-kb-dates">起 ' + kbFmtDate(start) + ' → 止 ' + kbFmtDate(b.end_date) + '</div>' +
+                '</div>' +
+                '<div class="m-kb-remain ' + dc + '">' + kbDueText(b.end_date) + '<small>' + kbFmtDate(b.end_date) + '</small></div>' +
+            '</div></div>';
+        }).join('');
+    }
+
+    // 未设止期统计：只算「本应填止期却没填、且未拆机」的业务
+    var byType = {};
+    all.forEach(function (b) {
+        if (!b.end_date && KB_EXP_TYPES[b.business_type]) {
+            var k = KB_EXP_TYPES[b.business_type];
+            byType[k] = (byType[k] || 0) + 1;
+        }
+    });
+    var missing = 0, segs = [];
+    Object.keys(KB_EXP_TYPES).forEach(function (t) {
+        var k = KB_EXP_TYPES[t];
+        var n = byType[k] || 0;
+        if (n > 0) { missing += n; segs.push(k + n); }
+    });
+    if (missing > 0) {
+        html += '<div class="m-kb-tip">还有 ' + missing + ' 笔未设止期，其中' + segs.join('，') + '，不计入提醒</div>';
+    }
+
+    box.innerHTML = html;
+    if (cnt) cnt.textContent = soon + ' / ' + list.length;
+}
 
 var _allTasksMobile = [];
 var _taskSubMap = {};
