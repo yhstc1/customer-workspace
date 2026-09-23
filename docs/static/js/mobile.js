@@ -6,7 +6,7 @@
 
 // 当前版本号（用于「关于」页展示）。
 // 版本号规则（仅适用于 APK/移动端；PC 端模板改动不触发）：① 第一位=重大版本（用户判定，当前=4），大版本升级时二三位归零；② 有需 APK 的原生改动→中间位+1、末位保持（例 4.12.15→4.13.15）；③ H5/纯页面改动只发服务器热更、不 bump 中间位（用户无感）。
-const APP_VERSION = '4.14.25';
+const APP_VERSION = '4.14.26';
 
 // ==================== H5 密码登录浮层 ====================
 // 纯账号密码登录：后端基于 session cookie 认证，登录成功后由 /api/me 校验。
@@ -4669,6 +4669,13 @@ async function addMobileSubtask(taskId) {
                 if (String(cache[k].id) === String(tmpId)) { if (real != null) cache[k].id = real; break; }
             }
             if (real != null) refreshSubtaskSection(taskId, false, false); // 静默合并真实 id
+            // 后端规则：新增未完成子待办会把非「进行中」事项拉回「进行中」。
+            // 同步本地缓存与详情页状态下拉，避免返回列表/看板时仍按旧状态（如已完结）过滤导致看不到该事项。
+            var t = (_allTasksMobile || []).find(function(x) { return String(x.id) === String(taskId); });
+            if (t && t.status !== '进行中') t.status = '进行中';
+            var st = document.getElementById('mEditTaskStatus');
+            if (st && st.value !== '进行中') st.value = '进行中';
+            _pageDirty['tasks'] = true;
         })
         .catch(function() {
             showToast('添加失败', 'error');

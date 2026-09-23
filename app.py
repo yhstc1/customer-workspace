@@ -1658,6 +1658,13 @@ def add_subtask(tid):
         max_row = conn.execute("SELECT COALESCE(MAX(order_index), -1) AS m FROM subtasks WHERE task_id = ?", (tid,)).fetchone()
         next_idx = (max_row["m"] if max_row and max_row["m"] is not None else -1) + 1
         cur = conn.execute("INSERT INTO subtasks (task_id, title, order_index) VALUES (?, ?, ?)", (tid, title, next_idx))
+        # 新增的子待办默认未完成：事项若不在「进行中」（如已完结/已归档），自动拉回「进行中」。
+        # 与勾选/取消/删除子待办的状态同步逻辑保持一致，否则看板待办清单（只显示进行中）会漏掉该事项。
+        conn.execute(
+            "UPDATE tasks SET status='进行中', updated_at=datetime('now','localtime') "
+            "WHERE id=? AND status!='进行中'",
+            (tid,),
+        )
         conn.commit()
         row = conn.execute("SELECT * FROM subtasks WHERE id = ?", (cur.lastrowid,)).fetchone()
         conn.close()
