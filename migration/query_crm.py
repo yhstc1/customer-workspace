@@ -70,7 +70,12 @@ conn = pymysql.connect(
 try:
     with conn.cursor() as cur:
         cur.execute(sql)
-        rows = cur.fetchall()
+        if not head.startswith("select") and not head.startswith("show") and not head.startswith("desc"):
+            conn.commit()  # pymysql 默认 autocommit=False，写语句不 commit 会在关闭连接时回滚
+            print("已执行（affected=%d）" % cur.rowcount)
+            rows = []
+        else:
+            rows = cur.fetchall()
         if not rows:
             print("(0 行)")
         else:
