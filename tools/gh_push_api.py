@@ -18,20 +18,37 @@ token 来源（按优先级）：
     - 只处理本次 diff 涉及的文件，其余文件沿用远端 tree，不动
 """
 import base64
+import glob
 import json
 import os
+import shutil
 import subprocess
 import sys
 import urllib.error
 import urllib.request
 
-GIT = r"C:\Users\yohyi\.workbuddy\binaries\PortableGit\versions\1.2.0\mingw64\bin\git.exe"
+
+def _find_git():
+    """优先用 PATH 里的 git；WorkBuddy 便携版路径会随升级变化（1.2.0→1.3.0 已变），不能写死。"""
+    cand = shutil.which("git")
+    if cand:
+        return cand
+    pattern = os.path.expanduser(r"~/.workbuddy/binaries/PortableGit/versions/*/mingw64/bin/git.exe")
+    found = sorted(glob.glob(pattern))
+    if found:
+        return found[-1]
+    return "git"  # 兜底，让报错信息更易读
+
+
+GIT = _find_git()
 API = "https://api.github.com"
 BRANCH = "main"
 
 
 def git(*args, check=True):
-    r = subprocess.run([GIT] + list(args), capture_output=True, text=True, encoding="utf-8")
+    # core.quotepath=false：否则中文文件名会被转义成 "\344\272\244..."，导致读文件路径失败
+    r = subprocess.run([GIT, "-c", "core.quotepath=false"] + list(args),
+                       capture_output=True, text=True, encoding="utf-8")
     if check and r.returncode:
         sys.exit("git 命令失败: git %s\n%s" % (" ".join(args), r.stderr))
     return r.stdout.strip()
