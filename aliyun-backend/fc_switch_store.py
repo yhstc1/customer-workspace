@@ -25,21 +25,20 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
 
-from fc_creds import load_creds  # noqa: E402
-from alibabacloud_fc20230330.client import Client as FCClient  # noqa: E402
+from fc_client import (  # noqa: E402
+    make_client,
+    get_function_env,
+    function_name,
+    runtime,
+)
 from alibabacloud_fc20230330 import models as fc_models  # noqa: E402
-from alibabacloud_tea_openapi import models as openapi_models  # noqa: E402
-from alibabacloud_tea_util import models as util_models  # noqa: E402
-
-CREDS = load_creds() or {}
-AK_ID = os.environ.get("ALIYUN_AK_ID") or CREDS.get("ALIYUN_AK_ID", "")
-AK_SECRET = os.environ.get("ALIYUN_AK_SECRET") or CREDS.get("ALIYUN_AK_SECRET", "")
-REGION = os.environ.get("ALIYUN_REGION") or CREDS.get("ALIYUN_REGION", "cn-hangzhou")
-ACCOUNT_ID = os.environ.get("ALIYUN_ACCOUNT_ID") or CREDS.get("ALIYUN_ACCOUNT_ID", "")
-FUNCTION_NAME = os.environ.get("ALIYUN_FC_FUNCTION") or CREDS.get("ALIYUN_FC_FUNCTION", "crm-api-fc")
 
 GITHUB_REPO = os.environ.get("GITHUB_STORE_REPO", "yhstc1/customer-data")
 GITHUB_DATA_PATH = os.environ.get("GITHUB_DATA_PATH", "data/customers.db")
+# FC 上必须用**同步**模式（请求内写回）：wsgiref 单线程 + 实例空闲缩容回收，
+# 后台线程往往等不到 debounce 就被杀掉 → 数据丢失。详见交接文档「坑 #5」。
+GITHUB_SYNC_ASYNC = os.environ.get("GITHUB_SYNC_ASYNC", "0")
+GITHUB_SYNC_DEBOUNCE = os.environ.get("GITHUB_SYNC_DEBOUNCE", "5")
 
 
 def _gh_token():
@@ -57,37 +56,14 @@ def _gh_token():
     raise SystemExit("取不到 GITHUB_TOKEN：请设环境变量或检查 .workbuddy/密钥与凭据备份.md")
 
 
-def make_client():
-    endpoint = (
-        "%s.%s.fc.aliyuncs.com" % (ACCOUNT_ID, REGION)
-        if ACCOUNT_ID else "fc.%s.aliyuncs.com" % REGION
-    )
-    cfg = openapi_models.Config(
-        access_key_id=AK_ID, access_key_secret=AK_SECRET,
-        region_id=REGION, endpoint=endpoint,
-    )
-    return FCClient(cfg)
-
-
 def get_env(client):
-    runtime = util_models.RuntimeOptions()
-    runtime.qualifier = "LATEST"
-    runtime.read_timeout = 60
-    runtime.connect_timeout = 30
-    resp = client.get_function(FUNCTION_NAME, runtime)
-    body = resp.body
-    body = body.to_map() if hasattr(body, "to_map") else body
-    return dict(body.get("environmentVariables") or {})
+    return get_function_env(client)
 
 
 def put_env(client, env):
-    runtime = util_models.RuntimeOptions()
-    runtime.qualifier = "LATEST"
-    runtime.read_timeout = 60
-    runtime.connect_timeout = 30
     body = fc_models.UpdateFunctionInput(environment_variables=env)
     req = fc_models.UpdateFunctionRequest(body=body)
-    resp = client.update_function(FUNCTION_NAME, req)
+    resp = client.update_function(function_name(), runtime())
     out = resp.body
     return out.to_map() if hasattr(out, "to_map") else out
 
@@ -124,8 +100,8 @@ def main():
         env["GITHUB_TOKEN"] = _gh_token()
         env["GITHUB_DATA_PATH"] = GITHUB_DATA_PATH
         env["GITHUB_BRANCH"] = "main"
-        env["GITHUB_SYNC_ASYNC"] = "1"
-        env["GITHUB_SYNC_DEBOUNCE"] = "5"
+        env["GITHUB_SYNC_ASYNC"] = GITHUB_SYNC_ASYNC
+        env["GITHUB_SYNC_DEBOUNCE"] = GITHUB_SYNC_DEBOUNCE
     else:  # mysql
         for k in ("GITHUB_STORE_REPO", "GITHUB_TOKEN", "GITHUB_DATA_PATH",
                   "GITHUB_BRANCH", "GITHUB_SYNC_ASYNC", "GITHUB_SYNC_DEBOUNCE"):
