@@ -30,7 +30,9 @@ def _prepare_db():
 
     - **MySQL 模式**（设置了 MYSQL_HOST）：数据全部在 RDS，无需本地 SQLite 文件，
       直接跳过 /tmp 拷贝，避免冷启动把过期包内 db 拷进 /tmp 误导排查。
-    - **SQLite 模式**（未设置 MYSQL_HOST）：FC 自定义运行时 /code 只读，
+    - **GitHub 模式**（设置了 GITHUB_STORE_REPO + GITHUB_TOKEN）：数据在 GitHub 私有仓，
+      同样跳过包内 db 拷贝；models.init_db() 会从 GitHub 拉取最新 customers.db 恢复到 /tmp。
+    - **SQLite 模式**（以上都没有）：FC 自定义运行时 /code 只读，
       把包内只读 db 复制到可写层 /tmp 后用（冷启动自动从代码包恢复数据）。
     """
     if os.environ.get("MYSQL_HOST"):
@@ -40,6 +42,11 @@ def _prepare_db():
     os.environ["CUSTOMER_DB_PATH"] = writable_db
     db_dir = os.path.dirname(writable_db)
     os.makedirs(db_dir, exist_ok=True)
+    if os.environ.get("GITHUB_STORE_REPO", "").strip() and os.environ.get("GITHUB_TOKEN", "").strip():
+        print("[server] GitHub 模式：数据存 GitHub 仓，冷启动将从远端恢复", flush=True)
+        # 不在此删除本地 db——由 models._restore_github_db() 负责覆盖恢复，
+        # 避免同一实例内重复执行 server.py 时误删正在使用的数据。
+        return
     if not os.path.exists(writable_db):
         src = os.path.join(CODE_DIR, "data", "customers.db")
         if os.path.exists(src):

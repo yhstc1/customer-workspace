@@ -14,6 +14,8 @@ PROJECT_ROOT = os.path.dirname(ROOT)  # customer-workspace
 backend_files = [
     'app.py', 'models.py', 'geo_service.py', 'dingtalk_notify.py',
     'report_generator.py', 'requirements.txt',
+    # GitHub 存储后端（方案 A）：models.py 依赖它，缺失会 ImportError
+    'github_store.py',
 ]
 
 ZIP_NAME = os.path.join(ROOT, "crm-api-custom-runtime-v2.zip")

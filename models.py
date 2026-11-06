@@ -8,6 +8,8 @@ import sqlite3
 import os
 import re
 import logging
+import threading
+import time
 from datetime import datetime, timezone, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -19,6 +21,12 @@ try:
     from pymysql.cursors import DictCursor
 except ImportError:  # pragma: no cover
     pymysql = None
+
+# github_store 为 GitHub 存储后端（方案 A）可选依赖，未启用时全部逻辑短路
+try:
+    import github_store
+except ImportError:  # pragma: no cover
+    github_store = None
 
 # 统一使用 pbkdf2:sha256：兼容性最好（阿里云 FC 的 Python3.10 运行时
 # 底层 OpenSSL 不支持 werkzeug 默认的 scrypt，会导致 check_password_hash 抛
@@ -44,6 +52,46 @@ os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
 # MySQL 等价写法，保持业务代码零改动。行以 dict 形式返回(row["col"] / dict(row) 兼容)。
 # ============================================================
 USE_MYSQL = bool(os.environ.get("MYSQL_HOST")) and pymysql is not None
+
+# ============================================================
+# GitHub 存储后端（方案 A：GitHub 私有仓替代 RDS）
+# ------------------------------------------------------------
+# 优先级：MYSQL_HOST > GITHUB_STORE_REPO > 本地 SQLite。
+# 设计要点（详见 github_store.py 顶部说明）：
+#   运行时引擎仍是 SQLite -> app.py 的业务 SQL（JOIN/聚合/SQLite 方言）零改动；
+#   GitHub 承担「持久化 + 版本历史 + 备份」角色，冷启动从仓里拉 db，写后回传。
+# 仅在设置 GITHUB_STORE_REPO + GITHUB_TOKEN 时启用，删掉这两个变量即完整回退。
+# ============================================================
+USE_GITHUB_STORE = bool(
+    github_store is not None
+    and not USE_MYSQL
+    and os.environ.get("GITHUB_STORE_REPO", "").strip()
+    and os.environ.get("GITHUB_TOKEN", "").strip()
+)
+
+# 写入后同步到 GitHub 的节流参数：
+#   GITHUB_SYNC_DEBOUNCE  秒 —— 距上次同步超过该秒数才真正回传（合并短时间内的连续写入）
+#   GITHUB_SYNC_ASYNC    1/0  —— 1=后台线程异步回传；0=请求内同步回传
+#
+# ⚠️ FC 上的重要约束（2026-11-07 实测）：
+#   FC 用 wsgiref.single_server 单线程处理请求，且实例在空闲后会被平台缩容回收。
+#   后台线程在请求结束后很可能来不及执行（实测异步模式下写入未回传，
+#   同步模式下立即回传成功）。故生产默认走 **请求内同步**：
+#   写操作在响应返回前就把数据推上 GitHub，保证「用户看到成功 = 数据已持久化」。
+#   代价是写请求多约 0.5~1.5s（GitHub API 往返），换取绝不丢数据。
+#   异步模式仅供本地开发调试。
+_SYNC_DEBOUNCE = float(os.environ.get("GITHUB_SYNC_DEBOUNCE", "5"))
+_SYNC_ASYNC = os.environ.get("GITHUB_SYNC_ASYNC", "0") not in ("0", "false", "False")
+
+# 同步状态（进程内）
+_sync_lock = threading.Lock()
+_sync_dirty = False
+_sync_last_at = 0.0
+_sync_thread = None
+_sync_error = None
+_sync_suppressed = 0
+# GitHub 模式：同一进程只从远端恢复一次（避免重复 init_db 覆盖本地新数据）
+_github_restored = False
 
 
 def _mysql_cfg():
@@ -241,8 +289,163 @@ _TS_TRIGGERS = {
 }
 
 
+# ============================================================
+# GitHub 存储后端：写后自动同步
+# ------------------------------------------------------------
+# 思路：SQLite 事务提交后，把 db 打包上传 GitHub（带 blob SHA 乐观锁）。
+#  - 异步模式（默认）：起后台线程回传，不阻塞用户请求；进程退出前会 join。
+#  - 同步模式：直接阻塞回传，失败即抛错（适合数据不容丢的严格场景）。
+# 节流：距上次同步不足 GITHUB_SYNC_DEBOUNCE 秒时只置脏标记，
+# 由后台线程在窗口到期后统一回传，避免连续写操作反复打 GitHub API。
+# ============================================================
+
+
+def _mark_sync_dirty():
+    """标记数据库有未回传的变更。"""
+    global _sync_dirty
+    with _sync_lock:
+        _sync_dirty = True
+
+
+def _suppress_sync():
+    """是否处于「抑制同步」状态（init_db 期间用：建表/迁移不应触发上传）。"""
+    return _sync_suppressed > 0
+
+
+class _suppress_scope:
+    """上下文管理器：期间所有 commit() 不触发 GitHub 同步。"""
+
+    def __enter__(self):
+        global _sync_suppressed
+        _sync_suppressed += 1
+        return self
+
+    def __exit__(self, *a):
+        global _sync_suppressed
+        _sync_suppressed = max(0, _sync_suppressed - 1)
+        return False
+
+
+def _sync_worker():
+    """后台同步线程：等待节流窗口后回传最新数据。"""
+    global _sync_thread, _sync_dirty, _sync_last_at, _sync_error
+    while True:
+        with _sync_lock:
+            if not _sync_dirty:
+                _sync_thread = None
+                return
+        time.sleep(_SYNC_DEBOUNCE)
+        with _sync_lock:
+            if not _sync_dirty:
+                _sync_thread = None
+                return
+        try:
+            sha = github_store.sync_to_github(DB_PATH)
+            with _sync_lock:
+                _sync_dirty = False
+                _sync_last_at = time.time()
+                _sync_error = None
+            print("[github-store] synced ok sha=%s" % str(sha)[:12], flush=True)
+        except Exception as e:  # noqa: BLE001
+            with _sync_lock:
+                _sync_error = str(e)
+                # 失败后保持脏标记，等待下一次写入再试；不在此死循环，避免刷 API
+                _sync_thread = None
+            print("[github-store] sync FAILED: %s" % e, flush=True)
+            return
+        # 本轮已同步；若期间又产生新变更则继续下一轮，否则退出
+        with _sync_lock:
+            if not _sync_dirty:
+                _sync_thread = None
+                return
+
+
+def flush_github_store(timeout=15):
+    """强制立即回传所有待同步变更（进程退出 / 关键操作后调用）。"""
+    global _sync_dirty
+    if not USE_GITHUB_STORE:
+        return None
+    with _sync_lock:
+        if not _sync_dirty:
+            return None
+    try:
+        sha = github_store.sync_to_github(DB_PATH)
+    except Exception as e:  # noqa: BLE001
+        print("[github-store] flush FAILED: %s" % e, flush=True)
+        return None
+    with _sync_lock:
+        _sync_dirty = False
+        _sync_last_at = time.time()
+    print("[github-store] flushed sha=%s" % str(sha)[:12], flush=True)
+    return sha
+
+
+def _trigger_sync():
+    """触发一次同步。异步模式起后台线程；同步模式直接回传。"""
+    global _sync_thread
+    if not _SYNC_ASYNC:
+        sha = github_store.sync_to_github(DB_PATH)
+        with _sync_lock:
+            _sync_dirty = False
+            _sync_last_at = time.time()
+        return sha
+    with _sync_lock:
+        if _sync_thread is None or not _sync_thread.is_alive():
+            _sync_thread = threading.Thread(target=_sync_worker, daemon=True)
+            _sync_thread.start()
+    return None
+
+
+class _GitHubTrackedConnection:
+    """包装 sqlite3.Connection：commit() 后自动把变更同步回 GitHub。
+
+    对业务代码透明——app.py 仍然用 conn.execute(...) / conn.commit() / conn.close()。
+    只代理必要的接口，其余属性透传到底层连接。
+    """
+
+    def __init__(self, raw):
+        self._raw = raw
+
+    def execute(self, sql, params=None):
+        cur = self._raw.execute(sql, params) if params is not None else self._raw.execute(sql)
+        return cur
+
+    def executemany(self, sql, seq):
+        return self._raw.executemany(sql, seq)
+
+    def cursor(self):
+        return self._raw.cursor()
+
+    def commit(self):
+        self._raw.commit()
+        if _suppress_sync():
+            return
+        _mark_sync_dirty()
+        try:
+            _trigger_sync()
+        except Exception as e:  # noqa: BLE001
+            # 同步失败不应让业务写入失败（数据已在本地库中，下一次写入会再试），
+            # 但必须让运维看见——否则会出现「用户看到成功、GitHub 上却没有」的静默丢数据。
+            print("[github-store] trigger sync error: %s" % e, flush=True)
+            if not _SYNC_ASYNC:
+                # 同步模式：数据未持久化到远端，明确抛出让调用方感知
+                raise
+
+    def rollback(self):
+        return self._raw.rollback()
+
+    def close(self):
+        try:
+            self._raw.close()
+        except Exception:  # noqa: BLE001
+            pass
+
+    def __getattr__(self, name):
+        return getattr(self._raw, name)
+
+
 def get_db():
-    """获取数据库连接（MySQL 或 SQLite，取决于 USE_MYSQL）"""
+    """获取数据库连接（MySQL / GitHub-SQLite / 本地 SQLite，取决于配置）"""
     if USE_MYSQL:
         try:
             raw = pymysql.connect(**_mysql_cfg())
@@ -259,6 +462,8 @@ def get_db():
     except sqlite3.OperationalError:
         pass
     conn.execute("PRAGMA foreign_keys = ON")
+    if USE_GITHUB_STORE:
+        return _GitHubTrackedConnection(conn)
     return conn
 
 
@@ -371,11 +576,57 @@ def _init_db_mysql():
         raw.close()
 
 
+def _restore_github_db():
+    """GitHub 模式冷启动：从 GitHub 仓拉取 customers.db 恢复到本地 DB_PATH。
+
+    返回 True 表示已从远端恢复；False 表示远端还没有数据文件（首次部署）。
+
+    重要：同一进程内只恢复一次。
+    app.py 在 import 时会调 init_db()，若期间已有其它代码写过本地库，
+    再次恢复会用远端旧数据覆盖本地新数据（密码重置等本地修改会丢失）。
+    故用 _github_restored 标记保证「一次进程只从远端恢复一次」。
+    注意：必须在建表之前调用——CREATE TABLE IF NOT EXISTS 是幂等的，
+    不会破坏恢复出来的存量数据；反之若先建空表再恢复会丢数据。
+    """
+    global _github_restored
+    if not USE_GITHUB_STORE:
+        return False
+    if _github_restored:
+        return False
+    _github_restored = True
+    try:
+        os.makedirs(os.path.dirname(DB_PATH) or ".", exist_ok=True)
+        # 先删本地旧库再恢复：保证拿到的是远端最新版本，
+        # 不会因本地残留（上次运行的旧数据/WAL 残留）导致内容混杂。
+        if os.path.exists(DB_PATH):
+            for suffix in ("", "-wal", "-shm"):
+                p = DB_PATH + suffix
+                if os.path.exists(p):
+                    try:
+                        os.remove(p)
+                    except OSError:
+                        pass
+        got = github_store.restore_from_github(DB_PATH)
+        if got:
+            print("[github-store] restored db from GitHub -> %s (%d bytes)"
+                  % (DB_PATH, os.path.getsize(DB_PATH)), flush=True)
+        else:
+            print("[github-store] no remote db yet, will create local empty db", flush=True)
+        return got
+    except Exception as e:  # noqa: BLE001
+        # 拉取失败不能阻断启动：本地若已有 db 就继续用它（可能是上次运行残留）
+        print("[github-store] restore FAILED: %s (继续用本地库)" % e, flush=True)
+        return False
+
+
 def init_db():
-    """初始化数据库表结构（MySQL 或 SQLite）"""
+    """初始化数据库表结构（MySQL / GitHub / 本地 SQLite）"""
     if USE_MYSQL:
         _init_db_mysql()
         return
+    if USE_GITHUB_STORE:
+        # 先恢复远端数据，再建表/迁移（建表语句幂等，不会破坏存量数据）
+        _restore_github_db()
     conn = get_db()
     cur = conn.cursor()
 
@@ -610,7 +861,8 @@ def init_db():
         cur.execute("UPDATE businesses SET business_type='宽带' WHERE business_type='融合'")
         # 彻底移除「移网」类型（数据已确认为 0 条，此句幂等兜底层）
         cur.execute("DELETE FROM businesses WHERE business_type='移网'")
-        conn.commit()
+        with _suppress_scope():
+            conn.commit()
         print("[OK] 2.6.1 合并迁移完成：businesses/ledgers → 单表 businesses")
 
     # 迁移：customers 加 source 列（标记客户来源，如「导入业务时自动添加」）
@@ -709,7 +961,10 @@ def init_db():
         ("03683725397487",),
     )
 
-    conn.commit()
+    # init_db 期间抑制 GitHub 同步：建表/迁移是幂等 DDL 与数据修正，
+    # 不应该触发一次无谓的上传（真正的新写入才需要回传）。
+    with _suppress_scope():
+        conn.commit()
     conn.close()
     print(f"[OK] 数据库初始化完成: {DB_PATH}")
 
