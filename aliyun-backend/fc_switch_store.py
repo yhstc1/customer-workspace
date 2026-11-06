@@ -60,6 +60,37 @@ def get_env(client):
     return get_function_env(client)
 
 
+def _check_rds_reachable(mysql_vars):
+    """检查 RDS 实例是否真实可达。返回 (ok, detail)。
+
+    RDS 实例 rm-bp1x01d9d8g8i844q 已于 2026-11-07 释放，此处用于防止把
+    失效地址写进 FC env 导致应用整体不可用。
+    """
+    try:
+        import pymysql
+    except ImportError:
+        return False, "本机未装 pymysql，无法校验 RDS 连通性"
+    try:
+        conn = pymysql.connect(
+            host=mysql_vars.get("MYSQL_HOST"),
+            port=int(mysql_vars.get("MYSQL_PORT", 3306)),
+            user=mysql_vars.get("MYSQL_USER"),
+            password=mysql_vars.get("MYSQL_PASSWORD"),
+            database=mysql_vars.get("MYSQL_DB"),
+            charset="utf8mb4",
+            connect_timeout=10,
+        )
+        try:
+            cur = conn.cursor()
+            cur.execute("SELECT COUNT(*) FROM customers")
+            n = cur.fetchone()[0]
+            return True, "customers 表 %d 行" % n
+        finally:
+            conn.close()
+    except Exception as e:
+        return False, "%s: %s" % (type(e).__name__, str(e)[:200])
+
+
 def put_env(client, env):
     body = fc_models.UpdateFunctionInput(environment_variables=env)
     req = fc_models.UpdateFunctionRequest(body=body)
@@ -108,6 +139,7 @@ def main():
             env.pop(k, None)
         # 从本地 .env 恢复 MYSQL_*（.env 不入库，仅本机有）
         dotenv = os.path.join(HERE, ".env")
+        mysql_vars = {}
         if os.path.isfile(dotenv):
             with open(dotenv, "r", encoding="utf-8") as fh:
                 for line in fh:
@@ -116,10 +148,32 @@ def main():
                         continue
                     k, _, v = line.partition("=")
                     k, v = k.strip(), v.strip().strip('"').strip("'")
-                    if k.startswith("MYSQL_") and k not in env:
-                        env[k] = v
+                    if k.startswith("MYSQL_"):
+                        mysql_vars[k] = v
         else:
             print("[warn] 未找到 aliyun-backend/.env，MYSQL_* 变量可能不完整", flush=True)
+
+        # ⚠️ RDS 实例已于 2026-11-07 释放。切回 mysql 前必须先确认实例真实存在且可连，
+        # 否则会把失效地址写进 FC env → 应用既连不上 RDS 也读不到 GitHub → 全面挂掉。
+        if mysql_vars.get("MYSQL_HOST"):
+            ok, detail = _check_rds_reachable(mysql_vars)
+            if not ok:
+                print("=" * 62)
+                print("❌ 拒绝切换：RDS 实例不可达")
+                print("   %s" % detail)
+                print()
+                print("   RDS 实例 rm-bp1x01d9d8g8i844q 已于 2026-11-07 释放（省 ¥12.2/月）。")
+                print("   要回滚到 MySQL 模式，必须先重建 RDS 实例并导入备份：")
+                print("     本地备份   : backup_crm_20261107_034551.sql")
+                print("     GitHub 私有仓: yhstc1/customer-data/backup/backup_crm_20261107_034551.sql")
+                print("   重建后把新实例的连接信息写进 aliyun-backend/.env，再重跑本命令。")
+                print("=" * 62)
+                raise SystemExit(1)
+            print("[ok] RDS 实例可连（%s），允许切换" % detail, flush=True)
+
+        for k, v in mysql_vars.items():
+            if k not in env:
+                env[k] = v
 
     print("提交环境变量（%d 项）..." % len(env))
     put_env(client, env)
