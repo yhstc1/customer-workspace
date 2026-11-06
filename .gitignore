@@ -40,3 +40,7 @@ aliyun-backend/fc_creds.py
 AccessKey.csv
 # 部署包（二进制，不入库；本地仅用于上传 FC）
 aliyun-backend/*.zip
+
+# 含明文凭证的历史备份文档（ngrok authtoken 等，已从版本库移除）
+*.docx
+ngrok访问信息备份.docx
