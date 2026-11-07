@@ -25,6 +25,7 @@ fine-grained PAT（只授权 yhstc1/customer-data 的 Contents:Read/Write），
     python tools/switch_fc_github_token.py --check
     python tools/switch_fc_github_token.py --apply
 """
+import base64
 import json
 import os
 import sys
@@ -73,6 +74,38 @@ def gh(path, token, method="GET", data=None, raw=False, timeout=60):
         return None, {"_error": "%s: %s" % (type(e).__name__, e)}
 
 
+def write_probe(token, repo, path):
+    """写权限探测：对已存在的文件用**错误的 sha** 发 PUT。
+
+    返回 (status, detail)。语义（已实测）：
+        409 Conflict  -> 有写权限（GitHub 先校验 sha，不匹配就拒绝，不会写入）
+        403 / 404     -> 无写权限
+        401           -> token 无效
+        200 / 201     -> 意外写入成功（正常不会发生，sha 恒错）
+
+    ⚠️ 零副作用：sha 恒为 40 个 0，永远匹配不上，
+       所以**不会产生任何 commit、不会改动任何数据**。
+       实测确认：探测前后目标文件 blob SHA 完全不变。
+    """
+    body = {
+        "message": "probe: verify write permission (no-op, sha mismatch)",
+        "content": base64.b64encode(b"probe").decode("ascii"),
+        "sha": "0" * 40,          # 恒错的 sha -> 保证 409，不会真的写
+        "branch": "main",
+    }
+    code, payload = gh("/repos/%s/contents/%s" % (repo, path), token,
+                       method="PUT", data=body, timeout=60)
+    if code == 409:
+        return code, "有写权限（sha 不匹配被拒，未写入）"
+    if code in (403, 404):
+        return code, "无写权限"
+    if code == 401:
+        return code, "token 无效"
+    if code in (200, 201):
+        return code, "⚠️ 意外写入成功（不应发生）"
+    return code, str(payload)[:120]
+
+
 def check_token(token):
     """校验新 token：身份、能否读写目标仓、能否碰其他仓。返回 (ok, report)。"""
     report = {"ok": False, "checks": [], "notes": []}
@@ -81,7 +114,13 @@ def check_token(token):
         report["checks"].append((name, ok, detail))
         return ok
 
+    # 0) token 类型
+    report["kind"] = ("fine-grained" if token.startswith("github_pat_")
+                      else "classic" if token.startswith("ghp_")
+                      else "unknown")
+
     # 1) 身份有效
+    #    GET /user 对 fine-grained token 不需要任何权限（GitHub 官方文档确认）
     code, me = gh("/user", token)
     if not add("token 有效（能识别身份）", code == 200,
                "HTTP %s%s" % (code, "" if code == 200 else " " + str(me)[:120])):
@@ -92,39 +131,54 @@ def check_token(token):
     code, _ = gh("/repos/%s/contents/%s" % (TARGET_REPO, DATA_PATH), token, raw=True)
     add("能读 %s（%s）" % (TARGET_REPO, DATA_PATH), code == 200, "HTTP %s" % code)
 
-    # 3) 目标仓有写权限（查 repo permissions，不实际写）
-    code, repo = gh("/repos/%s" % TARGET_REPO, token)
-    perms = repo.get("permissions") or {} if code == 200 else {}
-    add("对 %s 有 push 权限" % TARGET_REPO, bool(perms.get("push")),
-        "push=%s admin=%s" % (perms.get("push"), perms.get("admin")))
+    # 3) 目标仓有写权限
+    #    ⚠️ 不能用 GET /repos/{repo} 返回的 permissions.push 判断：
+    #    那个对象反映的是**账号本人**在该仓的角色（yhstc1 是 owner，
+    #    恒为 admin/push=true），不是 token 被授予的 scope ——
+    #    即便 token 只给了 Read-only 也会误判为有写权限。
+    #    改用写探测：409 = 有写权限，403/404 = 无写权限。零副作用。
+    code, detail = write_probe(token, TARGET_REPO, DATA_PATH)
+    add("对 %s 有写权限（Contents: Read and write）" % TARGET_REPO,
+        code == 409, "写探测 -> HTTP %s %s" % (code, detail))
 
-    # 4) 爆炸半径检查：探测「写权限」而非「读权限」
-    #
-    # ⚠️ 不能用 GET /repos/{其它仓} 是否 200 来判定：
+    # 4) 爆炸半径检查：能否**写**其它仓库
+    #    ⚠️ 不能用 GET /repos/{其它仓} 是否 200 来判定：
     #    GitHub 官方明确「fine-grained token 永远可以读所有公开仓」
     #    （页面原文：Tokens can always read all public repositories）。
     #    customer-workspace / kehu 都是公开仓，用读权限判据必然误判失败，
     #    导致合格的 fine-grained PAT 被拒之门外。
     #
-    #    真正要卡的是「能不能改别的仓」——那才是爆炸半径。
-    #    判据：GET /repos/{其它仓}/collaborators 需要 push/admin 权限，
-    #    无授权的 token 会返回 403/404。
-    others = ["yhstc1/customer-workspace", "yhstc1/kehu"]
+    #    也不能用 GET /repos/{其它仓}/collaborators：
+    #    官方文档说该端点对 fine-grained 只需「Metadata: read」，
+    #    而 Metadata 是**自动附带**的 —— 判别力不可靠。
+    #
+    #    真正要卡的是「能不能改别的仓」——用写探测直接判定。
+    others = [
+        ("yhstc1/customer-workspace", ".gitignore"),
+        ("yhstc1/kehu", ".gitignore"),
+    ]
     writable = []
-    for r in others:
-        c, _ = gh("/repos/%s/collaborators" % r, token, raw=True)
-        if c == 200:
+    details = []
+    for r, p in others:
+        c, d = write_probe(token, r, p)
+        details.append("%s=%s" % (r.split("/")[-1], c))
+        if c == 409:
             writable.append(r)
     add("无法写其它仓库（爆炸半径已收窄）", not writable,
-        "仍可写: %s" % writable if writable else "其它仓写权限均已拒绝 ✅")
+        "写探测: %s%s" % ("  ".join(details),
+                          "  ❌ 仍可写: %s" % writable if writable else "  ✅ 全部拒绝"))
 
-    # 5) 范围说明：classic PAT 也有 repo scope，此项仅提示
+    # 5) 范围说明
     if report.get("login"):
         report["notes"].append(
             "验证要点：读公开仓任何 token 都能做到（GitHub 强制），"
-            "所以判据用的是「写权限」；fine-grained 对未授权仓返回 403/404，"
-            "classic PAT 返回 200"
+            "所以判据用的是「写权限」；fine-grained 对未授权仓写入返回 403/404，"
+            "classic PAT 返回 409"
         )
+    report["notes"].append(
+        "Metadata:read 对 fine-grained token 是自动附带的，"
+        "页面里不可取消也不必勾选"
+    )
 
     report["ok"] = all(ok for _, ok, _ in report["checks"])
     return report["ok"], report
