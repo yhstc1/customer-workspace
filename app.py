@@ -111,6 +111,7 @@ def get_static_ver():
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from models import get_db, init_db, seed_sample_data, normalize_company, company_exists, _seed_user_settings
+from models import USE_GITHUB_STORE
 from geo_service import geocode, reverse_geocode, find_nearby_customers
 from dingtalk_notify import notify_registration_pending, notify_registration_approved, notify_registration_rejected, notify_password_reset_pending  # 钉钉群机器人推送
 from report_generator import generate_daily_report, REPORTS_DIR
@@ -126,9 +127,17 @@ app.config["SESSION_COOKIE_SECURE"] = True
 # 确保数据库表结构存在。
 # gunicorn 等 WSGI 服务器不会执行 __main__，必须在模块加载时初始化，
 # 否则线上首个请求就会因表不存在而 500。init_db() 是幂等的（CREATE IF NOT EXISTS）。
+#
+# ⚠️ GitHub 存储模式下，init_db 失败**不能**降级继续：
+#    恢复失败 = 拿不到远端数据，此时建出来的是空表；
+#    若继续服务，用户看到「客户全没了」，且首次写入会把空库上传覆盖真实数据。
+#    故此处直接抛出，让实例启动失败（H5 报错）——宁可不可用，也不可静默丢数据。
 try:
     init_db()
 except Exception as _e:  # noqa: BLE001
+    if USE_GITHUB_STORE:
+        print("[FATAL] GitHub 存储模式初始化失败，实例拒绝启动（避免空库覆盖真实数据）: %s" % _e)
+        raise
     print(f"[WARN] init_db 失败: {_e}")
 
 

@@ -92,6 +92,13 @@ _sync_error = None
 _sync_suppressed = 0
 # GitHub 模式：同一进程只从远端恢复一次（避免重复 init_db 覆盖本地新数据）
 _github_restored = False
+# GitHub 模式：远端恢复是否成功。False 表示「没能拿到远端数据」——
+#  此时本地 db 是空的，若继续提供服务并接受写入，第一次写会把空库上传，
+#  覆盖掉远端 GitHub 上真实的数据（167 客户 / 24 事项…）。故必须阻断。
+_github_restore_ok = False
+# GitHub 模式：最近一次已知的远端 blob SHA（乐观锁基线）。
+# 恢复成功后 = 远端当时的 SHA；每次上传成功后更新为新 SHA。
+_github_remote_sha = None
 
 
 def _mysql_cfg():
@@ -328,7 +335,7 @@ class _suppress_scope:
 
 def _sync_worker():
     """后台同步线程：等待节流窗口后回传最新数据。"""
-    global _sync_thread, _sync_dirty, _sync_last_at, _sync_error
+    global _sync_thread, _sync_dirty, _sync_last_at, _sync_error, _github_remote_sha
     while True:
         with _sync_lock:
             if not _sync_dirty:
@@ -340,11 +347,13 @@ def _sync_worker():
                 _sync_thread = None
                 return
         try:
-            sha = github_store.sync_to_github(DB_PATH)
+            sha = github_store.sync_to_github(DB_PATH, expected_sha=_github_remote_sha)
             with _sync_lock:
                 _sync_dirty = False
                 _sync_last_at = time.time()
                 _sync_error = None
+                if sha:
+                    _github_remote_sha = sha
             print("[github-store] synced ok sha=%s" % str(sha)[:12], flush=True)
         except Exception as e:  # noqa: BLE001
             with _sync_lock:
@@ -362,32 +371,36 @@ def _sync_worker():
 
 def flush_github_store(timeout=15):
     """强制立即回传所有待同步变更（进程退出 / 关键操作后调用）。"""
-    global _sync_dirty
+    global _sync_dirty, _github_remote_sha
     if not USE_GITHUB_STORE:
         return None
     with _sync_lock:
         if not _sync_dirty:
             return None
     try:
-        sha = github_store.sync_to_github(DB_PATH)
+        sha = github_store.sync_to_github(DB_PATH, expected_sha=_github_remote_sha)
     except Exception as e:  # noqa: BLE001
         print("[github-store] flush FAILED: %s" % e, flush=True)
         return None
     with _sync_lock:
         _sync_dirty = False
         _sync_last_at = time.time()
+        if sha:
+            _github_remote_sha = sha
     print("[github-store] flushed sha=%s" % str(sha)[:12], flush=True)
     return sha
 
 
 def _trigger_sync():
     """触发一次同步。异步模式起后台线程；同步模式直接回传。"""
-    global _sync_thread
+    global _sync_thread, _github_remote_sha
     if not _SYNC_ASYNC:
-        sha = github_store.sync_to_github(DB_PATH)
+        sha = github_store.sync_to_github(DB_PATH, expected_sha=_github_remote_sha)
         with _sync_lock:
             _sync_dirty = False
             _sync_last_at = time.time()
+            if sha:
+                _github_remote_sha = sha
         return sha
     with _sync_lock:
         if _sync_thread is None or not _sync_thread.is_alive():
@@ -579,44 +592,54 @@ def _init_db_mysql():
 def _restore_github_db():
     """GitHub 模式冷启动：从 GitHub 仓拉取 customers.db 恢复到本地 DB_PATH。
 
-    返回 True 表示已从远端恢复；False 表示远端还没有数据文件（首次部署）。
+    返回 True 表示已从远端恢复；False 表示远端确实没有数据文件（首次部署）。
 
-    重要：同一进程内只恢复一次。
+    重要 1：同一进程内只恢复一次。
     app.py 在 import 时会调 init_db()，若期间已有其它代码写过本地库，
     再次恢复会用远端旧数据覆盖本地新数据（密码重置等本地修改会丢失）。
     故用 _github_restored 标记保证「一次进程只从远端恢复一次」。
     注意：必须在建表之前调用——CREATE TABLE IF NOT EXISTS 是幂等的，
     不会破坏恢复出来的存量数据；反之若先建空表再恢复会丢数据。
+
+    重要 2（防数据丢失，2026-11-07）：
+    恢复失败**不能**降级为「继续用本地库」——在 FC 上本地根本没有库，
+    init_db 随后会建出一张**空表**，服务看似正常但客户全没了；
+    更糟的是首次写入会把这份空库上传，反向覆盖 GitHub 上真实的数据。
+    故：
+      - 远端确实没文件（首次部署）→ 允许空库启动，记 _github_restore_ok=True
+      - 无权访问 / 网络错误      → 抛异常，让实例启动失败（H5 报错而非数据被清）
     """
-    global _github_restored
+    global _github_restored, _github_restore_ok, _github_remote_sha
     if not USE_GITHUB_STORE:
         return False
     if _github_restored:
         return False
     _github_restored = True
-    try:
-        os.makedirs(os.path.dirname(DB_PATH) or ".", exist_ok=True)
-        # 先删本地旧库再恢复：保证拿到的是远端最新版本，
-        # 不会因本地残留（上次运行的旧数据/WAL 残留）导致内容混杂。
-        if os.path.exists(DB_PATH):
-            for suffix in ("", "-wal", "-shm"):
-                p = DB_PATH + suffix
-                if os.path.exists(p):
-                    try:
-                        os.remove(p)
-                    except OSError:
-                        pass
-        got = github_store.restore_from_github(DB_PATH)
-        if got:
-            print("[github-store] restored db from GitHub -> %s (%d bytes)"
-                  % (DB_PATH, os.path.getsize(DB_PATH)), flush=True)
-        else:
-            print("[github-store] no remote db yet, will create local empty db", flush=True)
-        return got
-    except Exception as e:  # noqa: BLE001
-        # 拉取失败不能阻断启动：本地若已有 db 就继续用它（可能是上次运行残留）
-        print("[github-store] restore FAILED: %s (继续用本地库)" % e, flush=True)
-        return False
+    os.makedirs(os.path.dirname(DB_PATH) or ".", exist_ok=True)
+    # 先删本地旧库再恢复：保证拿到的是远端最新版本，
+    # 不会因本地残留（上次运行的旧数据/WAL 残留）导致内容混杂。
+    if os.path.exists(DB_PATH):
+        for suffix in ("", "-wal", "-shm"):
+            p = DB_PATH + suffix
+            if os.path.exists(p):
+                try:
+                    os.remove(p)
+                except OSError:
+                    pass
+    # 失败必须抛出：见函数 docstring「重要 2」
+    got = github_store.restore_from_github(DB_PATH)
+    if got:
+        _github_restore_ok = True
+        _github_remote_sha = got
+        print("[github-store] restored db from GitHub -> %s (%d bytes) sha=%s"
+              % (DB_PATH, os.path.getsize(DB_PATH), str(got)[:12]), flush=True)
+    else:
+        # 仓库可访问但远端尚无数据文件：这是「首次部署」，空库是正确状态
+        _github_restore_ok = True
+        _github_remote_sha = None
+        print("[github-store] remote has no db yet (first deploy), "
+              "will create local empty db", flush=True)
+    return bool(got)
 
 
 def init_db():

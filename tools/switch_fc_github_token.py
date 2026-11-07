@@ -98,20 +98,32 @@ def check_token(token):
     add("对 %s 有 push 权限" % TARGET_REPO, bool(perms.get("push")),
         "push=%s admin=%s" % (perms.get("push"), perms.get("admin")))
 
-    # 4) 范围检查：能否碰其他仓（fine-grained 应全部 404/403）
+    # 4) 爆炸半径检查：探测「写权限」而非「读权限」
+    #
+    # ⚠️ 不能用 GET /repos/{其它仓} 是否 200 来判定：
+    #    GitHub 官方明确「fine-grained token 永远可以读所有公开仓」
+    #    （页面原文：Tokens can always read all public repositories）。
+    #    customer-workspace / kehu 都是公开仓，用读权限判据必然误判失败，
+    #    导致合格的 fine-grained PAT 被拒之门外。
+    #
+    #    真正要卡的是「能不能改别的仓」——那才是爆炸半径。
+    #    判据：GET /repos/{其它仓}/collaborators 需要 push/admin 权限，
+    #    无授权的 token 会返回 403/404。
     others = ["yhstc1/customer-workspace", "yhstc1/kehu"]
-    leaked = []
+    writable = []
     for r in others:
-        c, _ = gh("/repos/%s" % r, token)
+        c, _ = gh("/repos/%s/collaborators" % r, token, raw=True)
         if c == 200:
-            leaked.append(r)
-    add("无法访问其它仓库（爆炸半径已收窄）", not leaked,
-        "仍可访问: %s" % leaked if leaked else "其它仓均不可达 ✅")
+            writable.append(r)
+    add("无法写其它仓库（爆炸半径已收窄）", not writable,
+        "仍可写: %s" % writable if writable else "其它仓写权限均已拒绝 ✅")
 
     # 5) 范围说明：classic PAT 也有 repo scope，此项仅提示
     if report.get("login"):
         report["notes"].append(
-            "验证要点：fine-grained PAT 对未授权的仓库返回 404，classic PAT 返回 200"
+            "验证要点：读公开仓任何 token 都能做到（GitHub 强制），"
+            "所以判据用的是「写权限」；fine-grained 对未授权仓返回 403/404，"
+            "classic PAT 返回 200"
         )
 
     report["ok"] = all(ok for _, ok, _ in report["checks"])

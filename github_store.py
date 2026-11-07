@@ -100,29 +100,72 @@ def _split_repo(repo):
     return repo.split("/", 1)
 
 
+def repo_access_status(token=None):
+    """检查当前 token 对目标仓是否有访问权。
+
+    返回 (ok: bool, detail: str)。
+
+    为什么必须单独探测：
+        fine-grained PAT 无权访问某个**私有**仓时，GitHub 对
+        `GET /repos/{owner}/{repo}/contents/{path}` 返回 **404**，
+        与「仓库可访问但文件不存在」的 404 完全一样。
+        若不区分，就会把「权限不足」误判成「远端没数据」，
+        于是 FC 用空库启动，并在首次写入时把空库上传覆盖真实数据。
+
+    对照：公开仓（customer-workspace / kehu）对任何 token 都返回 200，
+    所以本探测只对私有仓才有判别力——而 customer-data 正是私有仓。
+    """
+    repo, tok = _env()
+    if token:
+        tok = token
+    owner, name = _split_repo(repo)
+    try:
+        raw = _api("/repos/%s/%s" % (owner, name), tok, timeout=30, raw=True)
+        return True, "可访问 %s" % repo
+    except RuntimeError as e:
+        msg = str(e)
+        if "HTTP 404" in msg:
+            return False, ("无权访问 %s（404：token 未获该私有仓授权，"
+                           "或仓库不存在）" % repo)
+        if "HTTP 403" in msg:
+            return False, "无权访问 %s（403）" % repo
+        return False, msg[:200]
+
+
 # ============================================================
 # 下载
 # ============================================================
 def download_db(dest_path):
     """从 GitHub 仓下载 customers.db 到 dest_path。
 
-    返回 True 表示成功；False 表示远端还没有该文件（首次部署）。
+    返回值：
+        str  —— 成功，值为远端文件的 blob SHA（乐观锁基线）
+        None —— 远端确实没有该文件（仓库可访问，但文件不存在 = 全新部署）
+    抛 RuntimeError —— 无权访问仓库 / 网络错误等（**不可吞掉**，
+        吞掉会导致调用方误以为「远端没数据」而用空库启动）。
     """
     repo, token = _env()
     owner, name = _split_repo(repo)
+
+    # 先确认对仓库有访问权，把「无权访问(404)」与「文件不存在(404)」区分开
+    ok, detail = repo_access_status(token)
+    if not ok:
+        raise RuntimeError("GitHub 仓库访问校验失败: %s" % detail)
+
     path = "/repos/%s/%s/contents/%s" % (owner, name, DATA_PATH_IN_REPO)
     try:
         raw = _api(path, token, timeout=90, raw=True)
     except RuntimeError as e:
         if "HTTP 404" in str(e):
-            return False
+            # 仓库可访问但文件不存在 → 远端确实为空（首次部署），不是错误
+            return None
         raise
     payload = json.loads(raw.decode("utf-8"))
     content = base64.b64decode(payload["content"])
     os.makedirs(os.path.dirname(dest_path) or ".", exist_ok=True)
     with open(dest_path, "wb") as f:
         f.write(content)
-    return True
+    return payload.get("sha")
 
 
 def get_remote_sha():
@@ -217,7 +260,13 @@ def sync_to_github(db_path, expected_sha=None):
 
 
 def restore_from_github(dest_path):
-    """从 GitHub 还原数据库到 dest_path。返回 True/False（远端是否存在）。"""
+    """从 GitHub 还原数据库到 dest_path。
+
+    返回值同 download_db：
+        str  —— 成功，值为远端 blob SHA
+        None —— 远端确实没有数据文件（首次部署）
+    异常  —— 无权访问 / 网络错误（调用方必须视为致命错误，不可继续用空库）
+    """
     return download_db(dest_path)
 
 
