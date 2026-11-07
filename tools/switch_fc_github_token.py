@@ -206,7 +206,7 @@ def fc_env_update(new_token):
 
     body = fc_models.UpdateFunctionInput(environment_variables=env)
     req = fc_models.UpdateFunctionRequest(body=body)
-    resp = client.update_function(function_name(), runtime())
+    resp = client.update_function(function_name(), req)
     out = resp.body
     out = out.to_map() if hasattr(out, "to_map") else out
     return old, out
@@ -260,12 +260,12 @@ def e2e_verify(token):
                        ("business", "/api/business"),
                        ("settings", "/api/settings"),
                        ("admin_users", "/api/admin/users")):
-        c, _ = api(path, cookie=ck)
+        c, _, _ = api(path, cookie=ck)
         result["read_" + name] = c
 
     # 写测试
     sha_before = read_remote_sha(token)
-    c, body = api("/api/customers", "POST",
+    c, body, _ = api("/api/customers", "POST",
                   {"name": "token切换验证", "company": "token切换验证",
                    "phone": "027-0000002", "category": "普通客户"}, cookie=ck)
     result["write"] = c
@@ -280,14 +280,14 @@ def e2e_verify(token):
 
     # 清理
     if new_id:
-        c, _ = api("/api/customers/%s" % new_id, "DELETE", cookie=ck)
+        c, _, _ = api("/api/customers/%s" % new_id, "DELETE", cookie=ck)
         result["cleanup"] = c
     time.sleep(2)
     sha_final = read_remote_sha(token)
     result["sha_final"] = sha_final
 
     # 残留检查
-    c, payload = api("/api/customers", cookie=ck)
+    c, payload, _ = api("/api/customers", cookie=ck)
     items = payload if isinstance(payload, list) else (
         (payload.get("items") or payload.get("data") or []) if isinstance(payload, dict) else [])
     result["residual"] = sum(
