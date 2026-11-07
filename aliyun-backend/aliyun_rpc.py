@@ -104,15 +104,22 @@ def call(product: str, version: str, action: str, params: dict = None, endpoint:
 def main():
     if len(sys.argv) < 4:
         raise SystemExit(
-            "用法：python aliyun-backend/aliyun_rpc.py <Product> <Version> <Action> [Key=Value ...]"
+            "用法：python aliyun-backend/aliyun_rpc.py <Product> <Version> <Action> [Key=Value ...] [--endpoint=HOST]"
         )
-    product, version, action = sys.argv[1], sys.argv[2], sys.argv[3]
+    endpoint = None
+    args = []
+    for a in sys.argv[1:]:
+        if a.startswith("--endpoint="):
+            endpoint = a.split("=", 1)[1]
+        else:
+            args.append(a)
+    product, version, action = args[0], args[1], args[2]
     params = {}
-    for kv in sys.argv[4:]:
+    for kv in args[3:]:
         if "=" in kv:
             k, _, v = kv.partition("=")
             params[k] = v
-    out = call(product, version, action, params)
+    out = call(product, version, action, params, endpoint=endpoint)
     print(json.dumps(out, ensure_ascii=False, indent=2))
 
 

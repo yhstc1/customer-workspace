@@ -44,3 +44,8 @@ aliyun-backend/*.zip
 # 含明文凭证的历史备份文档（ngrok authtoken 等，已从版本库移除）
 *.docx
 ngrok访问信息备份.docx
+
+# 本地运行日志（不进仓库）
+*.log
+tools/preview_*.log
+tools/python_bg.log
